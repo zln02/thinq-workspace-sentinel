@@ -1,0 +1,112 @@
+# ThinQ Workspace Sentinel · Docker Compose
+# 기존 UIS의 TimescaleDB·Kafka 재사용 (external network)
+# 신규 컨테이너 7개
+
+services:
+  sentinel-api:
+    build: ../backend
+    container_name: sentinel-api
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8003:8003"
+    env_file: ../.env
+    environment:
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@uis-timescaledb:5432/uis
+      DB_SCHEMA: sentinel
+      KAFKA_BOOTSTRAP: uis-kafka:9092
+      REDIS_URL: redis://sentinel-redis:6379/0
+    depends_on:
+      - sentinel-redis
+    networks: [sentinel_net, uis_default]
+
+  sentinel-rehva:
+    build: ../ml
+    container_name: sentinel-rehva
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@uis-timescaledb:5432/uis
+      DB_SCHEMA: sentinel
+      KAFKA_BOOTSTRAP: uis-kafka:9092
+      REDIS_URL: redis://sentinel-redis:6379/1
+    depends_on:
+      - sentinel-redis
+    networks: [sentinel_net, uis_default]
+
+  sentinel-collector:
+    build: ../pipeline
+    container_name: sentinel-collector
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@uis-timescaledb:5432/uis
+      DB_SCHEMA: sentinel
+      KOWAS_API_KEY: ${KOWAS_API_KEY}
+      NAVER_DATALAB_KEY: ${NAVER_DATALAB_KEY}
+    networks: [sentinel_net, uis_default]
+
+  sentinel-protocol:
+    build:
+      context: ../pipeline
+      dockerfile: Dockerfile.mcp
+    container_name: sentinel-protocol
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8010-8013:8010-8013"
+    env_file: ../.env
+    environment:
+      THINQ_CLIENT_ID: ${THINQ_CLIENT_ID}
+      THINQ_CLIENT_SECRET: ${THINQ_CLIENT_SECRET}
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@uis-timescaledb:5432/uis
+      DB_SCHEMA: sentinel
+    networks: [sentinel_net, uis_default]
+
+  sentinel-reporter:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.reporter
+    container_name: sentinel-reporter
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@uis-timescaledb:5432/uis
+      DB_SCHEMA: sentinel
+    volumes:
+      - sentinel_pdf:/var/sentinel/reports
+    networks: [sentinel_net, uis_default]
+
+  sentinel-redis:
+    image: redis:7-alpine
+    container_name: sentinel-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - sentinel_redis:/data
+    networks: [sentinel_net]
+
+  sentinel-grafana:
+    image: grafana/grafana:10.4.0
+    container_name: sentinel-grafana
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+      GF_SERVER_ROOT_URL: http://localhost/sentinel-grafana
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+    volumes:
+      - sentinel_grafana:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    networks: [sentinel_net, uis_default]
+
+volumes:
+  sentinel_pdf:
+  sentinel_redis:
+  sentinel_grafana:
+
+networks:
+  sentinel_net:
+    driver: bridge
+  uis_default:
+    external: true
