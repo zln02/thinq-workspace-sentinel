@@ -12,14 +12,16 @@
 from __future__ import annotations
 
 import os
+from contextlib import asynccontextmanager
+
 import asyncpg
 import redis.asyncio as redis
-from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from backend.api.sse import router as sse_router
 from pipeline.simulator.runner import SCENARIO_SEASON, run
-
 
 DB_DSN = os.getenv("DATABASE_URL",
                    "postgresql://uis_user:uis_dev_placeholder_20260414@localhost:5433/urban_immune")
@@ -39,7 +41,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="ThinQ Workspace Sentinel", version="0.3.0", lifespan=lifespan)
 
-from fastapi.middleware.cors import CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
@@ -48,7 +49,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from backend.api.sse import router as sse_router
 app.include_router(sse_router)
 
 

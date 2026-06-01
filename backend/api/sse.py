@@ -26,7 +26,6 @@ from pipeline.simulator.runner import SCENARIO_SEASON
 from pipeline.simulator.sensors import build_nursing_home_sensors
 from pipeline.simulator.space import SpaceEnv, seed_scenario
 
-
 router = APIRouter(prefix="/api/v1/stream", tags=["realtime"])
 
 

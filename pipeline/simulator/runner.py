@@ -15,7 +15,6 @@ from pipeline.simulator.devices import build_nursing_home_pack
 from pipeline.simulator.sensors import build_nursing_home_sensors
 from pipeline.simulator.space import SpaceEnv, seed_scenario
 
-
 SCENARIO_SEASON = {
     "winter_influenza": "winter",
     "spring_tb": "spring",
