@@ -1,0 +1,11 @@
+# 박진영(Tech Lead)은 전체 권한.
+# 다른 모듈은 해당 담당자 (현재 자리)가 review 필수 — 실제 GitHub ID는 박진영이 추후 채울 것.
+* @zln02
+/backend/      @zln02
+/pipeline/     @zln02
+/frontend/     @zln02
+/ml/           @zln02
+/infra/        @zln02
+/.github/      @zln02
+/migrations/   @zln02
+/docs/         @zln02
