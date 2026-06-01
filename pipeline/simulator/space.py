@@ -5,13 +5,11 @@
 """
 from __future__ import annotations
 
-import random
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from math import exp
 
 from .devices import Device
 from .sensors import Sensor, infer_ach_from_co2
-
 
 # 병원체 quanta 발생율 (q/h) — 학술 평균값
 PATHOGEN_QUANTA = {

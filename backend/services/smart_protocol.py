@@ -6,7 +6,6 @@ from __future__ import annotations
 
 from pipeline.simulator.devices import DeviceType
 
-
 PATHOGEN_POLICY = {
     "COVID-19": {
         "target_temp": 22, "target_rh": 50, "vent_rate": "MAX",

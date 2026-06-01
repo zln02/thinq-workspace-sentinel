@@ -14,7 +14,6 @@ from typing import Optional
 
 from pipeline.simulator.devices import Device, DeviceType
 
-
 # device_type → 가능 명령 매핑 (ThinQ 공식 API 모사)
 AVAILABLE_CONTROLS = {
     DeviceType.AIR_PURIFIER: {

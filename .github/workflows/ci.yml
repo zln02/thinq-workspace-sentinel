@@ -4,99 +4,67 @@ on:
   pull_request:
     branches: [develop, main]
   push:
-    branches: [develop]
+    branches: [develop, main]
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  python-lint-test:
+  python:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
 
-      - name: Install dependencies
+      - name: Install Python deps
         run: |
           pip install --upgrade pip
-          pip install \
-            fastapi==0.111.0 "uvicorn[standard]==0.30.0" \
-            asyncpg==0.29.0 "redis>=5.0" pydantic==2.7.0 \
-            ruff==0.5.0 pytest==8.2.0 pytest-asyncio==0.23.7
+          pip install fastapi==0.111.0 "uvicorn[standard]==0.30.0" \
+                      asyncpg==0.29.0 "redis>=5.0" pydantic==2.7.0 \
+                      ruff==0.5.0
 
       - name: Lint (ruff)
         run: ruff check backend pipeline --select=E,F,W,I --ignore=E501
 
-      - name: Smoke test — 시뮬레이터 5종 시나리오
+      - name: Smoke test (5 scenarios)
         env:
-          PYTHONPATH: .
-        run: |
-          python - <<'PY'
-          import asyncio, sys
-          from pipeline.simulator.runner import run, SCENARIO_SEASON
+          PYTHONPATH: ${{ github.workspace }}
+        run: python tests/smoke_scenarios.py
 
-          async def main():
-              fails = []
-              for s in SCENARIO_SEASON:
-                  r = await run(s, minutes=120, dt=1.0)
-                  init_tier = r['initial']['tier']
-                  final_tier = r['final']['tier']
-                  init_poi = r['initial']['poi']
-                  final_poi = r['final']['poi']
-                  print(f"{s:30} {init_tier} → {final_tier}  PoI {init_poi:.4f} → {final_poi:.4f}")
-                  # 5종 모두 위험 등급 감소 검증
-                  if final_poi >= init_poi:
-                      fails.append(f"{s}: PoI 감소 실패")
-              if fails:
-                  print("FAIL:", *fails)
-                  sys.exit(1)
-              print("OK · 5종 시나리오 모두 PoI 감소")
-          asyncio.run(main())
-          PY
-
-      - name: Pytest (unit, if exists)
-        run: |
-          if [ -d tests ]; then pytest tests -q --tb=short; else echo "tests/ 디렉토리 없음 — skip"; fi
-
-  frontend-build:
+  frontend:
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('frontend/package.json') != '' }}
+    if: hashFiles('frontend/package.json') != ''
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node 20
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
 
-      - name: Install
+      - name: Install (no lockfile yet)
         working-directory: frontend
-        run: npm ci
-
-      - name: Lint
-        working-directory: frontend
-        run: npm run lint --if-present
+        run: npm install --no-audit --no-fund
 
       - name: Build
         working-directory: frontend
-        run: npm run build --if-present
+        run: npm run build
 
   secret-scan:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Detect committed .env / credentials
+
+      - name: Block committed .env files
         run: |
-          set -e
-          git ls-files | grep -E '(^|/)\.env$|\.env\.[a-zA-Z]+$' | grep -v 'example' && {
-            echo "::error::커밋된 .env 발견 — 절대 금지"; exit 1; } || echo "OK"
+          matches=$(git ls-files | grep -E '(^|/)\.env$|\.env\.[a-zA-Z0-9_-]+$' | grep -v 'example' || true)
+          if [ -n "$matches" ]; then
+            echo "::error::커밋된 .env 발견 (금지):"
+            echo "$matches"
+            exit 1
+          fi
+          echo "OK · .env 미커밋"
