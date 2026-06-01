@@ -1,60 +1,13 @@
-name: Deploy to VM
+name: Deploy
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
-
-concurrency:
-  group: deploy-vm
-  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # Secrets 미설정이면 잡 자체 skip (CI 실패 표시 방지)
-    if: ${{ vars.DEPLOY_ENABLED == 'true' }}
     steps:
-      - name: Trigger summary
-        run: echo "Deploy ref ${{ github.sha }}"
-
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.VM_SSH_KEY }}
-
-      - name: Add VM to known_hosts
+      - name: Notice
         run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H "${{ secrets.VM_HOST }}" >> ~/.ssh/known_hosts
-
-      - name: Deploy via SSH
-        env:
-          VM_USER: ${{ secrets.VM_USER }}
-          VM_HOST: ${{ secrets.VM_HOST }}
-        run: |
-          ssh "$VM_USER@$VM_HOST" '
-            set -euo pipefail
-            cd ~/thinq-workspace-sentinel
-            git fetch --all --prune
-            git checkout main
-            git reset --hard origin/main
-            docker exec -i uis-timescaledb psql -U uis_user -d urban_immune \
-              < migrations/002_nursing_home_pivot.sql || true
-            pkill -f "uvicorn backend.api.main" || true
-            sleep 1
-            nohup /home/wlsdud5035/.venv-sentinel/bin/uvicorn \
-              backend.api.main:app --host 127.0.0.1 --port 8003 \
-              > /tmp/sentinel-api.log 2>&1 &
-            sleep 3
-            curl -fs http://127.0.0.1:8003/health | head -c 400
-            echo
-          '
-
-  deploy-disabled-notice:
-    runs-on: ubuntu-latest
-    if: ${{ vars.DEPLOY_ENABLED != 'true' }}
-    steps:
-      - name: Deploy 비활성화 (정상)
-        run: |
-          echo "::notice::자동 배포 비활성화 상태. Tech Lead가 Settings → Variables 에 DEPLOY_ENABLED=true · Secrets (VM_SSH_KEY·VM_HOST·VM_USER) 등록 후 활성화."
+          echo "::notice::Deploy workflow placeholder. Tech Lead가 VM_SSH_KEY·VM_HOST·VM_USER Secrets 등록 후 본 워크플로 본문 채워서 활성화."
+          echo "현재는 수동 트리거만 가능 (Actions 탭)."

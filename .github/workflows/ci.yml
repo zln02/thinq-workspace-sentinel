@@ -2,69 +2,53 @@ name: CI
 
 on:
   pull_request:
-    branches: [develop, main]
   push:
-    branches: [develop, main]
-
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+    branches:
+      - develop
+      - main
 
 jobs:
   python:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: pip
-
-      - name: Install Python deps
-        run: |
-          pip install --upgrade pip
-          pip install fastapi==0.111.0 "uvicorn[standard]==0.30.0" \
-                      asyncpg==0.29.0 "redis>=5.0" pydantic==2.7.0 \
-                      ruff==0.5.0
-
-      - name: Lint (ruff)
+      - name: Install deps
+        run: pip install fastapi==0.111.0 "uvicorn[standard]==0.30.0" asyncpg==0.29.0 "redis>=5.0" pydantic==2.7.0 ruff==0.5.0
+      - name: Ruff
         run: ruff check backend pipeline --select=E,F,W,I --ignore=E501
-
-      - name: Smoke test (5 scenarios)
+      - name: Smoke
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: python tests/smoke_scenarios.py
 
   frontend:
     runs-on: ubuntu-latest
-    if: hashFiles('frontend/package.json') != ''
     steps:
       - uses: actions/checkout@v4
-
+      - name: Check frontend exists
+        id: check
+        run: |
+          if [ -f frontend/package.json ]; then echo "exists=true" >> $GITHUB_OUTPUT; else echo "exists=false" >> $GITHUB_OUTPUT; fi
       - uses: actions/setup-node@v4
+        if: steps.check.outputs.exists == 'true'
         with:
           node-version: "20"
-
-      - name: Install (no lockfile yet)
+      - name: Install + build
+        if: steps.check.outputs.exists == 'true'
         working-directory: frontend
-        run: npm install --no-audit --no-fund
-
-      - name: Build
-        working-directory: frontend
-        run: npm run build
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
 
   secret-scan:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Block committed .env files
+      - name: Block .env
         run: |
           matches=$(git ls-files | grep -E '(^|/)\.env$|\.env\.[a-zA-Z0-9_-]+$' | grep -v 'example' || true)
-          if [ -n "$matches" ]; then
-            echo "::error::커밋된 .env 발견 (금지):"
-            echo "$matches"
-            exit 1
-          fi
-          echo "OK · .env 미커밋"
+          if [ -n "$matches" ]; then echo "::error::커밋된 .env 발견"; echo "$matches"; exit 1; fi
+          echo "OK"
