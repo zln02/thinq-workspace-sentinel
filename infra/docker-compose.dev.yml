@@ -1,0 +1,73 @@
+# ThinQ Workspace Sentinel · 로컬 개발 스택
+# 팀원 본인 PC에서 docker compose 한 줄로 mini-stack 띄움.
+# 실서비스(VM) 연동 불필요 — DB·Redis 모두 로컬에서 가상.
+#
+# 실행:
+#   cd thinq-workspace-sentinel
+#   docker compose -f infra/docker-compose.dev.yml up -d
+#   curl http://127.0.0.1:8003/health
+#
+# 종료:
+#   docker compose -f infra/docker-compose.dev.yml down
+#
+# 데이터 초기화 (완전 리셋):
+#   docker compose -f infra/docker-compose.dev.yml down -v
+
+name: sentinel-dev
+
+services:
+  sentinel-db-dev:
+    image: timescale/timescaledb:2.14.2-pg15
+    container_name: sentinel-db-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sentinel
+      POSTGRES_PASSWORD: dev_local_password
+      POSTGRES_DB: sentinel_dev
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - sentinel_db_dev:/var/lib/postgresql/data
+      - ../migrations/001_init_sentinel.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+      - ../migrations/002_nursing_home_pivot.sql:/docker-entrypoint-initdb.d/02_pivot.sql:ro
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "sentinel", "-d", "sentinel_dev"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  sentinel-redis-dev:
+    image: redis:7-alpine
+    container_name: sentinel-redis-dev
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:56379:6379"
+    volumes:
+      - sentinel_redis_dev:/data
+
+  sentinel-api-dev:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    container_name: sentinel-api-dev
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8003:8003"
+    environment:
+      DATABASE_URL: postgresql://sentinel:dev_local_password@sentinel-db-dev:5432/sentinel_dev
+      REDIS_URL: redis://sentinel-redis-dev:6379/0
+      ENV: development
+      # 실데이터 미사용 — 시뮬레이터만
+      UIS_DB_ENABLED: "false"
+    depends_on:
+      sentinel-db-dev:
+        condition: service_healthy
+      sentinel-redis-dev:
+        condition: service_started
+    volumes:
+      - ../backend:/app/backend:ro
+      - ../pipeline:/app/pipeline:ro
+
+volumes:
+  sentinel_db_dev:
+  sentinel_redis_dev:
