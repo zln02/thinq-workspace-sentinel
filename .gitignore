@@ -12,6 +12,7 @@ node_modules/
 .DS_Store
 .vscode/
 .idea/
+.claude/
 *.pkl
 *.bin
 data/raw/
