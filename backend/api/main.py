@@ -37,7 +37,19 @@ async def lifespan(app: FastAPI):
     await state["redis"].aclose()
 
 
-app = FastAPI(title="ThinQ Workspace Sentinel", version="0.2.0", lifespan=lifespan)
+app = FastAPI(title="ThinQ Workspace Sentinel", version="0.3.0", lifespan=lifespan)
+
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+from backend.api.sse import router as sse_router
+app.include_router(sse_router)
 
 
 @app.get("/health")
