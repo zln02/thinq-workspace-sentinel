@@ -1,4 +1,6 @@
 import TierBadge from "@/components/domain/TierBadge";
+import PersonaSwitcher from "@/components/domain/PersonaSwitcher";
+import LiveSensorChart from "@/components/domain/LiveSensorChart";
 
 export default function ExecutivePage() {
   return (
