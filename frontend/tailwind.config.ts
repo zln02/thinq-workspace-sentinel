@@ -5,13 +5,24 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        lg: { primary: "#A50034", dark: "#222", light: "#F4F4F4" },
+        brand: {
+          primary: "#A50034",
+          dark: "#7B0027",
+          tint: "#FCE8EE",
+        },
         tier: {
-          monitor: "#22C55E",
-          caution: "#FACC15",
-          alert: "#FB923C",
-          high: "#EF4444",
-          critical: "#7F1D1D",
+          t1: { fg: "#2E7D32", bg: "#E8F5E9" },
+          t2: { fg: "#F9A825", bg: "#FFF8E1" },
+          t3: { fg: "#EF6C00", bg: "#FFF3E0" },
+          t4: { fg: "#C62828", bg: "#FFEBEE" },
+          t5: { fg: "#FFFFFF", bg: "#1A1A1A" },
+        },
+        neutral: {
+          900: "#1B1B1B",
+          700: "#4A4A4A",
+          400: "#9B9B9B",
+          200: "#E5E5E5",
+          100: "#F5F5F5",
         },
       },
     },
