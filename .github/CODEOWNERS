@@ -1,11 +1,25 @@
-# 박진영(Tech Lead)은 전체 권한.
-# 다른 모듈은 해당 담당자 (현재 자리)가 review 필수 — 실제 GitHub ID는 박진영이 추후 채울 것.
-* @zln02
-/backend/      @zln02
-/pipeline/     @zln02
-/frontend/     @zln02
-/ml/           @zln02
-/infra/        @zln02
-/.github/      @zln02
-/migrations/   @zln02
-/docs/         @zln02
+# 5분 대기조 — 모듈별 코드 오너 (2026-06-02 확정)
+# PR 시 해당 모듈 오너의 리뷰가 자동 요청됩니다.
+# 박진영(@zln02)은 PM 권한으로 모든 모듈에 풀 권한.
+
+# 전체 기본 — PM
+*                @zln02
+
+# Backend — 박진
+/backend/        @Parkjin0821 @zln02
+
+# Frontend — 윤재영
+/frontend/       @dsadsa2311245 @zln02
+
+# Data Pipeline + ML — 박진영 (PM 겸직)
+/pipeline/       @zln02
+/ml/             @zln02
+
+# DevOps · QA · CI — 정욱현
+/infra/          @ughyeon123-source @zln02
+/.github/        @ughyeon123-source @zln02
+/tests/          @ughyeon123-source @zln02
+/migrations/     @ughyeon123-source @zln02
+
+# Docs — PM
+/docs/           @zln02

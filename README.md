@@ -7,6 +7,18 @@ LG ThinQ 가전 8종 + IoT 센서 6종 + 외부 감염병 신호 (KOWAS·DataLab
 
 LG DX School 5기 · 5분 대기조 · 2026.05.19 ~ 2026.06.25
 
+## 팀 (5분 대기조)
+
+| 이름 | GitHub | 역할 | 담당 모듈 |
+|---|---|---|---|
+| 박진영 | [@zln02](https://github.com/zln02) | PM / Tech Lead | `pipeline/`, `ml/`, `docs/`, 전체 아키텍처 |
+| 박진 | [@Parkjin0821](https://github.com/Parkjin0821) | Backend | `backend/` (FastAPI + SSE + Smart Protocol) |
+| 윤재영 | [@dsadsa2311245](https://github.com/dsadsa2311245) | Frontend | `frontend/` (Next.js 14 + PWA + PT 대시보드) |
+| 정욱현 | [@ughyeon123-source](https://github.com/ughyeon123-source) | DevOps / QA | `infra/`, `.github/`, `tests/`, `migrations/` |
+
+> 모듈별 책임은 [`docs/roles/Role_*.pptx`](docs/roles/) 7슬라이드 가이드 참고.
+> 통합 개발 가이드는 [`docs/dev/Master_Dev_Guide.pdf`](docs/dev/Master_Dev_Guide.pdf) 16페이지.
+
 ## 6주 PoC 일정
 
 - **W1** (5/19~25) — 기획·설계 ✅
