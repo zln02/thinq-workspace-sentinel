@@ -19,6 +19,69 @@ LG DX School 5기 · 5분 대기조 · 2026.05.19 ~ 2026.06.25
 > 모듈별 책임은 [`docs/roles/Role_*.pptx`](docs/roles/) 7슬라이드 가이드 참고.
 > 통합 개발 가이드는 [`docs/dev/Master_Dev_Guide.pdf`](docs/dev/Master_Dev_Guide.pdf) 16페이지.
 
+---
+
+## 🌱 처음이신가요? — 이거부터 읽어요
+
+**우리 팀은 다 같이 공부하면서 만드는 중이에요.** 모르는 게 정상이고 막히는 게 당연해요.
+
+📖 **[`docs/dev/Friendly_Onboarding.pdf`](docs/dev/Friendly_Onboarding.pdf)** (9페이지 · 비개발자 친화 입문서)
+- 영어 단어 30개+ 풀이 (repo, branch, PR, Docker, API… 다 한글 비유로)
+- 첫날 시간표 (10/30/60분 단위) + "이러면 OK" 신호
+- 막힘 처방전 7가지 + 누구한테 물어볼지 라우팅
+- 요양병원·감염 도메인 단어 사전
+
+> **막히면 5분 시도 → 바로 박진영(@zln02)에게 물어봐요. 30분 헤매는 거 아까워요. 우리 다 처음이에요.**
+
+---
+
+## 🚀 내 첫날 — 3분 셋업
+
+```bash
+# 1. clone (Docker Desktop · Node 20 · Python 3.11 미리 설치)
+git clone https://github.com/zln02/thinq-workspace-sentinel.git
+cd thinq-workspace-sentinel
+
+# 2. 환경 변수 (placeholder 값 그대로 docker용)
+cp .env.example .env
+
+# 3. 로컬 스택 부팅 (DB + Redis + API 3개 컨테이너)
+docker compose -f infra/docker-compose.dev.yml up -d
+curl http://localhost:8003/health     # → {"status":"ok"} 확인
+
+# 4. 프론트 (별도 터미널)
+cd frontend && npm install && npm run dev
+# → http://localhost:3000
+
+# 5. 본인 역할 PPT 7슬 읽기
+#    Role_Backend.pptx   ← 박진
+#    Role_Frontend.pptx  ← 윤재영
+#    Role_DevOps.pptx    ← 정욱현
+#    Role_ML / Pipeline  ← 박진영(PM)
+```
+
+### 첫 PR 만드는 법 (5단계)
+
+```bash
+git checkout develop && git pull --ff-only origin develop
+git checkout -b feature/<role>-<short-name>   # 예: feature/be-healthcheck
+# 코딩 → 커밋 → 푸시
+gh pr create -B develop                       # 템플릿 자동 로드
+# 리뷰 1명 + CI 그린 → squash 머지
+```
+
+| 막힐 때 | 해결 |
+|---|---|
+| Docker 5432 충돌 | dev는 55432 사용 → 포트 충돌 X (호스트 PG와 무관) |
+| CI ruff 빨강 | `ruff check backend pipeline --fix` 후 재푸시 |
+| `develop` 과 충돌 | `git rebase develop` (merge 아님) → 충돌 해결 → `git push --force-with-lease` |
+| `.env` 실수 푸시 | secret-scan 잡이 차단함. 그래도 노출되면 즉시 박진영(@zln02)에게 |
+
+> 더 자세한 셋업/트러블슈팅은 [`docs/dev/Master_Dev_Guide.pdf`](docs/dev/Master_Dev_Guide.pdf) §8 참고.
+> 시연·심사기준·6주 WBS는 같은 PDF §2, §5, §6 참고.
+
+---
+
 ## 6주 PoC 일정
 
 - **W1** (5/19~25) — 기획·설계 ✅
