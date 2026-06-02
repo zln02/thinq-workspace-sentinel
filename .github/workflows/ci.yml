@@ -16,13 +16,17 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install deps
-        run: pip install fastapi==0.111.0 "uvicorn[standard]==0.30.0" asyncpg==0.29.0 "redis>=5.0" pydantic==2.7.0 ruff==0.5.0
+        run: pip install fastapi==0.111.0 "uvicorn[standard]==0.30.0" asyncpg==0.29.0 "redis>=5.0" pydantic==2.7.0 ruff==0.5.0 pytest==8.2.0
       - name: Ruff
         run: ruff check backend pipeline --select=E,F,W,I --ignore=E501
-      - name: Smoke
+      - name: Smoke (5 시나리오)
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: python tests/smoke_scenarios.py
+      - name: Pytest 단위테스트 (PoI · 5-Tier)
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: pytest tests/test_poi.py tests/test_tier.py -v
 
   frontend:
     runs-on: ubuntu-latest
