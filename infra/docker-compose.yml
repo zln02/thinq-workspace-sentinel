@@ -85,6 +85,17 @@ services:
       - sentinel_redis:/data
     networks: [sentinel_net]
 
+  sentinel-prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: sentinel-prometheus
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - sentinel_prometheus:/prometheus
+    networks: [sentinel_net, uis_default]
+
   sentinel-grafana:
     image: grafana/grafana:10.4.0
     container_name: sentinel-grafana
@@ -104,6 +115,7 @@ volumes:
   sentinel_pdf:
   sentinel_redis:
   sentinel_grafana:
+  sentinel_prometheus:
 
 networks:
   sentinel_net:
