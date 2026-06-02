@@ -2,6 +2,7 @@ import FloorPlan from "@/components/domain/FloorPlan";
 import TierBadge from "@/components/domain/TierBadge";
 import ApplianceCard, { ApplianceCardProps } from "@/components/domain/ApplianceCard";
 import AlertQueue from "@/components/domain/AlertQueue";
+import PersonaSwitcher from "@/components/domain/PersonaSwitcher";
 
 const APPLIANCES: ApplianceCardProps[] = [
   { name: "환기기", icon: "🌬️", state: "AUTO", description: "풍량 MAX", isExecuting: true },
@@ -29,9 +30,13 @@ export default function OperationsPage() {
         </div>
       </header>
 
+      {/* 페르소나 switcher */}
+      <div className="bg-white border-b px-6 py-3">
+        <PersonaSwitcher />
+      </div>
+
       <main className="p-6">
         <FloorPlan />
-
         <div className="mt-6">
           <h2 className="text-xl font-bold mb-4">⚡ 가전 자동 제어</h2>
           <div className="grid grid-cols-4 gap-3">
@@ -40,7 +45,6 @@ export default function OperationsPage() {
             ))}
           </div>
         </div>
-
         <div className="mt-6">
           <AlertQueue />
         </div>
