@@ -32,7 +32,7 @@ UIS_TO_SENTINEL = {
 
 async def fetch_latest_signals(pool: asyncpg.Pool, limit: int = 20) -> list[dict]:
     """UIS에서 최신 감염병 신호 조회 (read-only).
-    
+
     UIS 테이블이 없거나 연결 실패 시 빈 리스트 반환 (graceful degradation).
     """
     query = """

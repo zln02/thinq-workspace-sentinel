@@ -21,9 +21,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from backend.api.sse import router as sse_router
-from pipeline.simulator.runner import SCENARIO_SEASON, run
+from backend.services.external_signal import (
+    compute_external_risk_boost,
+    normalize_signals,
+)
 from backend.services.uis_reader import fetch_latest_signals, fetch_regional_risk
-from backend.services.external_signal import normalize_signals, compute_external_risk_boost
+from pipeline.simulator.runner import SCENARIO_SEASON, run
 
 DB_DSN = os.getenv("DATABASE_URL",
                    "postgresql://uis_user:uis_dev_placeholder_20260414@localhost:5433/urban_immune")
@@ -157,7 +160,7 @@ async def get_risk_boost(
     region_code: str = "KR",
 ):
     """외부 신호 기반 공간 tier 보정값 반환.
-    
+
     예: 공간은 CAUTION인데 KOWAS 신호가 HIGH_RISK면 → HIGH_RISK로 사전 경보.
     """
     raw = await fetch_latest_signals(state["db"], limit=50)

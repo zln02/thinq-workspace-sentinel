@@ -91,7 +91,7 @@ def compute_external_risk_boost(
     region_code: str = "KR",
 ) -> dict:
     """외부 신호 + 공간 tier → 최종 보정 tier 계산.
-    
+
     외부 신호가 공간 측정값보다 높으면 상향 보정 (사전 경보).
     낮으면 공간 측정값 유지 (보수적 원칙).
     """
