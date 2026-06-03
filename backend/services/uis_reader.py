@@ -80,7 +80,9 @@ async def fetch_regional_risk(pool: asyncpg.Pool, region_code: str) -> Optional[
                 "signals": [dict(r) for r in rows],
             }
     except Exception as e:
-        return {"error": str(e)[:120], "region_code": region_code}
+        # ISMS-P: raw DB 에러 클라이언트 노출 금지 — 서버 로그에만 남기고 None 반환
+        print(f"[uis_reader] fetch_regional_risk({region_code}) error: {str(e)[:120]}")
+        return None
 
 
 def map_uis_pathogen(uis_code: str) -> str:
