@@ -25,7 +25,11 @@ from backend.services.external_signal import (
     compute_external_risk_boost,
     normalize_signals,
 )
-from backend.services.uis_reader import fetch_latest_signals, fetch_regional_risk
+from backend.services.uis_reader import (
+    UIS_DSN,
+    fetch_latest_signals,
+    fetch_regional_risk,
+)
 from pipeline.simulator.runner import SCENARIO_SEASON, run
 
 DB_DSN = os.getenv("DATABASE_URL",
@@ -39,8 +43,16 @@ state: dict = {}
 async def lifespan(app: FastAPI):
     state["db"] = await asyncpg.create_pool(DB_DSN, min_size=1, max_size=4)
     state["redis"] = redis.from_url(REDIS_URL, decode_responses=True)
+    # UIS DB(urban_immune)는 sentinel DB와 별개 — read-only 외부신호 소비용 별도 풀
+    try:
+        state["uis_db"] = await asyncpg.create_pool(UIS_DSN, min_size=1, max_size=2)
+    except Exception as e:
+        print(f"[main] UIS DB 풀 초기화 실패 (외부신호 비활성, sentinel은 정상): {str(e)[:120]}")
+        state["uis_db"] = None
     yield
     await state["db"].close()
+    if state.get("uis_db"):
+        await state["uis_db"].close()
     await state["redis"].aclose()
 
 
@@ -149,7 +161,7 @@ async def simulate(req: SimRequest):
 @app.get("/api/v1/external/signals")
 async def get_external_signals(limit: int = 20):
     """UIS에서 최신 외부 감염병 신호 조회."""
-    raw = await fetch_latest_signals(state["db"], limit=limit)
+    raw = await fetch_latest_signals(state["uis_db"], limit=limit)
     normalized = normalize_signals(raw)
     return {
         "count": len(normalized),
@@ -178,7 +190,7 @@ async def get_risk_boost(
 
     예: 공간은 CAUTION인데 KOWAS 신호가 HIGH_RISK면 → HIGH_RISK로 사전 경보.
     """
-    raw = await fetch_latest_signals(state["db"], limit=50)
+    raw = await fetch_latest_signals(state["uis_db"], limit=50)
     normalized = normalize_signals(raw)
     boost = compute_external_risk_boost(
         signals=normalized,
@@ -192,7 +204,7 @@ async def get_risk_boost(
 @app.get("/api/v1/external/regional/{region_code}")
 async def get_regional_risk(region_code: str):
     """특정 지역 최근 14일 감염병 신호 집계."""
-    result = await fetch_regional_risk(state["db"], region_code)
+    result = await fetch_regional_risk(state["uis_db"], region_code)
     if not result:
         return {"region_code": region_code, "signals": [], "message": "신호 없음"}
     return result
