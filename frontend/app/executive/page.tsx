@@ -1,6 +1,12 @@
 import TierBadge from "@/components/domain/TierBadge";
 import PersonaSwitcher from "@/components/domain/PersonaSwitcher";
 import LiveSensorChart from "@/components/domain/LiveSensorChart";
+import SHAPExplainer from "@/components/domain/SHAPExplainer";
+import AutoActionLog from "@/components/domain/AutoActionLog";
+import UISTimeline from "@/components/domain/UISTimeline";
+import ComplianceReport from "@/components/domain/ComplianceReport";
+
+
 
 export default function ExecutivePage() {
   return (
@@ -16,6 +22,9 @@ export default function ExecutivePage() {
           <TierBadge tier="t1" />
           <span className="text-sm text-gray-500">🔔 3</span>
           <span className="text-sm text-gray-500">👤 김원장</span>
+        </div>
+        <div className="bg-white border-b px-6 py-3">
+          <PersonaSwitcher />
         </div>
       </header>
 
@@ -38,6 +47,7 @@ export default function ExecutivePage() {
             <p className="text-xs text-gray-400 mt-1">이번 분기</p>
           </div>
         </div>
+        <LiveSensorChart />
 
         {/* 이번 달 자동 대응 요약 */}
         <div className="bg-white rounded-xl p-5 border shadow-sm mb-6">
@@ -76,6 +86,24 @@ export default function ExecutivePage() {
                 <div className="bg-yellow-400 h-3 rounded-full" style={{ width: "40%" }} />
               </div>
               <span className="text-yellow-600 font-bold">↑ 상승</span>
+            </div>
+            {/* SHAP */}
+            <div className="mt-6">
+              <SHAPExplainer />
+            </div>
+
+            {/* 액션 로그 */}
+            <div className="mt-6">
+              <AutoActionLog />
+            </div>
+            {/* UIS 타임라인 */}
+            <div className="mt-6">
+              <UISTimeline />
+            </div>
+
+            {/* 증빙 리포트 */}
+            <div className="mt-6">
+              <ComplianceReport />
             </div>
           </div>
         </div>

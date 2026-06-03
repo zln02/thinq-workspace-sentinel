@@ -1,5 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import NavSidebar from "./layout-nav";
 
 export const metadata: Metadata = {
   title: "ThinQ Workspace Sentinel — 요양병원 중앙 관제",
@@ -9,7 +10,12 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko">
-      <body className="bg-slate-50 text-slate-900 antialiased">{children}</body>
+      <body className="bg-slate-50 text-slate-900 antialiased flex">
+        <NavSidebar />
+        <main className="ml-48 flex-1 min-h-screen">
+          {children}
+        </main>
+      </body>
     </html>
   );
 }
