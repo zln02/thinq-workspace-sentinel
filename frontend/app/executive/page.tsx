@@ -1,113 +1,83 @@
-import TierBadge from "@/components/domain/TierBadge";
-import PersonaSwitcher from "@/components/domain/PersonaSwitcher";
-import LiveSensorChart from "@/components/domain/LiveSensorChart";
-import SHAPExplainer from "@/components/domain/SHAPExplainer";
-import AutoActionLog from "@/components/domain/AutoActionLog";
-import UISTimeline from "@/components/domain/UISTimeline";
-import ComplianceReport from "@/components/domain/ComplianceReport";
+// frontend/app/executive/page.tsx
+"use client";
 
+import { Building2, TrendingDown, FileCheck2, Lightbulb, CheckCircle2 } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, Legend } from "recharts";
 
+const costData = [
+  { name: '1주차', 수동방역비용: 120, ThinQ자동제어: 45 },
+  { name: '2주차', 수동방역비용: 130, ThinQ자동제어: 48 },
+  { name: '3주차', 수동방역비용: 110, ThinQ자동제어: 42 },
+  { name: '4주차', 수동방역비용: 140, ThinQ자동제어: 50 },
+];
 
-export default function ExecutivePage() {
+export default function ExecutiveDashboard() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* 헤더 */}
-      <header className="bg-white border-b px-6 py-4 flex items-center justify-between">
+    <main className="p-8 animate-in fade-in duration-500 space-y-8">
+      <header className="flex justify-between items-end border-b border-slate-200 dark:border-slate-800 pb-4">
         <div className="flex items-center gap-3">
-          <span className="font-bold text-lg text-[#A50034]">Sentinel</span>
-          <span className="text-gray-400">·</span>
-          <span className="text-gray-600">시설장 대시보드</span>
+          <div className="w-10 h-10 rounded-lg bg-teal-50 dark:bg-teal-500/20 border border-teal-200 dark:border-teal-500/50 flex items-center justify-center text-teal-600 dark:text-teal-500">
+            <Building2 size={24} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">시설장(경영) 대시보드</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">병원 전체 ROI 및 질병관리청 법적 컴플라이언스 현황</p>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <TierBadge tier="t1" />
-          <span className="text-sm text-gray-500">🔔 3</span>
-          <span className="text-sm text-gray-500">👤 김원장</span>
-        </div>
-        <div className="bg-white border-b px-6 py-3">
-          <PersonaSwitcher />
-        </div>
+        <button className="flex items-center gap-2 px-4 py-2 bg-lg-red text-white rounded-lg text-sm font-bold shadow-md hover:bg-red-700 transition">
+          <FileCheck2 size={16} /> 질병청 증빙 리포트 출력
+        </button>
       </header>
 
-      <main className="p-6 max-w-6xl mx-auto">
-        {/* KPI 3종 */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-xl p-5 border shadow-sm">
-            <p className="text-sm text-gray-500">선제 리드타임</p>
-            <p className="text-3xl font-bold text-[#A50034] mt-1">4.2주</p>
-            <p className="text-xs text-gray-400 mt-1">지역 UIS 기준</p>
+      {/* 경영 성과 KPI */}
+      <div className="grid grid-cols-3 gap-6">
+        <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm transition-colors">
+          <div className="flex justify-between items-start mb-4">
+            <h3 className="text-slate-500 dark:text-slate-400 font-semibold">월간 에너지 절감액</h3>
+            <TrendingDown className="text-green-500" />
           </div>
-          <div className="bg-white rounded-xl p-5 border shadow-sm">
-            <p className="text-sm text-gray-500">증빙 자동화율</p>
-            <p className="text-3xl font-bold text-[#A50034] mt-1">100%</p>
-            <p className="text-xs text-gray-400 mt-1">지난 30일</p>
-          </div>
-          <div className="bg-white rounded-xl p-5 border shadow-sm">
-            <p className="text-sm text-gray-500">감염관리수가</p>
-            <p className="text-3xl font-bold text-green-600 mt-1">✓ 충족</p>
-            <p className="text-xs text-gray-400 mt-1">이번 분기</p>
-          </div>
-        </div>
-        <LiveSensorChart />
-
-        {/* 이번 달 자동 대응 요약 */}
-        <div className="bg-white rounded-xl p-5 border shadow-sm mb-6">
-          <h2 className="font-bold text-lg mb-3">이번 달 자동 대응 요약</h2>
-          <div className="flex gap-6 text-sm text-gray-600 mb-4">
-            <span>자동 환기 <strong>432회</strong></span>
-            <span>UV 가동 <strong>86회</strong></span>
-            <span>알림 <strong>12건</strong></span>
-          </div>
-          <button className="bg-[#A50034] text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-[#7B0027] transition">
-            📄 감염관리 증빙 PDF 다운로드
-          </button>
+          <div className="text-4xl font-black text-slate-900 dark:text-white">₩ 1,240,000</div>
+          <p className="text-sm text-green-600 dark:text-green-400 mt-2 font-medium">전년 동월 대비 24% 절감 (에어컨/공기청정기 최적화)</p>
         </div>
 
-        {/* UIS 외부 신호 */}
-        <div className="bg-white rounded-xl p-5 border shadow-sm">
-          <h2 className="font-bold text-lg mb-3">UIS 외부 신호 타임라인</h2>
-          <div className="flex flex-col gap-3 text-sm">
-            <div className="flex items-center gap-3">
-              <span className="w-24 text-gray-500">💊 OTC</span>
-              <div className="flex-1 bg-gray-100 rounded-full h-3">
-                <div className="bg-[#A50034] h-3 rounded-full" style={{ width: "75%" }} />
-              </div>
-              <span className="text-red-500 font-bold">↑ 상승</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="w-24 text-gray-500">🧪 KOWAS</span>
-              <div className="flex-1 bg-gray-100 rounded-full h-3">
-                <div className="bg-orange-400 h-3 rounded-full" style={{ width: "55%" }} />
-              </div>
-              <span className="text-orange-500 font-bold">↑ 상승</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="w-24 text-gray-500">🔍 검색</span>
-              <div className="flex-1 bg-gray-100 rounded-full h-3">
-                <div className="bg-yellow-400 h-3 rounded-full" style={{ width: "40%" }} />
-              </div>
-              <span className="text-yellow-600 font-bold">↑ 상승</span>
-            </div>
-            {/* SHAP */}
-            <div className="mt-6">
-              <SHAPExplainer />
-            </div>
-
-            {/* 액션 로그 */}
-            <div className="mt-6">
-              <AutoActionLog />
-            </div>
-            {/* UIS 타임라인 */}
-            <div className="mt-6">
-              <UISTimeline />
-            </div>
-
-            {/* 증빙 리포트 */}
-            <div className="mt-6">
-              <ComplianceReport />
-            </div>
+        <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm transition-colors">
+          <div className="flex justify-between items-start mb-4">
+            <h3 className="text-slate-500 dark:text-slate-400 font-semibold">인건비 (수동 방역 대비)</h3>
+            <TrendingDown className="text-green-500" />
           </div>
+          <div className="text-4xl font-black text-slate-900 dark:text-white">120 <span className="text-xl text-slate-400 font-medium">시간 절약</span></div>
+          <p className="text-sm text-slate-500 mt-2 font-medium">간병 인력의 환경 관리 업무를 ThinQ가 대체</p>
         </div>
-      </main>
-    </div>
+
+        <div className="bg-gradient-to-br from-lg-red to-[#7B0027] rounded-2xl p-6 shadow-lg text-white">
+          <div className="flex justify-between items-start mb-4">
+            <h3 className="text-white/80 font-semibold">법적 컴플라이언스 (질병청)</h3>
+            <CheckCircle2 className="text-white" />
+          </div>
+          <div className="text-4xl font-black">100% 충족</div>
+          <p className="text-sm text-white/90 mt-2 font-medium flex items-center gap-1">
+            <Lightbulb size={14}/> CO2, 환기량, 온습도 기준치 완벽 달성
+          </p>
+        </div>
+      </div>
+
+      {/* ROI 분석 차트 */}
+      <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm transition-colors">
+        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6">수동 방역 vs ThinQ 자동 제어 유지비용 비교 (단위: 만원)</h3>
+        <div className="h-[300px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={costData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" strokeOpacity={0.2} vertical={false} />
+              <XAxis dataKey="name" stroke="#6B7280" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+              <YAxis stroke="#6B7280" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+              <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+              <Legend wrapperStyle={{ paddingTop: '20px' }} />
+              <Bar dataKey="수동방역비용" name="기존 수동 방역 및 관리 비용" fill="#9CA3AF" radius={[4, 4, 0, 0]} barSize={40} />
+              <Bar dataKey="ThinQ자동제어" name="ThinQ 도입 후 최적화 유지비용" fill="#10B981" radius={[4, 4, 0, 0]} barSize={40} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </main>
   );
 }

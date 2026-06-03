@@ -1,55 +1,63 @@
-import TierBadge from "./TierBadge";
+// frontend/components/domain/RoomCard.tsx
+"use client";
+import { Users, Wind, Thermometer, Droplets, Activity } from "lucide-react";
 
-type Tier = "t1" | "t2" | "t3" | "t4" | "t5";
+type TierType = "MONITOR" | "CAUTION" | "ALERT" | "HIGH_RISK" | "CRITICAL";
 
-export interface RoomCardProps {
-  roomId: string;
-  tier: Tier;
-  co2: number;
-  pm25: number;
-  rebreathFraction: number;
-  occupancy: number;
-  isAuto: boolean;
-  onClick?: () => void;
-}
-
-const TIER_BG = {
-  t1: "#E8F5E9",
-  t2: "#FFF8E1",
-  t3: "#FFF3E0",
-  t4: "#FFEBEE",
-  t5: "#424242",
+const THEME_MAP: Record<TierType, { border: string; bg: string; text: string; label: string }> = {
+  MONITOR: { border: "border-green-500/30", bg: "bg-green-50 dark:bg-green-500/10", text: "text-green-600 dark:text-green-400", label: "Monitor" },
+  CAUTION: { border: "border-yellow-500/40", bg: "bg-yellow-50 dark:bg-yellow-500/10", text: "text-yellow-600 dark:text-yellow-400", label: "Caution" },
+  ALERT: { border: "border-orange-500/50", bg: "bg-orange-50 dark:bg-orange-500/15", text: "text-orange-600 dark:text-orange-400", label: "Alert" },
+  HIGH_RISK: { border: "border-red-300 dark:border-[#A50034]/60", bg: "bg-red-50 dark:bg-[#A50034]/20", text: "text-[#A50034]", label: "High Risk" },
+  CRITICAL: { border: "border-red-500 dark:border-red-600/70", bg: "bg-red-100 dark:bg-red-600/30", text: "text-red-700 dark:text-red-500", label: "Critical" }
 };
 
-export default function RoomCard({
-  roomId, tier, co2, pm25, rebreathFraction, occupancy, isAuto, onClick,
-}: RoomCardProps) {
+export function RoomCard({ roomCode, capacity, occ, snapshot, onClick }: any) {
+  const rawTier = snapshot?.tier || "MONITOR";
+  const tier: TierType = rawTier in THEME_MAP ? rawTier : "MONITOR";
+  const theme = THEME_MAP[tier];
+
+  const co2 = snapshot?.co2 || "—";
+  const temp = snapshot?.temp_c?.toFixed(1) || "—";
+  const rh = snapshot?.rh?.toFixed(0) || "—";
+  const pm25 = snapshot?.pm25 || "—";
+
   return (
-    <div
-      onClick={onClick}
-      style={{ backgroundColor: TIER_BG[tier] }}
-      className="relative rounded-xl p-4 border cursor-pointer hover:shadow-md transition"
-    >
-      {/* 자동대응 점멸 도트 */}
-      {isAuto && (
-        <span className="absolute left-2 top-2 w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-      )}
-
-      <div className="flex justify-between items-center mb-2">
-        <span className="font-bold text-lg">{roomId}호</span>
-        <TierBadge tier={tier} />
+    <div onClick={onClick} className={`cursor-pointer rounded-2xl p-5 border ${theme.border} ${theme.bg} backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between min-h-[160px]`}>
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <h4 className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">{roomCode}호</h4>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
+            <Users size={12}/> 재실 {occ}/{capacity}명
+          </p>
+        </div>
+        <div className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase ${theme.text} bg-white/60 dark:bg-[#0B1120]/80 shadow-sm dark:shadow-inner flex items-center gap-1.5 border border-slate-200 dark:border-slate-700/50`}>
+          <span className="relative flex h-1.5 w-1.5">
+            {tier !== "MONITOR" && <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${theme.text} opacity-50`}></span>}
+            <span className={`relative inline-flex rounded-full h-1.5 w-1.5 currentColor`}></span>
+          </span>
+          {theme.label}
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 text-sm text-gray-700">
-        <div>CO₂ <span className="font-mono font-bold">{co2} ppm</span></div>
-        <div>PM2.5 <span className="font-mono font-bold">{pm25} μg/m³</span></div>
-        <div>재호흡률 <span className="font-mono font-bold">{rebreathFraction}%</span></div>
-        <div>재실 <span className="font-mono font-bold">{occupancy}명</span></div>
+      <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-xs mt-2">
+        <div className="flex justify-between items-center">
+          <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1"><Wind size={12}/> CO₂</span>
+          <span className="font-bold text-slate-700 dark:text-slate-200">{co2}</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1"><Activity size={12}/> PM2.5</span>
+          <span className="font-bold text-slate-700 dark:text-slate-200">{pm25}</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1"><Thermometer size={12}/> 온도</span>
+          <span className="font-bold text-slate-700 dark:text-slate-200">{temp}</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1"><Droplets size={12}/> 습도</span>
+          <span className="font-bold text-slate-700 dark:text-slate-200">{rh}%</span>
+        </div>
       </div>
-
-      {isAuto && (
-        <div className="mt-2 text-xs text-red-500 font-semibold">⚡ 자동 대응 진행 중</div>
-      )}
     </div>
   );
 }

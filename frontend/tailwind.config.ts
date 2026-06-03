@@ -1,29 +1,29 @@
+// frontend/tailwind.config.ts (파일 상단 부분)
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
+  darkMode: 'class', // 💡 이 줄을 꼭 추가해 주세요!
+  content: [
+    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  // ... (나머지 기존 코드 유지)
   theme: {
     extend: {
       colors: {
-        brand: {
-          primary: "#A50034",
-          dark: "#7B0027",
-          tint: "#FCE8EE",
+        // LG 브랜드 컬러
+        lg: {
+          red: "#A50034",      // LG Active Red (포인트 컬러)
+          dark: "#7B0027",     // Hover 등 조금 더 어두운 Red
+          light: "#FCE8EE",    // 배경용 연한 Red
         },
-        tier: {
-          t1: { fg: "#2E7D32", bg: "#E8F5E9" },
-          t2: { fg: "#F9A825", bg: "#FFF8E1" },
-          t3: { fg: "#EF6C00", bg: "#FFF3E0" },
-          t4: { fg: "#C62828", bg: "#FFEBEE" },
-          t5: { fg: "#FFFFFF", bg: "#1A1A1A" },
-        },
-        neutral: {
-          900: "#1B1B1B",
-          700: "#4A4A4A",
-          400: "#9B9B9B",
-          200: "#E5E5E5",
-          100: "#F5F5F5",
-        },
+        // 관제 대시보드 전용 다크 테마 컬러
+        dash: {
+          bg: "#0B1120",       // 대시보드 전체 배경 (Deep Navy)
+          panel: "#111827",    // 카드, 네비게이션 바 등 패널 배경
+          border: "#1F2937",   // 패널 테두리
+        }
       },
     },
   },
