@@ -1,24 +1,33 @@
+import SafetyScore from "@/components/domain/SafetyScore";
+import TierBadge from "@/components/domain/TierBadge";
+import AlertQueue from "@/components/domain/AlertQueue";
+
 export default function MobilePage() {
   return (
-    <main className="min-h-screen p-6 max-w-md mx-auto">
-      <header className="mb-4">
-        <h1 className="text-xl font-bold text-lg-primary">📱 요양보호사 화면</h1>
-        <p className="text-xs text-slate-500">최주임 · 담당 병실 3개</p>
-      </header>
-      <div className="space-y-3">
-        {["601", "602", "603"].map((r) => (
-          <div key={r} className="rounded-lg border bg-white p-3 shadow-sm">
-            <div className="flex justify-between">
-              <span className="font-bold">{r}호</span>
-              <span className="text-green-600 font-bold">🟢 안전</span>
-            </div>
-            <div className="text-xs text-slate-500 mt-1">CO₂ 720 · RH 50% · 재실 6/6</div>
-          </div>
-        ))}
+    <div className="min-h-screen bg-white flex flex-col p-4 max-w-sm mx-auto">
+      <h1 className="text-xl font-bold text-[#A50034] mb-4">📱 모바일 — 요양보호사</h1>
+
+      {/* 안심 점수 */}
+      <div className="flex flex-col items-center mb-6">
+        <SafetyScore score={78} />
+        <div className="mt-3">
+          <TierBadge tier="t2" />
+        </div>
       </div>
-      <div className="mt-6 p-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-900">
-        🚧 W4 PWA 작업 예정 · 본인 담당 병실 1초 안심 확인 · 출퇴근 알림
+
+      {/* 내 담당 병실 */}
+      <div className="bg-yellow-50 rounded-xl border border-yellow-200 p-4 mb-4">
+        <h2 className="font-bold text-sm mb-2">⚠️ 담당 병실 주의</h2>
+        <div className="flex justify-between text-sm">
+          <span>202호</span><span className="text-yellow-600 font-bold">Caution</span>
+        </div>
+        <div className="flex justify-between text-sm mt-1">
+          <span>210호</span><span className="text-yellow-600 font-bold">Caution</span>
+        </div>
       </div>
-    </main>
+
+      {/* 알림 큐 */}
+      <AlertQueue />
+    </div>
   );
 }
