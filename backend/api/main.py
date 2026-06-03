@@ -56,24 +56,39 @@ app.add_middleware(
 
 app.include_router(sse_router)
 
-
 @app.get("/health")
 async def health():
-    ok = {"service": "sentinel-api", "version": app.version}
+    ok = {
+        "service": "sentinel-api",
+        "version": app.version,
+        "timestamp": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+    }
+
+    # DB 체크
     try:
         async with state["db"].acquire() as con:
             row = await con.fetchrow("SELECT COUNT(*) AS n FROM sentinel.pathogens")
             ok["db"] = {"status": "up", "pathogens_count": row["n"]}
     except Exception as e:
         ok["db"] = {"status": "down", "error": str(e)[:120]}
+
+    # Redis 체크
     try:
         await state["redis"].ping()
         ok["redis"] = {"status": "up"}
     except Exception as e:
         ok["redis"] = {"status": "down", "error": str(e)[:120]}
-    ok["simulator"] = {"status": "up", "scenarios": list(SCENARIO_SEASON.keys())}
-    return ok
 
+    # Simulator 체크
+    ok["simulator"] = {"status": "up", "scenarios": list(SCENARIO_SEASON.keys())}
+
+    # overall 상태 종합
+    is_down = ok["db"]["status"] == "down" or ok["redis"]["status"] == "down"
+    ok["overall"] = "down" if is_down else "ok"
+
+    status_code = 503 if is_down else 200
+    from fastapi.responses import JSONResponse
+    return JSONResponse(content=ok, status_code=status_code)
 
 @app.get("/api/v1/sites")
 async def list_sites():
