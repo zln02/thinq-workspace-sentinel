@@ -25,7 +25,11 @@ from backend.services.external_signal import (
     compute_external_risk_boost,
     normalize_signals,
 )
-from backend.services.uis_reader import fetch_latest_signals, fetch_regional_risk, UIS_DSN
+from backend.services.uis_reader import (
+    UIS_DSN,
+    fetch_latest_signals,
+    fetch_regional_risk,
+)
 from pipeline.simulator.runner import SCENARIO_SEASON, run
 
 DB_DSN = os.getenv("DATABASE_URL",
