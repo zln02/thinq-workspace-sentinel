@@ -17,3 +17,17 @@ node_modules/
 *.bin
 data/raw/
 data/processed/
+
+# ── 다이어트 점검 보강 (2026-06-03) ──
+.ruff_cache/
+*.bak
+*.orig
+*.tmp
+*.pem
+*.key
+*.p12
+coverage/
+.coverage
+htmlcov/
+# 대용량 발표 PDF는 git에 넣지 않음 (Notion/드라이브 보관)
+docs/legal/ppt/*.pdf

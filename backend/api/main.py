@@ -21,6 +21,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from backend.api.sse import router as sse_router
+from backend.services.external_signal import (
+    compute_external_risk_boost,
+    normalize_signals,
+)
+from backend.services.uis_reader import fetch_latest_signals, fetch_regional_risk
 from pipeline.simulator.runner import SCENARIO_SEASON, run
 
 DB_DSN = os.getenv("DATABASE_URL",
@@ -51,24 +56,39 @@ app.add_middleware(
 
 app.include_router(sse_router)
 
-
 @app.get("/health")
 async def health():
-    ok = {"service": "sentinel-api", "version": app.version}
+    ok = {
+        "service": "sentinel-api",
+        "version": app.version,
+        "timestamp": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+    }
+
+    # DB 체크
     try:
         async with state["db"].acquire() as con:
             row = await con.fetchrow("SELECT COUNT(*) AS n FROM sentinel.pathogens")
             ok["db"] = {"status": "up", "pathogens_count": row["n"]}
     except Exception as e:
         ok["db"] = {"status": "down", "error": str(e)[:120]}
+
+    # Redis 체크
     try:
         await state["redis"].ping()
         ok["redis"] = {"status": "up"}
     except Exception as e:
         ok["redis"] = {"status": "down", "error": str(e)[:120]}
-    ok["simulator"] = {"status": "up", "scenarios": list(SCENARIO_SEASON.keys())}
-    return ok
 
+    # Simulator 체크
+    ok["simulator"] = {"status": "up", "scenarios": list(SCENARIO_SEASON.keys())}
+
+    # overall 상태 종합
+    is_down = ok["db"]["status"] == "down" or ok["redis"]["status"] == "down"
+    ok["overall"] = "down" if is_down else "ok"
+
+    status_code = 503 if is_down else 200
+    from fastapi.responses import JSONResponse
+    return JSONResponse(content=ok, status_code=status_code)
 
 @app.get("/api/v1/sites")
 async def list_sites():
@@ -124,4 +144,55 @@ async def simulate(req: SimRequest):
     if req.scenario not in SCENARIO_SEASON:
         raise HTTPException(400, f"Unknown scenario. Use one of {list(SCENARIO_SEASON.keys())}")
     result = await run(req.scenario, req.minutes, req.dt)
+    return result
+
+@app.get("/api/v1/external/signals")
+async def get_external_signals(limit: int = 20):
+    """UIS에서 최신 외부 감염병 신호 조회."""
+    raw = await fetch_latest_signals(state["db"], limit=limit)
+    normalized = normalize_signals(raw)
+    return {
+        "count": len(normalized),
+        "signals": [
+            {
+                "pathogen": s.pathogen,
+                "source": s.source,
+                "raw_signal": s.raw_signal,
+                "weighted_signal": s.weighted_signal,
+                "suggested_tier": s.suggested_tier,
+                "region_code": s.region_code,
+                "signal_date": s.signal_date,
+            }
+            for s in normalized
+        ],
+    }
+
+
+@app.get("/api/v1/external/risk-boost")
+async def get_risk_boost(
+    pathogen: str = "COVID-19",
+    space_tier: str = "CAUTION",
+    region_code: str = "KR",
+):
+    """외부 신호 기반 공간 tier 보정값 반환.
+
+    예: 공간은 CAUTION인데 KOWAS 신호가 HIGH_RISK면 → HIGH_RISK로 사전 경보.
+    """
+    raw = await fetch_latest_signals(state["db"], limit=50)
+    normalized = normalize_signals(raw)
+    boost = compute_external_risk_boost(
+        signals=normalized,
+        space_tier=space_tier,
+        target_pathogen=pathogen,
+        region_code=region_code,
+    )
+    return boost
+
+
+@app.get("/api/v1/external/regional/{region_code}")
+async def get_regional_risk(region_code: str):
+    """특정 지역 최근 14일 감염병 신호 집계."""
+    result = await fetch_regional_risk(state["db"], region_code)
+    if not result:
+        return {"region_code": region_code, "signals": [], "message": "신호 없음"}
     return result

@@ -18,6 +18,7 @@ LG DX School 5기 · 5분 대기조 · 2026.05.19 ~ 2026.06.25
 
 > 모듈별 책임은 [`docs/roles/Role_*.pptx`](docs/roles/) 7슬라이드 가이드 참고.
 > 통합 개발 가이드는 [`docs/dev/Master_Dev_Guide.pdf`](docs/dev/Master_Dev_Guide.pdf) 16페이지.
+> 역할별 플레이북 (W3~W6 로드맵 + 핫픽스 가이드): [`docs/dev/Backend_Playbook.md`](docs/dev/Backend_Playbook.md) — 박진
 
 ---
 
