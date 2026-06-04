@@ -57,8 +57,8 @@ services:
       DATABASE_URL: postgresql://sentinel:dev_local_password@sentinel-db-dev:5432/sentinel_dev
       REDIS_URL: redis://sentinel-redis-dev:6379/0
       ENV: development
-      # 실데이터 미사용 — 시뮬레이터만
-      UIS_DB_ENABLED: "false"
+      # UIS 실데이터 연동 (read-only 외부신호). 미설정 시 풀 None → 외부신호 graceful 비활성
+      UIS_DATABASE_URL: ${UIS_DATABASE_URL:-}
     depends_on:
       sentinel-db-dev:
         condition: service_healthy
@@ -67,7 +67,16 @@ services:
     volumes:
       - ../backend:/app/backend:ro
       - ../pipeline:/app/pipeline:ro
+    networks:
+      - default
+      - uis-network
 
 volumes:
   sentinel_db_dev:
   sentinel_redis_dev:
+
+networks:
+  default:
+  # UIS TimescaleDB(urban_immune) 가 떠 있는 외부 네트워크. docker compose 밖에서 생성됨.
+  uis-network:
+    external: true
