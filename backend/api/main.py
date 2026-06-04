@@ -109,6 +109,18 @@ async def list_sites():
         return [dict(r) for r in rows]
 
 
+@app.get("/api/v1/sites/{site_id}/spaces")
+async def list_site_spaces(site_id: str):
+    """site의 병동(spaces) 목록. 실제 면적·체적(Wells-Riley 입력) 포함."""
+    async with state["db"].acquire() as con:
+        rows = await con.fetch(
+            "SELECT id, space_name, space_type, area_m2, ceiling_m, volume_m3, max_occupancy "
+            "FROM sentinel.spaces WHERE site_id = $1 ORDER BY space_name",
+            site_id,
+        )
+        return [dict(r) for r in rows]
+
+
 @app.get("/api/v1/pathogens")
 async def list_pathogens():
     async with state["db"].acquire() as con:

@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from math import exp
 
 from .devices import Device
+from .iaq import iaq_exceedances
 from .sensors import Sensor, infer_ach_from_co2
 
 # 병원체 quanta 발생율 (q/h) — 학술 평균값
@@ -112,6 +113,7 @@ class SpaceEnv:
             "co2": round(self.co2, 0),
             "pm25": round(self.pm25, 1),
             "occupancy": self.occupancy,
+            "volume_m3": round(self.volume_m3, 1),
             "virus_conc": round(self.virus_conc, 4),
             "surface_contam": round(self.surface_contam, 3),
             "fresh_air_ach": round(self.fresh_air_ach, 2),
@@ -121,6 +123,7 @@ class SpaceEnv:
             "poi": round(self.poi(), 4),
             "r_event": round(self.r_event(), 3),
             "tier": self.tier(),
+            "iaq_over": iaq_exceedances(co2=self.co2, pm25=self.pm25),
             "sensors": [
                 {"id": r.sensor_id, "type": r.sensor_type.value, "value": round(r.value, 2), "unit": r.unit}
                 for r in readings
@@ -149,3 +152,22 @@ def seed_scenario(env: SpaceEnv, scenario: str) -> None:
         env.outdoor_pm25 = 65.0
         env.pathogen, env.infected_count = "NOROVIRUS", 2
         env.surface_contam = 0.5
+
+
+def space_env_from_row(row, space_id: str | None = None) -> SpaceEnv:
+    """DB `sentinel.spaces` 레코드(dict/Record)로 SpaceEnv를 구성.
+
+    실제 병동 체적(volume_m3)·정원(max_occupancy)을 시뮬레이터에 주입한다.
+    row 가 None 이거나 값이 없으면 SpaceEnv 기본값(하드코딩 fallback)을 쓴다.
+    """
+    if not row:
+        return SpaceEnv(space_id=space_id or "ward_a")
+    name = row.get("space_name") or row.get("id")
+    volume = row.get("volume_m3")
+    occ = row.get("max_occupancy")
+    env = SpaceEnv(space_id=space_id or str(name))
+    if volume:
+        env.volume_m3 = float(volume)
+    if occ:
+        env.occupancy = int(occ)
+    return env
