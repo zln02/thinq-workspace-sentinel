@@ -17,6 +17,9 @@ import time
 
 import requests
 import serial
+from collections import deque
+
+_gas_window: deque = deque(maxlen=5)  # 가스값 이동평균(출렁임 완화 → tier 깜빡임 방지)
 
 PORT = os.getenv("SERIAL_PORT", "/dev/ttyACM0")
 BAUD = int(os.getenv("BAUD", "9600"))
@@ -40,12 +43,14 @@ def main():
         if not m:
             continue
         temp, hum, _lvl, gas = m.groups()
+        _gas_window.append(float(gas))
+        gas_smooth = sum(_gas_window) / len(_gas_window)
         payload = {
             "space_id": SPACE,
             "device_id": "rpi-arduino",
             "temp_c": float(temp),
             "humidity": float(hum),
-            "gas_raw": float(gas),
+            "gas_raw": round(gas_smooth, 1),
         }
         try:
             r = requests.post(API, json=payload, timeout=4)

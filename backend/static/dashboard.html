@@ -8,7 +8,7 @@
 <style>
   :root { --bg:#0b1020; --card:#151b2e; --line:#26304a; --txt:#e8edf7; --muted:#8a96b3; }
   * { box-sizing:border-box; margin:0; padding:0; }
-  body { background:var(--bg); color:var(--txt); font-family:'Pretendard',system-ui,sans-serif; height:100vh; overflow:hidden; }
+  body { background:var(--bg); color:var(--txt); font-family:'Pretendard','NanumGothic','Nanum Gothic','Noto Sans CJK KR',sans-serif; height:100vh; overflow:hidden; }
   header { display:flex; align-items:center; justify-content:space-between; padding:12px 24px; border-bottom:1px solid var(--line); }
   header h1 { font-size:21px; font-weight:800; letter-spacing:-.5px; }
   header .sub { color:var(--muted); font-size:13px; margin-left:8px; font-weight:500; }
@@ -72,7 +72,8 @@
       <div class="fchain" id="fchain">CO₂ <b>—</b> → 재호흡률 f <b>—</b> → 감염확률 PoI <b>—</b> → <b>—</b></div>
     </div>
     <div class="panel">
-      <span class="badge">외부신호(UIS): <b id="ext-sig">로딩…</b></span>
+      <span class="badge">지역: <select id="regionSel" onchange="selectRegion()" style="background:#1f2940;color:#e8edf7;border:1px solid #36456b;border-radius:6px;padding:3px 6px;font-size:13px"><option>로딩…</option></select></span>
+      <span class="badge">외부확산: <b id="ext-sig">— (지역 선택)</b></span>
       <span class="badge">코웨이: <b id="cw-power">—</b> · 풍량 <b id="cw-fan">—</b> · <b id="cw-watt">—</b>W</span>
       <span class="badge">IAQ법 초과: <b id="iaq-ex">없음</b></span>
       <span class="gov" id="gov">대기</span>
@@ -87,6 +88,15 @@
 </main>
 <script>
 const SPACE = 'ward_a';
+// 음성 안내 (대시보드 띄운 기기 스피커로 — 노트북에서 열면 노트북 스피커)
+const VOICE = {
+  ALERT: new Audio('/static/voice_alert.mp3'),
+  HIGH_RISK: new Audio('/static/voice_high_risk.mp3'),
+  CRITICAL: new Audio('/static/voice_critical.mp3'),
+};
+const VOICE_RESTORE = new Audio('/static/voice_restore.mp3');
+let _lastVoiceTier = null, _audioOn = false;
+document.body.addEventListener('click', () => { _audioOn = true; }, { once: true });  // 브라우저 autoplay 정책: 첫 클릭으로 음성 활성화
 const TIER = {
   MONITOR:   {ko:"정상 감시",   c:"#3ddc84", d:"환경 양호"},
   CAUTION:   {ko:"주의",        c:"#ffd166", d:"환기 권고"},
@@ -94,11 +104,11 @@ const TIER = {
   HIGH_RISK: {ko:"고위험",      c:"#ff5252", d:"관리자 승인 후 제어"},
   CRITICAL:  {ko:"위급",        c:"#d11149", d:"보건소 신고 기준 · 승인 필요"},
 };
-const MAXPTS = 40;
+const MAXPTS = 20;
 const ctx = document.getElementById('chart').getContext('2d');
 const mk = (label,color,axis)=>({label,data:[],borderColor:color,backgroundColor:color+"22",borderWidth:2,tension:.35,pointRadius:0,yAxisID:axis});
 const chart = new Chart(ctx,{type:'line',
-  data:{labels:[],datasets:[ mk('CO₂(ppm)','#5b8cff','yL'), mk('가스(raw)','#ff8c42','yL'), mk('PM2.5','#3ddc84','yR'), mk('온도(℃)','#c792ea','yR') ]},
+  data:{labels:[],datasets:[ mk('CO₂(ppm)','#5b8cff','yL'), mk('가스(raw)','#ff8c42','yL'), mk('온도(℃)','#c792ea','yR') ]},
   options:{responsive:true,maintainAspectRatio:false,animation:false,
     plugins:{legend:{labels:{color:'#cfd6e6'}}},
     scales:{ x:{ticks:{color:'#6b7794'},grid:{color:'#1c2540'}},
@@ -119,6 +129,14 @@ es.addEventListener('live_init',()=>{ const c=document.getElementById('conn'); c
 es.addEventListener('sensor',(e)=>{
   const d = JSON.parse(e.data);
   setTier(d.tier);
+  // tier 변화 시 음성 방송
+  if(_audioOn && d.tier !== _lastVoiceTier){
+    const active = ['ALERT','HIGH_RISK','CRITICAL'];
+    [VOICE.ALERT,VOICE.HIGH_RISK,VOICE.CRITICAL,VOICE_RESTORE].forEach(a=>{ a.pause(); a.currentTime=0; });  // 겹침/에코 방지
+    if(VOICE[d.tier]) VOICE[d.tier].play().catch(()=>{});
+    else if(active.includes(_lastVoiceTier) && !active.includes(d.tier)) VOICE_RESTORE.play().catch(()=>{});
+    _lastVoiceTier = d.tier;
+  }
   document.getElementById('v-co2').textContent  = num(d.co2_ppm);
   document.getElementById('v-pm25').textContent = num(d.pm25);
   document.getElementById('v-gas').textContent  = num(d.gas_raw);
@@ -140,19 +158,30 @@ es.addEventListener('sensor',(e)=>{
   const t = new Date().toLocaleTimeString('ko-KR',{hour12:false});
   const L = chart.data.labels; L.push(t); if(L.length>MAXPTS) L.shift();
   const push=(i,v)=>{ const a=chart.data.datasets[i].data; a.push(v); if(a.length>MAXPTS)a.shift(); };
-  push(0,d.co2_ppm); push(1,d.gas_raw); push(2,d.pm25); push(3,d.temp_c);
-  chart.update();
+  push(0,d.co2_ppm); push(1,d.gas_raw); push(2,d.temp_c);
+  chart.update('none');
 });
 es.addEventListener('approved',(e)=>{ document.getElementById('approveBtn').style.display='none'; });
 es.onerror = ()=>{ const c=document.getElementById('conn'); c.className='conn off'; c.textContent='연결 끊김 — 재시도'; };
 async function ctl(a){ try{ await fetch('/api/v1/sensor/control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({space_id:SPACE,action:a})}); }catch(e){} }
 async function approve(){ try{ await fetch('/api/v1/sensor/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({space_id:SPACE})}); document.getElementById('approveBtn').style.display='none'; }catch(e){} }
-async function loadExt(){
-  try{ const r = await fetch('/api/v1/external/signals?limit=1'); const j = await r.json();
-    if(j.signals && j.signals.length){ const s=j.signals[0];
-      document.getElementById('ext-sig').textContent = `${s.pathogen} · ${s.source} (${s.suggested_tier})`;
-    } else document.getElementById('ext-sig').textContent='신호 없음';
-  }catch(e){ document.getElementById('ext-sig').textContent='UIS 미연결'; }
+async function loadRegions(){
+  try{ const r = await fetch('/api/v1/external/regions'); const j = await r.json();
+    const sel = document.getElementById('regionSel');
+    if(j.available && j.regions && j.regions.length){
+      sel.innerHTML = '<option value="">— 지역 선택 —</option>' +
+        j.regions.map(x=>`<option value="${x.region}">${x.region} · ${x.disease} ${x.per_100k}(${x.level})</option>`).join('');
+    } else { sel.innerHTML = '<option value="">UIS 미연결</option>'; }
+  }catch(e){ document.getElementById('regionSel').innerHTML='<option>오류</option>'; }
+}
+async function selectRegion(){
+  const region = document.getElementById('regionSel').value;
+  const el = document.getElementById('ext-sig');
+  try{ const r = await fetch('/api/v1/external/select-region',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({region})});
+    const j = await r.json();
+    if(j.selected){ const s=j.selected; el.innerHTML = `${s.region} · ${s.disease} ${s.per_100k}(${s.level}) → <b style="color:#ff8c42">선제 ${j.boost_tier}</b>`; }
+    else el.textContent = region ? '데이터 없음' : '— 지역 미선택 (boost 해제)';
+  }catch(e){ el.textContent = '오류'; }
 }
 async function loadCoway(){
   try{ const r = await fetch('/api/v1/sensor/coway-status'); const j = await r.json();
@@ -165,8 +194,8 @@ async function loadCoway(){
     } else { document.getElementById('cw-power').textContent='미연결'; }
   }catch(e){}
 }
-loadExt(); setInterval(loadExt, 30000);
-loadCoway(); setInterval(loadCoway, 5000);
+loadRegions();
+loadCoway(); setInterval(loadCoway, 8000);
 </script>
 </body>
 </html>
