@@ -99,3 +99,40 @@ async def demo_stream(
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+# ── 실센서 라이브 스트림 (라파이 브릿지 → /sensor/reading ingest → 여기로 브로드캐스트) ──
+_live_subscribers: dict[str, set[asyncio.Queue]] = {}
+
+
+def publish_live(space_id: str, payload: dict) -> None:
+    """sensor ingest 가 호출 — 해당 공간을 구독 중인 모든 SSE 클라이언트에 푸시."""
+    for q in list(_live_subscribers.get(space_id, ())):
+        try:
+            q.put_nowait(payload)
+        except asyncio.QueueFull:
+            pass
+
+
+async def _live_stream(space_id: str) -> AsyncIterator[str]:
+    q: asyncio.Queue = asyncio.Queue(maxsize=50)
+    _live_subscribers.setdefault(space_id, set()).add(q)
+    yield _format_sse("live_init", {"space_id": space_id})
+    try:
+        while True:
+            payload = await q.get()
+            yield _format_sse("sensor", payload)
+    finally:
+        subs = _live_subscribers.get(space_id)
+        if subs:
+            subs.discard(q)
+
+
+@router.get("/live/{space_id}")
+async def live_stream(space_id: str):
+    """실센서(라파이) 데이터 실시간 푸시. ingest 가 publish_live 로 흘린다."""
+    return StreamingResponse(
+        _live_stream(space_id),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )

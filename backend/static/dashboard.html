@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ThinQ Sentinel · 병동 실시간 모니터</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  :root { --bg:#0b1020; --card:#151b2e; --line:#26304a; --txt:#e8edf7; --muted:#8a96b3; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--txt); font-family:'Pretendard',system-ui,sans-serif; height:100vh; overflow:hidden; }
+  header { display:flex; align-items:center; justify-content:space-between; padding:12px 24px; border-bottom:1px solid var(--line); }
+  header h1 { font-size:21px; font-weight:800; letter-spacing:-.5px; }
+  header .sub { color:var(--muted); font-size:13px; margin-left:8px; font-weight:500; }
+  .conn { font-size:13px; color:var(--muted); }
+  .conn.ok::before { content:"● "; color:#3ddc84; }
+  .conn.off::before { content:"● "; color:#ff5252; }
+  main { display:grid; grid-template-columns: 300px 1fr; grid-template-rows: auto 1fr; gap:14px; padding:14px 24px; height:calc(100vh - 56px); }
+  .tierbox { background:var(--card); border-radius:16px; padding:18px; text-align:center; border:2px solid var(--line); transition:.4s; }
+  .tierbox .label { color:var(--muted); font-size:13px; margin-bottom:6px; }
+  .tierbox .tier { font-size:40px; font-weight:900; letter-spacing:-1px; }
+  .tierbox .desc { font-size:13px; margin-top:6px; color:var(--muted); }
+  .cards { display:grid; grid-template-rows:repeat(5,1fr); gap:10px; }
+  .card { background:var(--card); border-radius:13px; padding:11px 16px; border:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; }
+  .card .k { color:var(--muted); font-size:13px; }
+  .card .k small { display:block; font-size:10px; color:#5c6a8a; }
+  .card .v { font-size:27px; font-weight:800; }
+  .card .v span { font-size:13px; color:var(--muted); font-weight:600; }
+  .card.warn { border-color:#ff8c42; }
+  .right { grid-row:1/3; grid-column:2/3; display:grid; grid-template-rows: 1fr auto auto; gap:13px; min-height:0; }
+  .chartbox { background:var(--card); border-radius:16px; padding:16px; border:1px solid var(--line); position:relative; min-height:0; }
+  .formula { background:var(--card); border-radius:16px; padding:14px 18px; border:1px solid #2d4a7a; }
+  .formula .ftitle { font-size:13px; color:#7fb0ff; font-weight:700; margin-bottom:8px; }
+  .fchain { font-size:17px; font-weight:600; letter-spacing:-.3px; }
+  .fchain b { color:#ffd166; font-weight:800; }
+  .panel { background:var(--card); border-radius:16px; padding:14px 18px; border:1px solid var(--line); display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+  .badge { background:#1f2940; border-radius:9px; padding:7px 12px; font-size:13px; }
+  .badge b { color:#ffd166; }
+  .sep { width:1px; height:26px; background:var(--line); }
+  button { background:#243152; color:var(--txt); border:1px solid #36456b; border-radius:9px; padding:8px 14px; font-size:13px; font-weight:700; cursor:pointer; }
+  button:hover { background:#2e3e63; }
+  button.approve { background:#7a1f2b; border-color:#b3303f; animation:pulse 1.2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
+  .gov { font-size:13px; padding:5px 10px; border-radius:8px; font-weight:700; }
+  .gov.auto { background:#16402a; color:#3ddc84; }
+  .gov.approval_required { background:#5a1622; color:#ff7a8a; }
+  .gov.approved { background:#234a2e; color:#9fe6b0; }
+</style>
+</head>
+<body>
+<header>
+  <div><h1>🏥 ThinQ Sentinel <span class="sub">요양병원 병동 실시간 모니터 (프로토타입)</span></h1></div>
+  <div id="conn" class="conn off">연결 대기…</div>
+</header>
+<main>
+  <div class="tierbox" id="tierbox">
+    <div class="label">현재 감염 위험도</div>
+    <div class="tier" id="tierText">—</div>
+    <div class="desc" id="tierDesc">센서 수신 대기 중</div>
+  </div>
+  <div class="cards">
+    <div class="card" id="c-co2"><div class="k">이산화탄소 CO₂ <small>코웨이 실측 · 기준 1000ppm</small></div><div class="v"><span id="v-co2">—</span> <span>ppm</span></div></div>
+    <div class="card" id="c-pm25"><div class="k">초미세먼지 PM2.5 <small>코웨이 실측 · 기준 35</small></div><div class="v"><span id="v-pm25">—</span> <span>㎍/㎥</span></div></div>
+    <div class="card" id="c-gas"><div class="k">가스 <small>아두이노 MQ2 · 트리거</small></div><div class="v"><span id="v-gas">—</span></div></div>
+    <div class="card"><div class="k">온도 <small>아두이노/코웨이</small></div><div class="v"><span id="v-temp">—</span> <span>℃</span></div></div>
+    <div class="card"><div class="k">습도 <small>아두이노 DHT11</small></div><div class="v"><span id="v-hum">—</span> <span>%</span></div></div>
+  </div>
+  <div class="right">
+    <div class="chartbox"><canvas id="chart"></canvas></div>
+    <div class="formula">
+      <div class="ftitle">감염확률 계산 · Rudnick-Milton CO₂ 재호흡 모델 &nbsp; <span style="color:#5c6a8a">P = 1 − exp(−f·(I/n)·q·t)</span></div>
+      <div class="fchain" id="fchain">CO₂ <b>—</b> → 재호흡률 f <b>—</b> → 감염확률 PoI <b>—</b> → <b>—</b></div>
+    </div>
+    <div class="panel">
+      <span class="badge">외부신호(UIS): <b id="ext-sig">로딩…</b></span>
+      <span class="badge">코웨이: <b id="cw-power">—</b> · 풍량 <b id="cw-fan">—</b> · <b id="cw-watt">—</b>W</span>
+      <span class="badge">IAQ법 초과: <b id="iaq-ex">없음</b></span>
+      <span class="gov" id="gov">대기</span>
+      <span class="sep"></span>
+      <button onclick="ctl('on')">전원 ON</button>
+      <button onclick="ctl('off')">전원 OFF</button>
+      <button onclick="ctl('rapid')">급속</button>
+      <button onclick="ctl('auto')">자동</button>
+      <button id="approveBtn" class="approve" style="display:none" onclick="approve()">⚠️ 고위험 승인</button>
+    </div>
+  </div>
+</main>
+<script>
+const SPACE = 'ward_a';
+const TIER = {
+  MONITOR:   {ko:"정상 감시",   c:"#3ddc84", d:"환경 양호"},
+  CAUTION:   {ko:"주의",        c:"#ffd166", d:"환기 권고"},
+  ALERT:     {ko:"경보",        c:"#ff8c42", d:"공청기 자동 가동"},
+  HIGH_RISK: {ko:"고위험",      c:"#ff5252", d:"관리자 승인 후 제어"},
+  CRITICAL:  {ko:"위급",        c:"#d11149", d:"보건소 신고 기준 · 승인 필요"},
+};
+const MAXPTS = 40;
+const ctx = document.getElementById('chart').getContext('2d');
+const mk = (label,color,axis)=>({label,data:[],borderColor:color,backgroundColor:color+"22",borderWidth:2,tension:.35,pointRadius:0,yAxisID:axis});
+const chart = new Chart(ctx,{type:'line',
+  data:{labels:[],datasets:[ mk('CO₂(ppm)','#5b8cff','yL'), mk('가스(raw)','#ff8c42','yL'), mk('PM2.5','#3ddc84','yR'), mk('온도(℃)','#c792ea','yR') ]},
+  options:{responsive:true,maintainAspectRatio:false,animation:false,
+    plugins:{legend:{labels:{color:'#cfd6e6'}}},
+    scales:{ x:{ticks:{color:'#6b7794'},grid:{color:'#1c2540'}},
+      yL:{position:'left',ticks:{color:'#6b7794'},grid:{color:'#1c2540'},title:{display:true,text:'CO₂ / 가스',color:'#8a96b3'}},
+      yR:{position:'right',ticks:{color:'#6b7794'},grid:{drawOnChartArea:false},title:{display:true,text:'PM2.5 / 온도',color:'#8a96b3'}} }}
+});
+function setTier(t){
+  const info = TIER[t] || TIER.MONITOR;
+  document.getElementById('tierText').textContent = (t||'—')+' · '+info.ko;
+  document.getElementById('tierText').style.color = info.c;
+  document.getElementById('tierDesc').textContent = info.d;
+  document.getElementById('tierbox').style.borderColor = info.c;
+}
+function num(x){ return (x===null||x===undefined)?'—':(Math.round(x*10)/10); }
+function pct(x,dp){ return (x===null||x===undefined)?'—':(x*100).toFixed(dp||1)+'%'; }
+const es = new EventSource('/api/v1/stream/live/'+SPACE);
+es.addEventListener('live_init',()=>{ const c=document.getElementById('conn'); c.className='conn ok'; c.textContent='실시간 연결됨'; });
+es.addEventListener('sensor',(e)=>{
+  const d = JSON.parse(e.data);
+  setTier(d.tier);
+  document.getElementById('v-co2').textContent  = num(d.co2_ppm);
+  document.getElementById('v-pm25').textContent = num(d.pm25);
+  document.getElementById('v-gas').textContent  = num(d.gas_raw);
+  document.getElementById('v-temp').textContent = num(d.temp_c);
+  document.getElementById('v-hum').textContent  = num(d.humidity);
+  document.getElementById('c-co2').classList.toggle('warn', (d.co2_ppm||0) > 1000);
+  document.getElementById('c-pm25').classList.toggle('warn', (d.pm25||0) > 35);
+  document.getElementById('c-gas').classList.toggle('warn', (d.gas_raw||0) >= 600);
+  document.getElementById('iaq-ex').textContent = (d.iaq_exceed&&d.iaq_exceed.length)? d.iaq_exceed.join(', ') : '없음';
+  // 공식 체인 (CO2 → 재호흡률 → PoI → tier)
+  const fm = d.formula || {};
+  document.getElementById('fchain').innerHTML =
+    `CO₂ <b>${num(fm.co2)}</b>ppm → 재호흡률 f <b>${pct(fm.f,2)}</b> → 감염확률 PoI <b>${pct(fm.poi,1)}</b> → <b style="color:${(TIER[d.tier]||TIER.MONITOR).c}">${d.tier}</b>`;
+  // 거버넌스
+  if(d.governance && d.governance!=='none'){ const g=document.getElementById('gov'); g.className='gov '+d.governance;
+    g.textContent = {auto:'AI 자동제어',approval_required:'승인 대기',auto_restore:'정상복귀 자동',approved:'승인됨'}[d.governance]||d.governance; }
+  document.getElementById('approveBtn').style.display = d.approval_required ? 'inline-block':'none';
+  // 차트
+  const t = new Date().toLocaleTimeString('ko-KR',{hour12:false});
+  const L = chart.data.labels; L.push(t); if(L.length>MAXPTS) L.shift();
+  const push=(i,v)=>{ const a=chart.data.datasets[i].data; a.push(v); if(a.length>MAXPTS)a.shift(); };
+  push(0,d.co2_ppm); push(1,d.gas_raw); push(2,d.pm25); push(3,d.temp_c);
+  chart.update();
+});
+es.addEventListener('approved',(e)=>{ document.getElementById('approveBtn').style.display='none'; });
+es.onerror = ()=>{ const c=document.getElementById('conn'); c.className='conn off'; c.textContent='연결 끊김 — 재시도'; };
+async function ctl(a){ try{ await fetch('/api/v1/sensor/control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({space_id:SPACE,action:a})}); }catch(e){} }
+async function approve(){ try{ await fetch('/api/v1/sensor/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({space_id:SPACE})}); document.getElementById('approveBtn').style.display='none'; }catch(e){} }
+async function loadExt(){
+  try{ const r = await fetch('/api/v1/external/signals?limit=1'); const j = await r.json();
+    if(j.signals && j.signals.length){ const s=j.signals[0];
+      document.getElementById('ext-sig').textContent = `${s.pathogen} · ${s.source} (${s.suggested_tier})`;
+    } else document.getElementById('ext-sig').textContent='신호 없음';
+  }catch(e){ document.getElementById('ext-sig').textContent='UIS 미연결'; }
+}
+async function loadCoway(){
+  try{ const r = await fetch('/api/v1/sensor/coway-status'); const j = await r.json();
+    if(j.available){
+      document.getElementById('cw-power').textContent = j.is_on?'ON':'OFF';
+      document.getElementById('cw-fan').textContent = j.rapid_mode?'급속':(j.auto_mode?'자동':('단계'+(j.fan_speed??'-')));
+      document.getElementById('cw-watt').textContent = (j.power_est_w!=null?j.power_est_w:'—');
+      if(j.co2!=null){ document.getElementById('v-co2').textContent=num(j.co2); }
+      if(j.pm25!=null){ document.getElementById('v-pm25').textContent=num(j.pm25); }
+    } else { document.getElementById('cw-power').textContent='미연결'; }
+  }catch(e){}
+}
+loadExt(); setInterval(loadExt, 30000);
+loadCoway(); setInterval(loadCoway, 5000);
+</script>
+</body>
+</html>
