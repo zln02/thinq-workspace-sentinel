@@ -154,6 +154,14 @@ def seed_scenario(env: SpaceEnv, scenario: str) -> None:
         env.surface_contam = 0.5
 
 
+def default_space(space_id: str = "ward_a") -> SpaceEnv:
+    """DB 없이 쓰는 기본 SpaceEnv 팩토리 — fallback 경로 일원화.
+
+    runner(/simulate)·SSE 모두 이 팩토리를 거쳐 '직접 SpaceEnv() 생성'을 없앤다.
+    """
+    return space_env_from_row(None, space_id=space_id)
+
+
 def space_env_from_row(row, space_id: str | None = None) -> SpaceEnv:
     """DB `sentinel.spaces` 레코드(dict/Record)로 SpaceEnv를 구성.
 

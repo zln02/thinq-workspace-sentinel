@@ -28,6 +28,16 @@ from pipeline.simulator.space import SpaceEnv, seed_scenario, space_env_from_row
 
 router = APIRouter(prefix="/api/v1/stream", tags=["realtime"])
 
+# 시나리오별 외부 감염 선행신호 (모회 시스템 UIS: 약국 OTC·DataLab·질병청 → 3주 선행)
+# 지역 단위 외부신호 = 병동 내부 tier와 독립. (출처, 병원체, 지역, 강도, 보정전→보정후 지역등급)
+EXTERNAL_SIGNAL = {
+    "winter_influenza": ("KOWAS 약국 OTC", "INFLUENZA", "서울 종로구", "HIGH", "CAUTION", "HIGH_RISK"),
+    "spring_tb": ("질병청 감염병신고", "TB", "서울 종로구", "MEDIUM", "MONITOR", "ALERT"),
+    "summer_norovirus": ("네이버 DataLab 검색", "NOROVIRUS", "서울 종로구", "HIGH", "CAUTION", "HIGH_RISK"),
+    "autumn_covid": ("KOWAS 약국 OTC", "COVID-19", "서울 종로구", "MEDIUM", "MONITOR", "ALERT"),
+    "heatwave_norovirus_double": ("네이버 DataLab 검색", "NOROVIRUS", "서울 종로구", "HIGH", "CAUTION", "CRITICAL"),
+}
+
 
 def _format_sse(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
@@ -68,6 +78,20 @@ async def _demo_stream(scenario: str, speed: int, total_minutes: int) -> AsyncIt
         "scenario": scenario,
         "season": season,
         "space": space.snapshot(sensors),
+    })
+
+    # 외부 감염 선행신호 (모회 UIS 시스템 수신) — 관리자 뷰 "외부경고" 카드
+    src, ext_pathogen, region, level, pre_tier, post_tier = EXTERNAL_SIGNAL.get(
+        scenario, ("KOWAS 약국 OTC", space.pathogen, "서울", "MEDIUM", "MONITOR", "ALERT"))
+    yield _format_sse("external_signal", {
+        "source": src,
+        "pathogen": ext_pathogen,
+        "region": region,
+        "signal_level": level,
+        "lead_weeks": 3,
+        "boost_applied": True,
+        "pre_boost_tier": pre_tier,
+        "post_boost_tier": post_tier,
     })
 
     proto = await execute_protocol(api, devices, space.pathogen, space.tier(), season)
