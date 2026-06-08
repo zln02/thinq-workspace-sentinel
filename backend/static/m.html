@@ -18,9 +18,8 @@
   body{background:var(--bg);color:var(--txt);font-family:'Pretendard','NanumGothic','Noto Sans KR',system-ui,sans-serif;
     font-size:15px;padding-bottom:30px;-webkit-font-smoothing:antialiased}
   header{position:sticky;top:0;z-index:10;background:var(--panel);border-bottom:1px solid var(--line);padding:13px 16px;display:flex;align-items:center;gap:11px}
-  .logo{width:40px;height:40px;border-radius:50%;background:radial-gradient(circle at 50% 42%,#c4174c,#a50034);position:relative;flex:none;box-shadow:0 2px 8px rgba(165,0,52,.3)}
-  .logo::before{content:"";position:absolute;top:10px;left:13px;width:5px;height:5px;border-radius:50%;background:#fff}
-  .logo::after{content:"";position:absolute;top:13px;left:11px;width:18px;height:18px;border:2.5px solid #fff;border-top-color:transparent;border-right-color:transparent;border-radius:50%;transform:rotate(45deg)}
+  .logo{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#c4174c,#a50034);display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 2px 8px rgba(165,0,52,.28)}
+  .logo svg{width:23px;height:23px}
   header b{font-size:16px;font-weight:800;color:#1d1418;display:block;line-height:1.15;letter-spacing:-.3px}
   header b .q{color:var(--brand)}
   header small{font-size:11px;color:var(--muted)}
@@ -65,7 +64,7 @@
 </head>
 <body>
 <header>
-  <div class="logo"></div>
+  <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg></div>
   <div><b>LG Thin<span class="q">Q</span> 케어</b><small>가족 안심 서비스 · LG 디지털요양병원</small></div>
 </header>
 <div class="wrap">
