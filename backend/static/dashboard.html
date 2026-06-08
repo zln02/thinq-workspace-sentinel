@@ -96,6 +96,22 @@
   #korea path.sel{stroke:#0f172a;stroke-width:1.6}
   .maplegend{display:flex;gap:10px;justify-content:center;font-size:10px;color:var(--muted);padding:2px 0 4px}
   .maplegend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:3px;vertical-align:middle}
+  /* 병동 클릭 → 3D 방 가전 모달 */
+  .rmodal{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:rgba(15,23,42,.55);backdrop-filter:blur(3px)}
+  .rmodal.on{display:flex}
+  .rmbox{background:#fff;border-radius:18px;width:560px;max-width:94vw;box-shadow:0 30px 70px -15px rgba(0,0,0,.4);overflow:hidden}
+  .rmhead{display:flex;align-items:center;justify-content:space-between;padding:15px 20px;border-bottom:1px solid var(--line)}
+  .rmhead b{font-size:17px;font-weight:800}
+  .rmhead .x{cursor:pointer;color:var(--muted);font-size:20px;background:none;border:none}
+  .rmhead .rt{font-size:12px;font-weight:800;padding:3px 11px;border-radius:20px}
+  .rmstage{display:flex;justify-content:center;padding:8px 0 4px}
+  .applist{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:6px 18px 18px}
+  .appitem{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:11px;border:1px solid var(--line);background:var(--panel2)}
+  .appitem.on{border-color:#1a7a45;background:#eaf7ef}
+  .appitem .ai{width:30px;height:30px;border-radius:8px;background:#eef2f7;display:flex;align-items:center;justify-content:center;color:#475569}
+  .appitem.on .ai{background:#1a7a45;color:#fff}
+  .appitem .at{flex:1}.appitem .at b{font-size:12.5px}.appitem .at small{display:block;font-size:10px;color:var(--dim)}
+  .appitem .as{font-size:11px;font-weight:800}.appitem.on .as{color:#1a7a45}.appitem .as{color:var(--dim)}
   .extsel{font-size:11.5px;color:#334155;padding:0 14px 11px;line-height:1.5}
   .extsel b{color:#0f172a}
   .pill{display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:5px}
@@ -185,6 +201,15 @@
     </div>
   </div>
 </main>
+
+<!-- 병동 클릭 → 3D 방 가전 가동현황 -->
+<div class="rmodal" id="rmodal" onclick="if(event.target===this)closeRoom()">
+  <div class="rmbox">
+    <div class="rmhead"><b id="rm-name">병실</b><span class="rt" id="rm-tier">—</span><button class="x" onclick="closeRoom()">✕</button></div>
+    <div class="rmstage"><svg id="rm-svg" viewBox="0 0 460 240" width="460" height="240"></svg></div>
+    <div class="applist" id="rm-apps"></div>
+  </div>
+</div>
 
 <script>
 const SPACE='ward_a';
@@ -295,12 +320,42 @@ const POST_HDR={'Content-Type':'application/json','X-API-Key':API_KEY};
 async function ctl(a){try{await fetch('/api/v1/sensor/control',{method:'POST',headers:POST_HDR,body:JSON.stringify({space_id:SPACE,action:a})});addEvent('수동 제어: '+a.toUpperCase());}catch(e){}}
 async function approve(){try{await fetch('/api/v1/sensor/approve',{method:'POST',headers:POST_HDR,body:JSON.stringify({space_id:SPACE})});document.getElementById('approveBtn').style.display='none';}catch(e){}}
 
+// 병동 클릭 → 3D 방 가전 가동현황
+let _spaces=[];
+function appOn(act){return !['대기','유지','정기','계절 연동','기본'].includes(act);}
+function openRoom(idx){const sp=_spaces[idx];if(!sp)return;const i=TIER[sp.tier]||TIER.MONITOR;
+  document.getElementById('rm-name').textContent=sp.space_name+(sp.source==='실센서'?' · 실센서':'');
+  const rt=document.getElementById('rm-tier');rt.textContent=i.ko;rt.style.background=i.bg;rt.style.color=i.c;
+  // 방 평면도: 외곽 + 출입문 + 병상 배치
+  const cap=Math.min(sp.max_occupancy||4,6);
+  const bedXs=[70,150,230,310];const beds=[];
+  for(let b=0;b<cap;b++){const bx=bedXs[b%4]||70;const by=b<4?52:150;
+    beds.push(`<rect x="${bx}" y="${by}" width="58" height="40" rx="5" fill="#fff" stroke="#cdd6e6"/>
+      <rect x="${bx}" y="${by}" width="58" height="13" rx="5" fill="#e8edf5"/><text x="${bx+29}" y="${by+30}" text-anchor="middle" font-size="9" fill="#94a3b8">병상${b+1}</text>`);}
+  // 가전 위치(평면도 둘레): 공청기·에어컨(천장)·환기(벽)·가습제습
+  const A=APPLIANCES.slice(0,4);const pos=[[62,206,'공기청정기'],[230,28,'에어컨(천장)'],[404,120,'환기구'],[404,206,'가습/제습']];
+  let mk='';
+  A.forEach((a,k)=>{const act=a.act(sp.tier);const on=appOn(act);const x=pos[k][0],y=pos[k][1];
+    mk+=`${on?`<circle cx="${x}" cy="${y}" r="20" fill="${i.c}" opacity=".16"><animate attributeName="r" values="14;22;14" dur="2s" repeatCount="indefinite"/></circle>`:''}
+      <circle cx="${x}" cy="${y}" r="13" fill="${on?i.c:'#cbd5e1'}"/>
+      <g transform="translate(${x-8},${y-8}) scale(0.66)" color="#fff" stroke="#fff">${a.ic}</g>
+      <text x="${x}" y="${y+25}" text-anchor="middle" font-size="9.5" font-weight="700" fill="#475569">${pos[k][2]}</text>`;});
+  document.getElementById('rm-svg').innerHTML=
+    `<rect x="40" y="22" width="380" height="196" rx="10" fill="#f7f9fc" stroke="#cdd6e6" stroke-width="2"/>
+     <rect x="200" y="214" width="60" height="6" fill="#fff"/><text x="230" y="232" text-anchor="middle" font-size="9" fill="#94a3b8">출입문</text>
+     ${beds.join('')}${mk}`;
+  document.getElementById('rm-apps').innerHTML=APPLIANCES.map(a=>{const act=a.act(sp.tier);const on=appOn(act);
+    return `<div class="appitem ${on?'on':''}"><span class="ai">${a.ic}</span><span class="at"><b>${a.n}</b><small>${a.lever}</small></span><span class="as">${a.live?'🟢 ':''}${on?act:'대기'}</span></div>`;}).join('');
+  document.getElementById('rmodal').classList.add('on');}
+function closeRoom(){document.getElementById('rmodal').classList.remove('on');}
+
 // 병동 리스트 + 헤더 종합상태
 async function loadOverview(){try{const r=await fetch('/api/v1/sensor/spaces/overview');const j=await r.json();if(!j.spaces)return;
-  document.getElementById('wcount').textContent=j.spaces.length+'개 공간';
+  _spaces=j.spaces;
+  document.getElementById('wcount').textContent=j.spaces.length+'개 공간 · 클릭→가전';
   let worst=0;
-  document.getElementById('wardrows').innerHTML=j.spaces.map(s=>{const i=TIER[s.tier]||TIER.MONITOR;worst=Math.max(worst,RANK[s.tier]||0);
-    return `<div class="wrow ${s.source==='실센서'?'active':''}"><span class="led" style="background:${i.c}"></span>
+  document.getElementById('wardrows').innerHTML=j.spaces.map((s,idx)=>{const i=TIER[s.tier]||TIER.MONITOR;worst=Math.max(worst,RANK[s.tier]||0);
+    return `<div class="wrow ${s.source==='실센서'?'active':''}" style="cursor:pointer" onclick="openRoom(${idx})"><span class="led" style="background:${i.c}"></span>
       <span class="wi"><div class="wn">${s.space_name}<span class="src">${s.source}</span></div><div class="wm">${s.space_type} · ${s.max_occupancy}인</div></span>
       <span class="wtier" style="background:${i.bg};color:${i.c}">${i.ko}</span></div>`;}).join('');
   const wt=['MONITOR','CAUTION','ALERT','HIGH_RISK','CRITICAL'][worst],wi=TIER[wt];
