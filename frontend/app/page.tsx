@@ -1,45 +1,100 @@
 // frontend/app/page.tsx
 "use client";
 
-import Link from "next/link";
-import { ShieldAlert, Users, Building2 } from "lucide-react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { ShieldAlert, User, Lock, ArrowRight } from "lucide-react";
 
-export default function Home() {
+export default function LoginPage() {
+  const router = useRouter();
+  const [id, setId] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (password !== "1234") {
+      setError("비밀번호가 일치하지 않습니다. (데모 PW: 1234)");
+      return;
+    }
+
+    if (id === "nurse") {
+      localStorage.setItem("role", "NURSE");
+      localStorage.setItem("userName", "김민수 간호사");
+      router.push("/dashboard");
+    } else if (id === "director") {
+      localStorage.setItem("role", "DIRECTOR");
+      localStorage.setItem("userName", "박원장 병원장");
+      router.push("/dashboard");
+    } else if (id === "fm") {
+      localStorage.setItem("role", "FM");
+      localStorage.setItem("userName", "정욱현 시설관리자");
+      router.push("/dashboard");
+    } else {
+      setError("존재하지 않는 계정입니다. (nurse, director, fm 중 입력)");
+    }
+  };
+
   return (
-    <main className="min-h-screen bg-[#0B1120] text-slate-200 flex flex-col items-center justify-center p-8">
-      {/* 💡 요청하신 대로 타이틀을 수정하고, 아래의 회색 설명 텍스트를 삭제했습니다. */}
-      <div className="flex flex-col items-center mb-16 text-center animate-in slide-in-from-bottom-4 duration-700">
-        <ShieldAlert size={64} className="text-[#A50034] mb-6" strokeWidth={1.5} />
-        <h1 className="text-5xl md:text-6xl font-black tracking-tight text-white mb-4">
+    <main className="min-h-screen bg-[#0B1120] flex flex-col items-center justify-center p-4">
+      
+      {/* 타이틀 영역 */}
+      <div className="flex flex-col items-center mb-8 text-center animate-in slide-in-from-bottom-4 duration-700">
+        <ShieldAlert size={56} className="text-[#A50034] mb-4" strokeWidth={1.5} />
+        <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white mb-3">
           ThinQ Space <span className="text-[#A50034]">Sentinel</span>
         </h1>
+        <p className="text-slate-400 text-sm md:text-base">LG 스마트 요양병원 환경 및 감염 관리 솔루션</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl">
-        <Link href="/admin" className="group bg-[#111827] border border-slate-800 hover:border-[#A50034]/50 rounded-2xl p-8 flex flex-col items-center text-center transition-all hover:-translate-y-2 hover:shadow-[0_10px_30px_-10px_rgba(165,0,52,0.3)]">
-          <div className="w-16 h-16 rounded-full bg-slate-800 group-hover:bg-[#A50034] flex items-center justify-center mb-4 transition-colors">
-            <ShieldAlert size={28} className="text-slate-400 group-hover:text-white transition-colors" />
+      {/* 로그인 폼 영역 */}
+      <div className="w-full max-w-md bg-[#111827] border border-slate-800 rounded-3xl p-8 shadow-2xl animate-in slide-in-from-bottom-8 duration-700">
+        <h2 className="text-xl font-bold text-white mb-6">시스템 접속</h2>
+        
+        <form onSubmit={handleLogin} className="space-y-5">
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-400 ml-1">사번 (ID)</label>
+            <div className="relative">
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+              <input 
+                type="text" 
+                value={id} 
+                onChange={(e) => setId(e.target.value)} 
+                placeholder="nurse / director / fm"
+                className="w-full bg-[#0B1120] border border-slate-700 text-white px-11 py-3.5 rounded-xl focus:outline-none focus:border-[#A50034] transition-colors" 
+                required
+              />
+            </div>
           </div>
-          <h2 className="text-xl font-bold text-white mb-2">통합 관제 시스템</h2>
-          <p className="text-sm text-slate-500">감염관리자 및 시설관리용 대시보드</p>
-        </Link>
 
-        <Link href="/executive" className="group bg-[#111827] border border-slate-800 hover:border-blue-500/50 rounded-2xl p-8 flex flex-col items-center text-center transition-all hover:-translate-y-2 hover:shadow-[0_10px_30px_-10px_rgba(59,130,246,0.2)]">
-          <div className="w-16 h-16 rounded-full bg-slate-800 group-hover:bg-blue-600 flex items-center justify-center mb-4 transition-colors">
-            <Building2 size={28} className="text-slate-400 group-hover:text-white transition-colors" />
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-400 ml-1">비밀번호 (PW)</label>
+            <div className="relative">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+              <input 
+                type="password" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                placeholder="비밀번호 입력 (1234)"
+                className="w-full bg-[#0B1120] border border-slate-700 text-white px-11 py-3.5 rounded-xl focus:outline-none focus:border-[#A50034] transition-colors" 
+                required
+              />
+            </div>
           </div>
-          <h2 className="text-xl font-bold text-white mb-2">시설장 대시보드</h2>
-          <p className="text-sm text-slate-500">병원 경영진 ROI 및 컴플라이언스 관제</p>
-        </Link>
 
-        <Link href="/family" className="group bg-[#111827] border border-slate-800 hover:border-green-500/50 rounded-2xl p-8 flex flex-col items-center text-center transition-all hover:-translate-y-2 hover:shadow-[0_10px_30px_-10px_rgba(34,197,94,0.2)]">
-          <div className="w-16 h-16 rounded-full bg-slate-800 group-hover:bg-green-500 flex items-center justify-center mb-4 transition-colors">
-            <Users size={28} className="text-slate-400 group-hover:text-white transition-colors" />
-          </div>
-          <h2 className="text-xl font-bold text-white mb-2">우리 가족 안심 케어</h2>
-          <p className="text-sm text-slate-500">환자 보호자 전용 모바일 뷰</p>
-        </Link>
+          {error && <p className="text-red-500 text-sm font-medium text-center">{error}</p>}
+
+          <button type="submit" className="w-full bg-[#A50034] hover:bg-red-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all mt-4">
+            로그인 <ArrowRight size={18} />
+          </button>
+        </form>
+
+        <div className="mt-8 pt-6 border-t border-slate-800 text-center">
+          <p className="text-xs text-slate-500">※ 데모 테스트 ID: <b className="text-slate-300">nurse</b> / <b className="text-slate-300">director</b> / <b className="text-slate-300">fm</b> (PW: 1234)</p>
+        </div>
       </div>
+      
     </main>
   );
 }

@@ -4,6 +4,10 @@
 import { useState } from "react";
 import { RoomCard } from "./RoomCard";
 import { X, HeartPulse, UserCircle, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useLiveWard } from "@/lib/useSentinel";
+
+// 실센서 병동(ward_a) ↔ 평면도 호실 매핑 (201호만 실데이터, 나머지는 시드)
+const LIVE_ROOM = "201";
 
 const ROOM_DATA = [
   { 
@@ -107,19 +111,44 @@ const ROOM_DATA = [
 
 export function FloorPlan() {
   const [selectedRoom, setSelectedRoom] = useState<any | null>(null);
+  // 실센서(ward_a=201호) SSE 실시간 — 해당 호실 snapshot 만 실데이터로 덮어씀
+  const { data: live, connected } = useLiveWard("ward_a");
+  const rooms = ROOM_DATA.map((room) => {
+    if (room.roomCode === LIVE_ROOM && live) {
+      return {
+        ...room,
+        isLive: true,
+        snapshot: {
+          tier: live.tier ?? room.snapshot.tier,
+          poi: live.poi ?? room.snapshot.poi,
+          co2: live.co2_ppm ?? room.snapshot.co2,
+          temp_c: live.temp_c ?? room.snapshot.temp_c,
+          rh: live.humidity ?? room.snapshot.rh,
+          pm25: live.pm25 ?? room.snapshot.pm25,
+        },
+      };
+    }
+    return room;
+  });
 
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 relative">
-        {ROOM_DATA.map((room, idx) => (
-          <RoomCard 
-            key={idx} 
-            roomCode={room.roomCode} 
-            capacity={room.capacity} 
-            occ={room.occ}
-            snapshot={room.snapshot}
-            onClick={() => setSelectedRoom(room)}
-          />
+        {rooms.map((room, idx) => (
+          <div key={idx} className="relative">
+            {room.roomCode === LIVE_ROOM && (
+              <span className={`absolute -top-1.5 right-2 z-10 text-[10px] font-bold px-2 py-0.5 rounded-full ${connected ? "bg-emerald-500 text-white" : "bg-slate-400 text-white"}`}>
+                {connected ? "● 실센서 LIVE" : "실센서 연결중"}
+              </span>
+            )}
+            <RoomCard
+              roomCode={room.roomCode}
+              capacity={room.capacity}
+              occ={room.occ}
+              snapshot={room.snapshot}
+              onClick={() => setSelectedRoom(room)}
+            />
+          </div>
         ))}
       </div>
 
