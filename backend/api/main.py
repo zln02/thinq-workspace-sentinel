@@ -231,7 +231,10 @@ class SimRequest(BaseModel):
 async def simulate(req: SimRequest):
     if req.scenario not in SCENARIO_SEASON:
         raise HTTPException(400, f"Unknown scenario. Use one of {list(SCENARIO_SEASON.keys())}")
-    result = await run(req.scenario, req.minutes, req.dt)
+    # SSE와 동일하게 DB의 실제 병동 체적을 주입 (미연결 시 graceful fallback)
+    from backend.api.sse import _load_demo_space
+    space = await _load_demo_space()
+    result = await run(req.scenario, req.minutes, req.dt, space=space)
     return result
 
 @app.get("/api/v1/external/signals")

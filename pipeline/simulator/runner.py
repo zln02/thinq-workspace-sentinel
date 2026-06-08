@@ -13,7 +13,7 @@ from backend.services.smart_protocol import execute_protocol
 from backend.services.thinq_mock import ThinQApiMock
 from pipeline.simulator.devices import build_nursing_home_pack
 from pipeline.simulator.sensors import build_nursing_home_sensors
-from pipeline.simulator.space import SpaceEnv, seed_scenario
+from pipeline.simulator.space import SpaceEnv, default_space, seed_scenario
 
 SCENARIO_SEASON = {
     "winter_influenza": "winter",
@@ -24,8 +24,11 @@ SCENARIO_SEASON = {
 }
 
 
-async def run(scenario: str, minutes: int = 120, dt: float = 1.0, verbose: bool = False) -> dict:
-    space = SpaceEnv(space_id="ward_a")
+async def run(scenario: str, minutes: int = 120, dt: float = 1.0, verbose: bool = False,
+              space: SpaceEnv | None = None) -> dict:
+    # space 미주입 시 fallback 팩토리 사용 (CLI/스모크는 DB 없이 기본 체적).
+    # API(/simulate)는 DB에서 읽은 실제 병동 체적을 주입한다 → SSE와 일치.
+    space = space or default_space("ward_a")
     devices = build_nursing_home_pack("ward_a")
     sensors = build_nursing_home_sensors("ward_a")
     api = ThinQApiMock(devices)
