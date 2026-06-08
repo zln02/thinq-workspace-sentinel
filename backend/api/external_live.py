@@ -132,6 +132,45 @@ async def _leading_layers(con, region: str, onset) -> list[dict]:
     return [{"layer": r["layer"], "source": r["source"], "value": round(r["max_val"], 1)} for r in rows]
 
 
+_TIER_ORDER = ["MONITOR", "CAUTION", "ALERT", "HIGH_RISK", "CRITICAL"]
+
+
+def _downgrade(tier: str) -> str:
+    i = _TIER_ORDER.index(tier) if tier in _TIER_ORDER else 0
+    return _TIER_ORDER[max(0, i - 1)]
+
+
+async def _region_trend(con, region: str, ref_date, n: int = 4) -> dict:
+    """기준일까지 최근 n개 주간 risk_score 추세 — 하강국면 후행 오경보(FP) 차단용.
+
+    rising  : 확산 임박(선제 경보 유효) / falling : 확산 진정(경보 해제 대상) / flat.
+    """
+    rows = await con.fetch(
+        "SELECT composite_score AS s FROM risk_scores "
+        "WHERE region=$1 AND time <= ($2::date + INTERVAL '1 day') "
+        "ORDER BY time DESC LIMIT $3",
+        region, ref_date, n,
+    )
+    scores = [r["s"] for r in rows if r["s"] is not None]  # 최신→과거
+    if len(scores) < 2:
+        return {"trend": "flat", "slope": 0.0, "n": len(scores)}
+    slope = round(scores[0] - scores[-1], 1)  # 최신 - 가장오래된 (양수=상승)
+    trend = "rising" if slope > 5 else "falling" if slope < -5 else "flat"
+    return {"trend": trend, "slope": slope, "n": len(scores), "latest": round(scores[0], 1)}
+
+
+def _trend_adjust(boost: str, trend: dict, score: float | None) -> tuple[str, str]:
+    """추세로 boost 보정. 하강+ORANGE미만(score<55) → 해제, 하강+고위험 → 한단계 완화.
+
+    반환: (보정 boost, 사유). 상승/평탄이면 원본 유지(선제 경보는 상승국면에서만 강하게).
+    """
+    if trend.get("trend") == "falling":
+        if score is not None and score < 55:
+            return "MONITOR", "하강 추세·ORANGE 미만 → 후행경보 해제"
+        return _downgrade(boost), "하강 추세 → 한 단계 완화(후행 FP 억제)"
+    return boost, "상승/유지 추세 → 선제 경보 유효"
+
+
 class RegionSel(BaseModel):
     region: str
     mode: str = "replay"  # replay=시즌 조기경보 재현 / live=현재 실시간
@@ -154,18 +193,25 @@ async def select_region(sel: RegionSel):
         info = _row_to_region(match)
         info["leading_signals"] = await _leading_layers(con, sel.region, match["ew_onset"])
 
-    if mode == "replay":
-        basis_level, basis_score, basis_date = match["peak_level"], info["peak_score"], info["ew_onset"]
-    else:
-        basis_level, basis_score, basis_date = match["live_level"], info["live_score"], str(match["live_date"])
-    boost = _boost_from_level(basis_level)
+        if mode == "replay":
+            basis_level, basis_score, basis_date = match["peak_level"], info["peak_score"], match["ew_onset"]
+        else:
+            basis_level, basis_score, basis_date = match["live_level"], info["live_score"], match["live_date"]
+        raw_boost = _boost_from_level(basis_level)
+        # 하강국면 후행 오경보(FP) 차단 — 기준일 추세로 boost 보정
+        trend = await _region_trend(con, sel.region, basis_date)
+
+    boost, trend_reason = _trend_adjust(raw_boost, trend, basis_score)
 
     info["mode"] = mode
     info["basis_level"] = basis_level
     info["basis_score"] = basis_score
-    info["basis_date"] = basis_date
+    info["basis_date"] = str(basis_date) if basis_date else None
+    info["trend"] = trend
+    info["raw_boost"] = raw_boost
+    info["trend_reason"] = trend_reason
     _selected.update(region=sel.region, boost_tier=boost, mode=mode, info=info)
-    return {"ok": True, "selected": info, "boost_tier": boost, "mode": mode}
+    return {"ok": True, "selected": info, "boost_tier": boost, "mode": mode, "trend": trend["trend"]}
 
 
 @router.get("/selected")
