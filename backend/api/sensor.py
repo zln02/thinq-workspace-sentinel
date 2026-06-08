@@ -352,3 +352,73 @@ async def coway_status():
         return {"available": True, **aq}
     except Exception as e:  # noqa: BLE001
         return {"available": False, "error": str(e)[:120]}
+
+
+def _sim_reading(space_name: str, space_type: str) -> dict:
+    """비실센서 공간용 라벨된 시뮬값(데모) — 공간별 결정적 baseline + 시간 변동.
+
+    음압격리실은 고위험 환자 수용이라 baseline을 높여 데모 다양성 확보(라벨 '시뮬').
+    """
+    import math
+
+    seed = sum(ord(c) for c in space_name)
+    t = time.time() / 60.0
+    wave = math.sin(t + seed)  # -1~1, 분 단위 완만 변동
+    base_gas = 140 + (seed % 60)
+    if space_type == "ISOLATION":
+        base_gas += 220  # 격리실 고위험
+    elif space_type == "DINING":
+        base_gas += 90   # 식사시간 밀집
+    gas = max(60, base_gas + wave * 50)
+    temp = 23.5 + (seed % 4) + wave * 1.2
+    hum = 50 + (seed % 12) + wave * 6
+    return {"gas_raw": round(gas, 0), "temp_c": round(temp, 1),
+            "humidity": round(hum, 1), "co2_ppm": None, "pm25": round(15 + (seed % 25), 0)}
+
+
+@router.get("/spaces/overview")
+async def spaces_overview():
+    """전 공간 현재 위험도(다병동 그리드·평면도 히트맵용).
+
+    실센서 병동은 최근 적재값, 그 외는 라벨된 시뮬값. 외부신호 boost 공통 반영.
+    """
+    from backend.api.main import state
+
+    try:
+        from backend.api.external_live import external_boost_tier
+        boost = external_boost_tier()
+    except Exception:  # noqa: BLE001
+        boost = "MONITOR"
+
+    pool = state.get("db")
+    out = []
+    if not pool:
+        return {"spaces": [], "boost": boost}
+    async with pool.acquire() as con:
+        spaces = await con.fetch(
+            "SELECT id, space_name, space_type, area_m2, max_occupancy "
+            "FROM sentinel.spaces ORDER BY space_type, space_name"
+        )
+        for s in spaces:
+            r = await con.fetchrow(
+                "SELECT co2_ppm, pm25_ugm3, temperature, humidity, gas_raw, time "
+                "FROM sentinel.sensor_readings WHERE space_id=$1 AND time > NOW() - INTERVAL '2 min' "
+                "ORDER BY time DESC LIMIT 1",
+                s["id"],
+            )
+            if r:
+                vals = {"gas_raw": r["gas_raw"], "temp_c": r["temperature"],
+                        "humidity": r["humidity"], "co2_ppm": r["co2_ppm"], "pm25": r["pm25_ugm3"]}
+                source = "실센서"
+            else:
+                vals = _sim_reading(s["space_name"], s["space_type"])
+                source = "시뮬"
+            tier, poi, _f = compute_tier(vals["co2_ppm"], vals["gas_raw"], vals["temp_c"], vals["humidity"])
+            if _TIER_RANK.get(boost, 0) > _TIER_RANK.get(tier, 0):
+                tier = boost
+            out.append({
+                "space_name": s["space_name"], "space_type": s["space_type"],
+                "area_m2": s["area_m2"], "max_occupancy": s["max_occupancy"],
+                "tier": tier, "poi": poi, "source": source, **vals,
+            })
+    return {"spaces": out, "boost": boost, "count": len(out)}
