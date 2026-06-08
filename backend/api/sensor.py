@@ -18,9 +18,10 @@ import logging
 import time
 from typing import Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
+from backend.api.auth import require_api_key
 from backend.api.sse import publish_live
 from pipeline.simulator.iaq import iaq_exceedances
 from pipeline.simulator.rebreathed import infection_probability, tier_from_poi
@@ -228,7 +229,7 @@ class SensorReading(BaseModel):
     pm25: Optional[float] = None
 
 
-@router.post("/reading")
+@router.post("/reading", dependencies=[Depends(require_api_key)])
 async def ingest_reading(r: SensorReading):
     # 1) 코웨이 실측 CO2/PM2.5 병합 (아두이노는 CO2 미측정)
     co2 = r.co2_ppm
@@ -327,7 +328,7 @@ class ApproveReq(BaseModel):
     space_id: str = "ward_a"
 
 
-@router.post("/approve")
+@router.post("/approve", dependencies=[Depends(require_api_key)])
 async def approve(req: ApproveReq):
     """관리자 승인 — 대기 중인 고위험(HIGH_RISK/CRITICAL) 제어를 실행."""
     p = _pending_approval.pop(req.space_id, None)
@@ -346,7 +347,7 @@ class ControlReq(BaseModel):
     action: str  # on | off | rapid | auto
 
 
-@router.post("/control")
+@router.post("/control", dependencies=[Depends(require_api_key)])
 async def manual_control(req: ControlReq):
     """대시보드 수동 제어 — 관리자가 직접 코웨이 ON/OFF/풍량."""
     a = req.action.lower()

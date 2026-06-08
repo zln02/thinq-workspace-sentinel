@@ -290,8 +290,10 @@ function renderGov(d){const g=document.getElementById('gov');const m={auto:'AI �
   g.className='gov '+((d.governance&&d.governance!=='none')?d.governance:'idle');g.textContent=m[d.governance]||'대기';
   document.getElementById('approveBtn').style.display=d.approval_required?'inline-block':'none';
   if(d.governance==='auto')addEvent('🤖 공기청정기 자동 급속 가동');if(d.governance==='auto_restore')addEvent('정상 복귀 — 자동 종료');}
-async function ctl(a){try{await fetch('/api/v1/sensor/control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({space_id:SPACE,action:a})});addEvent('수동 제어: '+a.toUpperCase());}catch(e){}}
-async function approve(){try{await fetch('/api/v1/sensor/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({space_id:SPACE})});document.getElementById('approveBtn').style.display='none';}catch(e){}}
+const API_KEY='__SENTINEL_API_KEY__';  // 서버가 SENTINEL_API_KEY 주입(미설정 시 빈값=인증off)
+const POST_HDR={'Content-Type':'application/json','X-API-Key':API_KEY};
+async function ctl(a){try{await fetch('/api/v1/sensor/control',{method:'POST',headers:POST_HDR,body:JSON.stringify({space_id:SPACE,action:a})});addEvent('수동 제어: '+a.toUpperCase());}catch(e){}}
+async function approve(){try{await fetch('/api/v1/sensor/approve',{method:'POST',headers:POST_HDR,body:JSON.stringify({space_id:SPACE})});document.getElementById('approveBtn').style.display='none';}catch(e){}}
 
 // 병동 리스트 + 헤더 종합상태
 async function loadOverview(){try{const r=await fetch('/api/v1/sensor/spaces/overview');const j=await r.json();if(!j.spaces)return;
