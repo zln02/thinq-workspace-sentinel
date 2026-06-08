@@ -55,6 +55,14 @@ async def lifespan(app: FastAPI):
     except Exception as e:  # noqa: BLE001
         print(f"[main] Coway 어댑터 비활성: {str(e)[:100]}")
         state["coway"] = None
+    # 삼성 SmartThings 에어컨 어댑터 (SMARTTHINGS_TOKEN 설정 시에만 활성)
+    try:
+        from backend.services.smartthings_adapter import SmartThingsAdapter
+
+        state["ac"] = SmartThingsAdapter() if os.getenv("SMARTTHINGS_TOKEN") else None
+    except Exception as e:  # noqa: BLE001
+        print(f"[main] SmartThings 어댑터 비활성: {str(e)[:100]}")
+        state["ac"] = None
     # UIS DB(urban_immune)는 sentinel DB와 별개 — read-only 외부신호 소비용 별도 풀
     try:
         state["uis_db"] = await asyncpg.create_pool(UIS_DSN, min_size=1, max_size=2)
@@ -65,6 +73,8 @@ async def lifespan(app: FastAPI):
     await state["db"].close()
     if state.get("uis_db"):
         await state["uis_db"].close()
+    if state.get("ac"):
+        await state["ac"].close()
     await state["redis"].aclose()
 
 
