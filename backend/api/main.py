@@ -123,6 +123,15 @@ async def service_worker():
     return FileResponse(str(_STATIC_DIR / "sw.js"), media_type="application/javascript",
                         headers={"Cache-Control": "no-cache"})
 
+
+@app.get("/split")
+async def split_view():
+    """시연용 분할 화면 — 좌: 간호사 관제 대시보드 / 우: 보호자 폰앱(목업)."""
+    from fastapi.responses import FileResponse
+
+    return FileResponse(str(_STATIC_DIR / "split.html"), media_type="text/html",
+                        headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+
 @app.get("/health")
 async def health():
     ok = {

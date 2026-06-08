@@ -4,21 +4,25 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
 <meta name="google" content="notranslate" />
-<meta name="theme-color" content="#1d4ed8" />
+<meta name="theme-color" content="#a50034" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <link rel="manifest" href="/static/manifest.json" />
 <link rel="apple-touch-icon" href="/static/icon-192.png" />
-<title>가족 안심 서비스 · ThinQ Sentinel</title>
+<title>LG ThinQ 케어 · 가족 안심 서비스</title>
 <style>
-  :root{--bg:#eef2f8;--panel:#fff;--line:#e2e8f2;--txt:#1e293b;--muted:#64748b;--dim:#94a3b8;--brand:#1d4ed8;
-    --ok:#15803d;--okbg:#eafaf0;--okbd:#bfe8cd;--caution:#b45309;--cautionbg:#fdf6e8;
-    --alert:#c2410c;--alertbg:#fdefe6;--high:#dc2626;--highbg:#fdeced;--sh:0 2px 10px rgba(16,24,40,.06)}
+  :root{--bg:#f4f1f2;--panel:#fff;--line:#ece6e8;--txt:#1d1418;--muted:#6b5f63;--dim:#9b8e92;
+    --brand:#a50034;--brand2:#c4174c;--brandbg:#fbeef2;
+    --ok:#1a7a45;--okbg:#eaf7ef;--okbd:#c2e6cf;--caution:#b45309;--cautionbg:#fdf6e8;
+    --alert:#c2410c;--alertbg:#fdefe6;--high:#cc1133;--highbg:#fdecef;--sh:0 2px 12px rgba(70,20,40,.07)}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   body{background:var(--bg);color:var(--txt);font-family:'Pretendard','NanumGothic','Noto Sans KR',system-ui,sans-serif;
     font-size:15px;padding-bottom:30px;-webkit-font-smoothing:antialiased}
-  header{position:sticky;top:0;z-index:10;background:var(--panel);border-bottom:1px solid var(--line);padding:13px 16px;display:flex;align-items:center;gap:10px}
-  .logo{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#1d4ed8,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:17px}
-  header b{font-size:16px;font-weight:800;color:#0f172a;display:block;line-height:1.15}
+  header{position:sticky;top:0;z-index:10;background:var(--panel);border-bottom:1px solid var(--line);padding:13px 16px;display:flex;align-items:center;gap:11px}
+  .logo{width:40px;height:40px;border-radius:50%;background:radial-gradient(circle at 50% 42%,#c4174c,#a50034);position:relative;flex:none;box-shadow:0 2px 8px rgba(165,0,52,.3)}
+  .logo::before{content:"";position:absolute;top:10px;left:13px;width:5px;height:5px;border-radius:50%;background:#fff}
+  .logo::after{content:"";position:absolute;top:13px;left:11px;width:18px;height:18px;border:2.5px solid #fff;border-top-color:transparent;border-right-color:transparent;border-radius:50%;transform:rotate(45deg)}
+  header b{font-size:16px;font-weight:800;color:#1d1418;display:block;line-height:1.15;letter-spacing:-.3px}
+  header b .q{color:var(--brand)}
   header small{font-size:11px;color:var(--muted)}
   .wrap{padding:15px 15px 0;display:flex;flex-direction:column;gap:14px}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--sh);overflow:hidden}
@@ -50,7 +54,7 @@
   .guide{padding:14px 16px;font-size:13px;color:#475569;line-height:1.7}
   .guide li{margin-left:18px;margin-top:3px}
   .notifrow{display:flex;align-items:center;gap:12px;padding:15px 16px}
-  .notifrow .ai{width:38px;height:38px;border-radius:10px;background:#eef4ff;display:flex;align-items:center;justify-content:center;font-size:19px;flex:none}
+  .notifrow .ai{width:38px;height:38px;border-radius:10px;background:var(--brandbg);display:flex;align-items:center;justify-content:center;font-size:19px;flex:none}
   .notifrow .at{flex:1}.notifrow .at b{font-size:14px}.notifrow .at small{display:block;font-size:11.5px;color:var(--muted)}
   .nbtn{background:var(--brand);color:#fff;border:none;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:700;font-family:inherit}
   .foot{text-align:center;font-size:11px;color:var(--dim);padding:14px 16px 4px;line-height:1.6}
@@ -60,8 +64,8 @@
 </head>
 <body>
 <header>
-  <div class="logo">🏥</div>
-  <div><b>가족 안심 서비스</b><small>LG 디지털요양병원 · 감염관리</small></div>
+  <div class="logo"></div>
+  <div><b>LG Thin<span class="q">Q</span> 케어</b><small>가족 안심 서비스 · LG 디지털요양병원</small></div>
 </header>
 <div class="wrap">
   <!-- 메인 안심 카드 -->
@@ -109,7 +113,7 @@
     </ul></div>
   </div>
 
-  <div class="foot">이 서비스는 병동 감염 위험을 자동 감시하고,<br>위험 시 병원이 즉시 조치합니다. 안심하세요.<br><br>ThinQ Sentinel · 감염관리 시스템</div>
+  <div class="foot">이 서비스는 병동 감염 위험을 자동 감시하고,<br>위험 시 병원이 즉시 조치합니다. 안심하세요.<br><br>LG ThinQ 케어 · 감염관리 시스템</div>
 </div>
 
 <script>
@@ -145,7 +149,7 @@ function notify(tier){if(!_notif)return;const s=STATE[tier];
 async function enableNotif(){try{const p=await Notification.requestPermission();_notif=(p==='granted');
   const b=document.getElementById('notifBtn');b.textContent=_notif?'켜짐 ✓':'거부됨';if(_notif)b.style.background='#15803d';}catch(e){}}
 
-function gradeColor(g){return g<=1?['좋음','var(--okbg)','var(--ok)']:g===2?['보통','#eef4ff','#1d4ed8']:g===3?['나쁨','#fdf6e8','#b45309']:['매우나쁨','#fdeced','#dc2626'];}
+function gradeColor(g){return g<=1?['좋음','var(--okbg)','var(--ok)']:g===2?['보통','#f1eef0','#6b5f63']:g===3?['나쁨','#fdf6e8','#b45309']:['매우나쁨','#fdeced','#dc2626'];}
 
 const es=new EventSource('/api/v1/stream/live/'+SPACE);
 es.addEventListener('live_init',()=>{const c=document.getElementById('conn');c.className='conn ok';document.getElementById('connText').textContent='실시간 연결';});

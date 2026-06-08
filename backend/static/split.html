@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko" translate="no">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="google" content="notranslate" />
+<title>ThinQ Sentinel · 통합 시연</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden}
+  body{display:flex;background:
+    radial-gradient(900px 500px at 100% 0%,#1a1f3a 0%,transparent 55%),
+    linear-gradient(160deg,#0d1220,#070a14);
+    font-family:'Pretendard','NanumGothic',system-ui,sans-serif}
+  /* 좌: 간호사 관제 대시보드 */
+  .left{flex:1;height:100vh;display:flex;flex-direction:column;min-width:0}
+  .lbl{display:flex;align-items:center;gap:8px;padding:7px 18px;color:#cbd5e1;font-size:13px;font-weight:700;letter-spacing:.2px}
+  .lbl .tag{font-size:10px;font-weight:700;padding:2px 9px;border-radius:999px;border:1px solid rgba(148,163,184,.3);color:#93c5fd;background:rgba(59,130,246,.12)}
+  .left iframe{flex:1;width:100%;border:none;background:#eef1f6}
+  /* 우: 보호자 폰 */
+  .right{width:460px;flex:none;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:linear-gradient(180deg,rgba(255,255,255,.02),transparent);border-left:1px solid rgba(148,163,184,.12)}
+  .phone{width:392px;height:90vh;max-height:850px;background:#0b1020;border-radius:46px;padding:13px;
+    box-shadow:0 30px 70px -20px rgba(0,0,0,.7),0 0 0 2px rgba(148,163,184,.18),inset 0 0 0 2px rgba(255,255,255,.04);position:relative}
+  .phone::before{content:"";position:absolute;top:20px;left:50%;transform:translateX(-50%);width:120px;height:26px;background:#0b1020;border-radius:0 0 16px 16px;z-index:2}
+  .phone::after{content:"";position:absolute;top:27px;left:50%;transform:translateX(-50%);width:46px;height:5px;background:#1e293b;border-radius:99px;z-index:3}
+  .phone iframe{width:100%;height:100%;border:none;border-radius:34px;background:#eef2f8}
+  .plabel{color:#cbd5e1;font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .plabel .tag{font-size:10px;font-weight:700;padding:2px 9px;border-radius:999px;border:1px solid rgba(148,163,184,.3);color:#86efac;background:rgba(34,197,94,.12)}
+</style>
+</head>
+<body>
+  <div class="left">
+    <div class="lbl">🖥️ 감염관리실 통합관제 <span class="tag">간호사 · 키오스크</span></div>
+    <iframe src="/dashboard" title="감염관리 대시보드"></iframe>
+  </div>
+  <div class="right">
+    <div class="plabel">📱 가족 안심 서비스 <span class="tag">보호자 · 모바일</span></div>
+    <div class="phone"><iframe src="/m" title="보호자 앱"></iframe></div>
+  </div>
+</body>
+</html>
