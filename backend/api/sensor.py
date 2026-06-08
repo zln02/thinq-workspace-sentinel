@@ -96,23 +96,41 @@ def compute_tier(co2, gas_raw, temp=None, humidity=None):
     return final, poi, f
 
 
-async def _coway_aq() -> Optional[dict]:
-    """코웨이 공기질 실측 — 5초 캐시(매 ingest 호출 부담 완화)."""
-    now = time.time()
-    if now - float(_coway_cache["t"]) < 5 and _coway_cache["data"]:
-        return _coway_cache["data"]  # type: ignore[return-value]
+_COWAY_TTL = 10.0  # 캐시 신선도(초)
+
+
+async def _coway_refresh() -> None:
+    """백그라운드 코웨이 공기질 갱신 — 핫패스(ingest)를 절대 블록하지 않음."""
+    if _coway_cache.get("refreshing"):
+        return  # 단일 갱신만 (cache stampede 방지)
+    _coway_cache["refreshing"] = True
     try:
         from backend.api.main import state
 
         coway = state.get("coway")
         if coway:
             aq = await coway.async_get_air_quality()
-            _coway_cache["t"] = now
+            _coway_cache["t"] = time.time()
             _coway_cache["data"] = aq
-            return aq
     except Exception as e:  # noqa: BLE001
-        logger.warning("coway 공기질 조회 실패: %s", e)
-    return None
+        logger.warning("coway 공기질 갱신 실패: %s", e)
+    finally:
+        _coway_cache["refreshing"] = False
+
+
+async def _coway_aq() -> Optional[dict]:
+    """코웨이 공기질 — 캐시 즉시 반환(논블로킹). 만료 시 백그라운드 갱신만 트리거.
+
+    코웨이 IoCare 클라우드 호출(수초)을 ingest 임계경로에서 제거 →
+    센서 수신 지연이 가전 클라우드 응답속도에 종속되지 않음(p95 안정).
+    """
+    import asyncio
+
+    now = time.time()
+    fresh = (now - float(_coway_cache["t"])) < _COWAY_TTL and _coway_cache["data"]
+    if not fresh and not _coway_cache.get("refreshing"):
+        asyncio.create_task(_coway_refresh())  # 기다리지 않음
+    return _coway_cache["data"]  # type: ignore[return-value]  # 신선하면 최신, 아니면 직전값(또는 None)
 
 
 async def _control_coway(wind: str) -> Optional[dict]:
@@ -144,16 +162,35 @@ async def _power_coway(on: bool) -> Optional[dict]:
     return None
 
 
-async def _resolve_space(con):
-    """sensor_readings 의 site_id/space_id(둘 다 NOT NULL)용 — 대표 WARD의 (site_id, space_id) 캐시."""
-    if "ward" in _space_uuid_cache:
-        return _space_uuid_cache["ward"]
-    row = await con.fetchrow(
-        "SELECT id, site_id FROM sentinel.spaces WHERE space_type='WARD' ORDER BY space_name LIMIT 1"
+async def _ward_list(con) -> list[tuple]:
+    """전체 WARD (site_id, space_id) 목록 — space_name 순. 60초 캐시."""
+    now = time.time()
+    cached = _space_uuid_cache.get("_wards")
+    if cached and now - float(_space_uuid_cache.get("_wards_t", 0)) < 60:
+        return cached  # type: ignore[return-value]
+    rows = await con.fetch(
+        "SELECT id, site_id FROM sentinel.spaces WHERE space_type='WARD' ORDER BY space_name"
     )
-    result = (row["site_id"], row["id"]) if row else (None, None)
-    _space_uuid_cache["ward"] = result
-    return result
+    wards = [(r["site_id"], r["id"]) for r in rows]
+    _space_uuid_cache["_wards"] = wards
+    _space_uuid_cache["_wards_t"] = now
+    return wards
+
+
+async def _resolve_space(con, space_id: str = "ward_a"):
+    """논리 space_id → 물리 WARD (site_id, space_id) 매핑 (다병동).
+
+    'ward_a'..'ward_e' 는 인덱스로, 그 외 문자열은 해시로 분산 — 단말마다 다른 병동에 적재.
+    """
+    wards = await _ward_list(con)
+    if not wards:
+        return (None, None)
+    key = (space_id or "ward_a").lower()
+    if key.startswith("ward_") and len(key) == 6 and key[5].isalpha():
+        idx = ord(key[5]) - ord("a")
+    else:
+        idx = sum(ord(c) for c in key)
+    return wards[idx % len(wards)]
 
 
 class SensorReading(BaseModel):
@@ -199,7 +236,7 @@ async def ingest_reading(r: SensorReading):
         pool = state.get("db")
         if pool:
             async with pool.acquire() as con:
-                site_uuid, space_uuid = await _resolve_space(con)
+                site_uuid, space_uuid = await _resolve_space(con, r.space_id)
                 await con.execute(
                     "INSERT INTO sentinel.sensor_readings "
                     "(time, site_id, space_id, device_id, co2_ppm, pm25_ugm3, temperature, humidity, gas_raw) "

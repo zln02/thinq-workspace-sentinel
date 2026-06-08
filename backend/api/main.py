@@ -45,7 +45,7 @@ state: dict = {}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    state["db"] = await asyncpg.create_pool(DB_DSN, min_size=1, max_size=4)
+    state["db"] = await asyncpg.create_pool(DB_DSN, min_size=4, max_size=12)
     state["redis"] = redis.from_url(REDIS_URL, decode_responses=True)
     # 코웨이 실기기 어댑터 (COWAY_USERNAME 설정 시에만 활성, 미설정/미설치면 None)
     try:
