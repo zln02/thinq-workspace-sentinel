@@ -68,6 +68,12 @@
   .finfo .fn{font-size:16px;font-weight:800;color:#0f172a}
   .finfo .fd{font-size:12.5px;color:var(--muted);margin-top:2px}
   .finfo .fu{font-size:11px;color:var(--dim);margin-top:4px}
+  .tscale{display:flex;gap:4px;margin-top:9px}
+  .tstep{flex:1;text-align:center;padding:4px 2px;border-radius:6px;font-size:11px;font-weight:700;
+    background:#f1f5f9;color:#94a3b8;border:1px solid transparent;transition:.3s;position:relative}
+  .tstep small{display:block;font-size:8.5px;font-weight:600;opacity:.8}
+  .tstep.cur{color:#fff;box-shadow:0 1px 4px rgba(0,0,0,.12);transform:translateY(-1px)}
+  .tstep.cur::after{content:"▲";position:absolute;bottom:-11px;left:50%;transform:translateX(-50%);font-size:8px}
   .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;flex:none}
   .kpi{background:var(--panel2);border:1px solid var(--line2);border-radius:9px;padding:8px 11px;min-width:88px}
   .kpi .kk{font-size:10.5px;color:var(--muted);font-weight:600}
@@ -140,7 +146,8 @@
     <div class="gauge" id="gauge" style="--gc:#15803d;--p:.08"><div class="gin">
       <div class="gt" id="tierText">—</div><div class="gk" id="tierKo">대기</div></div></div>
     <div class="finfo"><div class="fn" id="focusName">201호 다인실</div>
-      <div class="fd" id="tierDesc">센서 수신 대기 중</div><div class="fu" id="updated">— 수신 없음</div></div>
+      <div class="fd" id="tierDesc">센서 수신 대기 중</div><div class="fu" id="updated">— 수신 없음</div>
+      <div class="tscale" id="tscale"></div></div>
     <div class="kpis">
       <div class="kpi" id="k-co2"><div class="kk">CO₂ (SCD41 예정)</div><div class="kv"><span id="v-co2">—</span> <span>ppm</span></div></div>
       <div class="kpi" id="k-pm25"><div class="kk">PM2.5/10 <span id="aqgrade" style="color:var(--dim)">코웨이</span></div><div class="kv"><span id="v-pm25">—</span>/<span id="v-pm10">—</span></div></div>
@@ -222,11 +229,14 @@ function pct(x,dp){return x==null?'—':(x*100).toFixed(dp||1)+'%';}
 function num(x){return x==null?'—':(Math.round(x*10)/10);}
 function warn(id,w,c){const el=document.getElementById(id);el.classList.toggle('warn',!!w&&!c);el.classList.toggle('crit',!!c);}
 
+const TORDER=['MONITOR','CAUTION','ALERT','HIGH_RISK','CRITICAL'];
+function renderScale(cur){document.getElementById('tscale').innerHTML=TORDER.map(k=>{const i=TIER[k];
+  const on=k===cur;return `<div class="tstep ${on?'cur':''}" style="${on?`background:${i.c};border-color:${i.c}`:''}">${i.ko}<small>${k}</small></div>`;}).join('');}
 function setTier(t){const i=TIER[t]||TIER.MONITOR;
   document.getElementById('tierText').textContent=t||'—';document.getElementById('tierText').style.color=i.c;
   document.getElementById('tierKo').textContent=i.ko;document.getElementById('tierDesc').textContent=i.d;
   const g=document.getElementById('gauge');g.style.setProperty('--gc',i.c);g.style.setProperty('--p',i.p);
-  document.getElementById('achTarget').textContent='목표 ACH '+i.ach;renderOrch(t);}
+  document.getElementById('achTarget').textContent='목표 ACH '+i.ach;renderScale(t||'MONITOR');renderOrch(t);}
 function renderOrch(t){document.getElementById('orchList').innerHTML=APPLIANCES.map(a=>{
   const act=a.act(t);const isOn=!['대기','유지','정기','계절 연동'].includes(act);
   const cls=a.live?'live':(isOn?'on':'std');
@@ -324,7 +334,7 @@ async function loadCoway(){try{const r=await fetch('/api/v1/sensor/coway-status'
     if(j.aq_grade!=null)document.getElementById('aqgrade').textContent='등급'+j.aq_grade;
     if(_lastTs==null||Date.now()-_lastTs>9000){if(j.pm25!=null)setVal('pm25',j.pm25);if(j.co2!=null)setVal('co2',j.co2);}}}catch(e){}}
 
-renderOrch('MONITOR');initMap();loadOverview();setInterval(loadOverview,5000);loadCoway();setInterval(loadCoway,8000);
+renderScale('MONITOR');renderOrch('MONITOR');initMap();loadOverview();setInterval(loadOverview,5000);loadCoway();setInterval(loadCoway,8000);
 </script>
 </body>
 </html>
