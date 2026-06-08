@@ -128,6 +128,12 @@ async def mobile_pwa():
     return _serve_html("m.html")
 
 
+@app.get("/wardmap")
+async def wardmap():
+    """병동 3D(아이소메트릭) 위험 맵 — 공간별 감염위험 입체 시각화."""
+    return _serve_html("wardmap.html")
+
+
 @app.get("/sw.js")
 async def service_worker():
     """서비스워커는 루트 스코프(/)에서 서빙해야 PWA 전체 제어 가능."""
