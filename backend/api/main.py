@@ -102,6 +102,27 @@ async def dashboard():
     return FileResponse(str(p), media_type="text/html",
                         headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
 
+
+_STATIC_DIR = _pl.Path(__file__).parent.parent / "static"
+
+
+@app.get("/m")
+async def mobile_pwa():
+    """PWA 모바일 대시보드 (홈화면 설치 · 경보 알림)."""
+    from fastapi.responses import FileResponse
+
+    return FileResponse(str(_STATIC_DIR / "m.html"), media_type="text/html",
+                        headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+
+
+@app.get("/sw.js")
+async def service_worker():
+    """서비스워커는 루트 스코프(/)에서 서빙해야 PWA 전체 제어 가능."""
+    from fastapi.responses import FileResponse
+
+    return FileResponse(str(_STATIC_DIR / "sw.js"), media_type="application/javascript",
+                        headers={"Cache-Control": "no-cache"})
+
 @app.get("/health")
 async def health():
     ok = {
