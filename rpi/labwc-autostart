@@ -34,5 +34,5 @@ swayidle -w timeout 0 "" 2>/dev/null &
   chromium --ozone-platform=wayland --kiosk --noerrdialogs --disable-infobars \
     --disable-session-crashed-bubble --no-first-run --incognito --password-store=basic \
     --disable-features=Translate --check-for-update-interval=31536000 \
-    "${GCP_API}/dashboard"
+    "${GCP_API}/split"
 ) &
