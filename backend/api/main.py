@@ -98,7 +98,9 @@ async def dashboard():
     from fastapi.responses import FileResponse
 
     p = pathlib.Path(__file__).parent.parent / "static" / "dashboard.html"
-    return FileResponse(str(p), media_type="text/html")
+    # 키오스크가 항상 최신 대시보드를 받도록 no-cache (배포 후 새로고침만으로 반영)
+    return FileResponse(str(p), media_type="text/html",
+                        headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
 
 @app.get("/health")
 async def health():
