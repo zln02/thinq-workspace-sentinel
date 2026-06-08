@@ -170,7 +170,7 @@ async function loadRegions(){
     const sel = document.getElementById('regionSel');
     if(j.available && j.regions && j.regions.length){
       sel.innerHTML = '<option value="">— 지역 선택 —</option>' +
-        j.regions.map(x=>`<option value="${x.region}">${x.region} · ${x.disease} ${x.per_100k}(${x.level})</option>`).join('');
+        j.regions.map(x=>`<option value="${x.region}">${x.region} · 시즌피크 ${x.peak_score}(${x.peak_level}) · ${x.lead_days!=null?x.lead_days+'일 선행':'—'}</option>`).join('');
     } else { sel.innerHTML = '<option value="">UIS 미연결</option>'; }
   }catch(e){ document.getElementById('regionSel').innerHTML='<option>오류</option>'; }
 }
@@ -179,7 +179,12 @@ async function selectRegion(){
   const el = document.getElementById('ext-sig');
   try{ const r = await fetch('/api/v1/external/select-region',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({region})});
     const j = await r.json();
-    if(j.selected){ const s=j.selected; el.innerHTML = `${s.region} · ${s.disease} ${s.per_100k}(${s.level}) → <b style="color:#ff8c42">선제 ${j.boost_tier}</b>`; }
+    if(j.selected){ const s=j.selected;
+      const sig = (s.leading_signals||[]).slice(0,3).map(x=>`${x.layer}:${x.value}`).join(' · ');
+      const lead = s.lead_days!=null ? `<b style="color:#42d77d">${s.lead_days}일 선행 포착</b>` : '';
+      el.innerHTML = `${s.region} · 조기경보 <b>${s.basis_level}</b>(${s.basis_score}) ${lead} → <b style="color:#ff8c42">선제 ${j.boost_tier}</b>`
+        + (sig?`<br><span style="font-size:11px;color:#8b9bbd">선행신호 ${sig} → 확진피크 ${s.conf_peak_date}</span>`:'');
+    }
     else el.textContent = region ? '데이터 없음' : '— 지역 미선택 (boost 해제)';
   }catch(e){ el.textContent = '오류'; }
 }
