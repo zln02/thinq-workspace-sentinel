@@ -3,8 +3,10 @@
 
 import { useState } from "react";
 import { RoomCard } from "./RoomCard";
-import { X, HeartPulse, UserCircle, AlertCircle, CheckCircle2 } from "lucide-react";
+import { X, HeartPulse, UserCircle, AlertCircle, CheckCircle2, Wind } from "lucide-react";
 import { useLiveWard } from "@/lib/useSentinel";
+import { RoomFloorPlan } from "./RoomFloorPlan";
+import type { Tier } from "@/lib/appliances";
 
 // 실센서 병동(ward_a) ↔ 평면도 호실 매핑 (201호만 실데이터, 나머지는 시드)
 const LIVE_ROOM = "201";
@@ -170,7 +172,17 @@ export function FloorPlan() {
             </div>
 
             <div className="p-6 overflow-y-auto space-y-4">
-              <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1.5">
+              {/* 방 평면도 + 가전 가동현황 (위험도별 자동제어 반영) */}
+              <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1.5">
+                <Wind size={18} /> 병실 평면도 · 가전 가동현황
+              </h3>
+              <RoomFloorPlan
+                tier={selectedRoom.snapshot.tier as Tier}
+                spaceType={(selectedRoom as { spaceType?: string }).spaceType ?? "WARD"}
+                occupancy={selectedRoom.capacity}
+              />
+
+              <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-2 mt-5 flex items-center gap-1.5">
                 <UserCircle size={18} /> 재실 환자 생체 지표 (Vitals)
               </h3>
               
