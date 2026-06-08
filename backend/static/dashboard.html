@@ -8,193 +8,177 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
   :root{
-    --bg0:#070b16; --bg1:#0d1426; --card:rgba(22,29,49,.72); --cardSolid:#161d31;
-    --line:#27314e; --txt:#eaf0fb; --muted:#8c98b8; --dim:#5c6a8a;
-    --accent:#5b8cff; --good:#33e08a; --warn:#ffb028; --bad:#ff5d5d;
+    --bg0:#070b16; --bg1:#0d1426; --card:rgba(22,29,49,.72); --line:#27314e;
+    --txt:#eaf0fb; --muted:#8c98b8; --dim:#5c6a8a;
+    --accent:#5b8cff; --good:#33e08a; --warn:#ffb028; --bad:#ff5d5d; --crit:#d11149;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
-  body{
-    background:
+  body{background:
       radial-gradient(1200px 700px at 12% -8%, #16264d 0%, transparent 55%),
       radial-gradient(1000px 600px at 100% 0%, #1a1840 0%, transparent 50%),
       linear-gradient(180deg,var(--bg1),var(--bg0));
-    color:var(--txt); font-family:'Pretendard','Pretendard Variable','NanumGothic','Noto Sans CJK KR',system-ui,sans-serif;
-    height:100vh; overflow:hidden; -webkit-font-smoothing:antialiased;
-  }
-  /* ---------- header ---------- */
-  header{display:flex;align-items:center;justify-content:space-between;padding:13px 26px;
-    border-bottom:1px solid var(--line);
-    background:linear-gradient(90deg,rgba(91,140,255,.08),transparent 40%);}
-  .brand{display:flex;align-items:baseline;gap:10px}
-  .brand h1{font-size:21px;font-weight:800;letter-spacing:-.6px;
+    color:var(--txt);font-family:'Pretendard','NanumGothic','Noto Sans CJK KR',system-ui,sans-serif;
+    height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased}
+  header{display:flex;align-items:center;justify-content:space-between;padding:11px 24px;
+    border-bottom:1px solid var(--line);background:linear-gradient(90deg,rgba(91,140,255,.08),transparent 40%)}
+  .brand{display:flex;align-items:baseline;gap:9px}
+  .brand h1{font-size:20px;font-weight:800;letter-spacing:-.6px;
     background:linear-gradient(90deg,#cfe0ff,#7fb0ff);-webkit-background-clip:text;background-clip:text;color:transparent}
-  .brand .sub{color:var(--muted);font-size:12.5px;font-weight:500}
-  .brand .tag{font-size:10.5px;font-weight:700;color:#9fc0ff;background:rgba(91,140,255,.13);
-    border:1px solid rgba(91,140,255,.3);border-radius:999px;padding:2px 9px;margin-left:4px;vertical-align:middle}
-  .hright{display:flex;align-items:center;gap:18px}
-  .clock{font-variant-numeric:tabular-nums;font-size:15px;color:#bcc8e6;font-weight:600;letter-spacing:.5px}
-  .conn{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
-  .dot{width:9px;height:9px;border-radius:50%;background:var(--dim);box-shadow:0 0 0 0 rgba(0,0,0,0)}
+  .brand .sub{color:var(--muted);font-size:12px;font-weight:500}
+  .brand .tag{font-size:10px;font-weight:700;color:#9fc0ff;background:rgba(91,140,255,.13);
+    border:1px solid rgba(91,140,255,.3);border-radius:999px;padding:2px 8px}
+  .hright{display:flex;align-items:center;gap:16px}
+  .clock{font-variant-numeric:tabular-nums;font-size:14px;color:#bcc8e6;font-weight:600}
+  .conn{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--dim)}
   .conn.ok .dot{background:var(--good);animation:beat 1.6s infinite}
   .conn.off .dot{background:var(--bad)}
   @keyframes beat{0%,100%{box-shadow:0 0 0 0 rgba(51,224,138,.5)}70%{box-shadow:0 0 0 7px rgba(51,224,138,0)}}
-  /* ---------- layout ---------- */
-  main{display:grid;grid-template-columns:330px 1fr;grid-template-rows:auto 1fr;gap:15px;
-    padding:15px 26px;height:calc(100vh - 58px)}
-  .glass{background:var(--card);border:1px solid var(--line);border-radius:18px;
+  .glass{background:var(--card);border:1px solid var(--line);border-radius:15px;
     backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)}
-  /* ---------- tier gauge ---------- */
-  .tierbox{position:relative;padding:20px 18px;text-align:center;overflow:hidden;transition:border-color .5s,box-shadow .5s}
-  .tierbox::before{content:"";position:absolute;inset:0;opacity:.16;transition:.5s;
-    background:radial-gradient(120% 90% at 50% 0%,var(--tc,#33e08a),transparent 60%)}
-  .ring{position:relative;width:150px;height:150px;margin:4px auto 8px;border-radius:50%;
+  main{display:grid;gap:11px;padding:11px 22px;height:calc(100vh - 54px);
+    grid-template-columns:300px 1.35fr .95fr;grid-template-rows:auto 1fr auto}
+  /* 다병동 그리드 스트립 */
+  .wardstrip{grid-column:1/4;display:flex;gap:9px;padding:9px 12px;overflow-x:auto}
+  .wcard{flex:1;min-width:96px;border-radius:11px;padding:8px 11px;border:1px solid var(--line);
+    cursor:pointer;transition:.25s;position:relative;overflow:hidden}
+  .wcard::before{content:"";position:absolute;inset:0;opacity:.14;background:var(--wc,#33e08a)}
+  .wcard.active{border-color:var(--wc);box-shadow:0 0 16px -4px var(--wc)}
+  .wcard .wn{font-size:12px;font-weight:700;position:relative}
+  .wcard .wt{font-size:13px;font-weight:900;color:var(--wc);position:relative;margin-top:2px}
+  .wcard .ws{font-size:9px;color:var(--dim);position:relative;margin-top:1px}
+  .wcard .wsrc{position:absolute;top:6px;right:8px;font-size:8px;padding:1px 5px;border-radius:5px;
+    background:rgba(0,0,0,.3);color:var(--muted)}
+  /* 게이지 */
+  .tierbox{grid-column:1;grid-row:2;padding:16px;text-align:center;position:relative;overflow:hidden;transition:.5s}
+  .ring{position:relative;width:128px;height:128px;margin:2px auto 8px;border-radius:50%;
     background:conic-gradient(var(--tc,#33e08a) calc(var(--p,.1)*360deg),rgba(255,255,255,.06) 0);
-    transition:background .6s ease,filter .5s;filter:drop-shadow(0 0 14px var(--tc,#33e08a))}
-  .ring::after{content:"";position:absolute;inset:11px;border-radius:50%;background:#0e1424}
+    transition:.6s;filter:drop-shadow(0 0 13px var(--tc,#33e08a))}
+  .ring::after{content:"";position:absolute;inset:10px;border-radius:50%;background:#0e1424}
   .ring .rin{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1}
-  .ring .tier{font-size:30px;font-weight:900;letter-spacing:-1px;color:var(--tc,#33e08a);transition:color .5s}
-  .ring .tko{font-size:13px;color:var(--muted);margin-top:1px}
-  .tierbox .label{color:var(--muted);font-size:12px;letter-spacing:.3px}
-  .tierbox .desc{font-size:13px;margin-top:4px;color:#c3cde6;font-weight:600;position:relative}
-  .tierbox .updated{font-size:11px;color:var(--dim);margin-top:7px;position:relative}
-  /* ---------- kpi cards ---------- */
-  .cards{display:grid;grid-template-rows:repeat(5,1fr);gap:10px;min-height:0}
-  .card{padding:10px 15px;display:flex;align-items:center;justify-content:space-between;
-    border-radius:13px;transition:border-color .35s,box-shadow .35s,background .35s;position:relative;overflow:hidden}
-  .card .k{color:var(--muted);font-size:12.5px;font-weight:600;z-index:1}
-  .card .k small{display:block;font-size:9.5px;color:var(--dim);font-weight:500;margin-top:1px}
-  .card .rv{display:flex;align-items:baseline;gap:5px;z-index:1}
-  .card .v{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
-  .card .u{font-size:12px;color:var(--muted);font-weight:600}
-  .card .trend{font-size:12px;font-weight:800;width:14px;text-align:center}
-  .trend.up{color:var(--bad)}.trend.down{color:var(--good)}.trend.flat{color:var(--dim)}
-  .card.warn{border-color:var(--warn)!important;box-shadow:0 0 18px -4px rgba(255,176,40,.5);
-    background:linear-gradient(90deg,rgba(255,176,40,.1),var(--card))}
-  .card.crit{border-color:var(--bad)!important;box-shadow:0 0 20px -3px rgba(255,93,93,.55);
-    background:linear-gradient(90deg,rgba(255,93,93,.12),var(--card))}
-  /* ---------- right ---------- */
-  .right{grid-row:1/3;grid-column:2/3;display:grid;grid-template-rows:1fr auto auto;gap:13px;min-height:0}
-  .chartbox{padding:14px 16px 10px;position:relative;min-height:0}
-  .chart-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+  .ring .tier{font-size:26px;font-weight:900;color:var(--tc,#33e08a)}
+  .ring .tko{font-size:12px;color:var(--muted)}
+  .tierbox .label{color:var(--muted);font-size:11px}
+  .tierbox .focus{font-size:13px;font-weight:700;margin-bottom:6px;color:#c3cde6}
+  .tierbox .desc{font-size:12px;margin-top:3px;color:#c3cde6;position:relative}
+  .tierbox .updated{font-size:10px;color:var(--dim);margin-top:5px;position:relative}
+  .kpis{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:11px}
+  .kpi{background:rgba(15,20,36,.5);border:1px solid var(--line);border-radius:10px;padding:7px 9px;text-align:left;transition:.3s}
+  .kpi .kk{font-size:10px;color:var(--muted)}
+  .kpi .kv{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums}
+  .kpi .kv span{font-size:10px;color:var(--muted);font-weight:600}
+  .kpi.warn{border-color:var(--warn);box-shadow:0 0 12px -4px rgba(255,176,40,.5)}
+  .kpi.crit{border-color:var(--bad);box-shadow:0 0 13px -3px rgba(255,93,93,.55)}
+  /* 차트 */
+  .chartbox{grid-column:2;grid-row:2;padding:13px 15px 9px;position:relative;min-height:0}
+  .chart-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
   .chart-h .t{font-size:13px;font-weight:700;color:#b9c6e6}
-  .chart-h .lg{display:flex;gap:13px;font-size:11.5px;color:var(--muted)}
+  .chart-h .lg{display:flex;gap:11px;font-size:11px;color:var(--muted)}
   .chart-h .lg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:middle}
-  .cwrap{position:relative;height:calc(100% - 26px)}
-  .formula{padding:13px 18px;border:1px solid #2f4a82;
-    background:linear-gradient(90deg,rgba(91,140,255,.09),var(--card))}
-  .formula .ftitle{font-size:12px;color:#86b4ff;font-weight:700;margin-bottom:7px;display:flex;align-items:center;gap:8px}
-  .formula .ftitle .eq{color:var(--dim);font-weight:500;font-size:11.5px}
-  .fchain{font-size:16px;font-weight:600;letter-spacing:-.3px;line-height:1.5}
-  .fchain b{color:#ffd479;font-weight:800}
-  .fchain .arw{color:var(--dim);margin:0 6px;font-weight:400}
-  .fchain .res{font-weight:900;padding:1px 8px;border-radius:7px}
-  /* ---------- panel ---------- */
-  .panel{padding:13px 16px;display:flex;gap:11px;align-items:center;flex-wrap:wrap}
-  .badge{background:rgba(31,41,64,.85);border:1px solid var(--line);border-radius:10px;
-    padding:7px 12px;font-size:12.5px;display:flex;align-items:center;gap:6px}
-  .badge .bi{font-size:13px;opacity:.8}
+  .cwrap{position:relative;height:calc(100% - 24px)}
+  /* 오케스트레이션 */
+  .orch{grid-column:3;grid-row:2;padding:12px 14px;overflow-y:auto;min-height:0}
+  .orch h3{font-size:13px;font-weight:700;color:#b9c6e6;margin-bottom:9px;display:flex;justify-content:space-between}
+  .orch h3 .ach{font-size:11px;color:#86b4ff}
+  .arow{display:flex;align-items:center;gap:9px;padding:6px 4px;border-bottom:1px solid rgba(39,49,78,.5)}
+  .arow .ic{font-size:16px;width:20px;text-align:center}
+  .arow .an{flex:1}
+  .arow .an b{font-size:12px;font-weight:700}
+  .arow .an small{display:block;font-size:9.5px;color:var(--dim)}
+  .arow .ast{font-size:11px;font-weight:800;padding:2px 8px;border-radius:6px;white-space:nowrap}
+  .ast.on{background:rgba(51,224,138,.16);color:var(--good)}
+  .ast.std{background:rgba(140,152,184,.12);color:var(--muted)}
+  .ast.live{background:rgba(91,140,255,.16);color:#9fc0ff}
+  /* 하단: 히트맵 / 타임라인 / 제어 */
+  .heat{grid-column:1;grid-row:3;padding:11px 13px}
+  .heat h3,.tl h3{font-size:12px;font-weight:700;color:#b9c6e6;margin-bottom:7px}
+  .hgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+  .hcell{border-radius:7px;padding:6px 4px;text-align:center;font-size:9px;border:1px solid var(--line);
+    background:var(--hc,#1c2440);color:#0b0f1c;font-weight:700}
+  .hcell .hn{font-size:9px;opacity:.85}
+  .tl{grid-column:2;grid-row:3;padding:11px 13px;overflow-y:auto;max-height:150px}
+  .tlrow{display:flex;gap:8px;align-items:baseline;font-size:11px;padding:2px 0;border-bottom:1px solid rgba(39,49,78,.4)}
+  .tlrow .tt{color:var(--dim);font-variant-numeric:tabular-nums;font-size:10px;min-width:54px}
+  .tlrow .tb{color:#c3cde6}
+  .ctrl{grid-column:3;grid-row:3;padding:11px 13px;display:flex;flex-direction:column;gap:8px}
+  .ctrl .row1{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+  .badge{background:rgba(31,41,64,.85);border:1px solid var(--line);border-radius:9px;padding:5px 9px;font-size:11px;display:flex;align-items:center;gap:5px}
   .badge b{color:#ffd479}
-  .badge.live b{color:#9fe6b0}
-  select{background:#1a2238;color:var(--txt);border:1px solid #36456b;border-radius:7px;
-    padding:4px 7px;font-size:12.5px;font-family:inherit;cursor:pointer}
-  .pw{display:inline-flex;align-items:center;gap:5px;font-weight:700}
-  .pw .pd{width:8px;height:8px;border-radius:50%;background:var(--dim)}
-  .pw.on .pd{background:var(--good);box-shadow:0 0 8px var(--good);animation:beat 1.6s infinite}
-  .sep{width:1px;height:26px;background:var(--line);margin:0 2px}
-  .gov{font-size:12.5px;padding:6px 11px;border-radius:9px;font-weight:800;letter-spacing:.2px}
-  .gov.idle{background:#1c2440;color:var(--muted)}
-  .gov.auto{background:rgba(51,224,138,.14);color:var(--good);border:1px solid rgba(51,224,138,.3)}
-  .gov.auto_restore{background:rgba(91,140,255,.14);color:#9fc0ff;border:1px solid rgba(91,140,255,.3)}
-  .gov.approval_required{background:rgba(255,93,93,.16);color:#ff9aa6;border:1px solid rgba(255,93,93,.35);animation:pulse 1.3s infinite}
-  .gov.approved{background:rgba(51,224,138,.14);color:#9fe6b0}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
-  button{background:#243152;color:var(--txt);border:1px solid #36456b;border-radius:9px;
-    padding:8px 13px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:inherit}
-  button:hover{background:#2e3e63;transform:translateY(-1px)}
-  button:active{transform:translateY(0)}
+  select{background:#1a2238;color:var(--txt);border:1px solid #36456b;border-radius:7px;padding:4px 6px;font-size:11px;font-family:inherit;cursor:pointer;max-width:170px}
+  .btns{display:flex;gap:6px;flex-wrap:wrap}
+  button{background:#243152;color:var(--txt);border:1px solid #36456b;border-radius:8px;padding:6px 11px;font-size:11px;font-weight:700;cursor:pointer;transition:.15s;font-family:inherit}
+  button:hover{background:#2e3e63}
   button.approve{background:linear-gradient(90deg,#7a1f2b,#a02838);border-color:#b3303f;animation:pulse 1.2s infinite}
-  .ext-detail{font-size:11px;color:#9aa9cb;margin-top:3px;line-height:1.45}
-  .chip{display:inline-block;background:rgba(91,140,255,.12);border:1px solid rgba(91,140,255,.25);
-    border-radius:6px;padding:1px 7px;margin:1px 3px 1px 0;font-size:10.5px;color:#bcd2ff}
-  .flash{animation:flash .6s ease}
-  @keyframes flash{0%{background:rgba(255,255,255,.14)}100%{background:transparent}}
+  .gov{font-size:11px;padding:4px 9px;border-radius:8px;font-weight:800}
+  .gov.idle{background:#1c2440;color:var(--muted)}
+  .gov.auto{background:rgba(51,224,138,.14);color:var(--good)}
+  .gov.auto_restore{background:rgba(91,140,255,.14);color:#9fc0ff}
+  .gov.approval_required{background:rgba(255,93,93,.16);color:#ff9aa6;animation:pulse 1.3s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+  .fchain{font-size:12px;color:#c3cde6;line-height:1.5}
+  .fchain b{color:#ffd479;font-weight:800}
+  .fchain .arw{color:var(--dim);margin:0 4px}
 </style>
 </head>
 <body>
 <header>
-  <div class="brand">
-    <h1>🏥 ThinQ Sentinel</h1>
-    <span class="sub">요양병원 병동 실시간 감염위험 모니터</span>
-    <span class="tag" id="modeTag">실연동</span>
-  </div>
-  <div class="hright">
-    <div class="clock" id="clock">--:--:--</div>
-    <div id="conn" class="conn off"><span class="dot"></span><span id="connText">연결 대기…</span></div>
-  </div>
+  <div class="brand"><h1>🏥 ThinQ Sentinel</h1>
+    <span class="sub">요양병원 감염위험 다병동 통합관제</span><span class="tag" id="modeTag">실연동</span></div>
+  <div class="hright"><div class="clock" id="clock">--:--:--</div>
+    <div id="conn" class="conn off"><span class="dot"></span><span id="connText">연결 대기…</span></div></div>
 </header>
 <main>
-  <!-- 위험도 게이지 -->
+  <!-- 다병동 그리드 스트립 -->
+  <div class="glass wardstrip" id="wardstrip"></div>
+
+  <!-- 포커스 병동 게이지 + KPI -->
   <div class="glass tierbox" id="tierbox" style="--tc:#33e08a">
-    <div class="label">현재 감염 위험도</div>
-    <div class="ring" id="ring" style="--p:.08">
-      <div class="rin">
-        <div class="tier" id="tierText">—</div>
-        <div class="tko" id="tierKo">대기</div>
-      </div>
-    </div>
+    <div class="focus" id="focusName">201호 다인실</div>
+    <div class="label">감염 위험도</div>
+    <div class="ring" id="ring" style="--p:.08"><div class="rin">
+      <div class="tier" id="tierText">—</div><div class="tko" id="tierKo">대기</div></div></div>
     <div class="desc" id="tierDesc">센서 수신 대기 중</div>
     <div class="updated" id="updated">— 수신 없음</div>
+    <div class="kpis">
+      <div class="kpi" id="k-co2"><div class="kk">CO₂ <span style="color:#5c6a8a">SCD41 예정</span></div><div class="kv"><span id="v-co2">—</span> <span>ppm</span></div></div>
+      <div class="kpi" id="k-pm25"><div class="kk">PM2.5 / PM10 <span style="color:#5c6a8a" id="aqgrade">코웨이</span></div><div class="kv"><span id="v-pm25">—</span><span> / </span><span id="v-pm10">—</span> <span>㎍</span></div></div>
+      <div class="kpi" id="k-temp"><div class="kk">온도</div><div class="kv"><span id="v-temp">—</span> <span>℃</span></div></div>
+      <div class="kpi" id="k-hum"><div class="kk">습도</div><div class="kv"><span id="v-hum">—</span> <span>%</span></div></div>
+    </div>
   </div>
 
-  <!-- 센서 KPI -->
-  <div class="cards">
-    <div class="glass card" id="c-co2"><div class="k">이산화탄소 CO₂<small>코웨이 실측 · 법정 1000ppm</small></div>
-      <div class="rv"><span class="trend flat" id="t-co2">·</span><span class="v" id="v-co2">—</span><span class="u">ppm</span></div></div>
-    <div class="glass card" id="c-pm25"><div class="k">초미세먼지 PM2.5<small>코웨이 실측 · 기준 35</small></div>
-      <div class="rv"><span class="trend flat" id="t-pm25">·</span><span class="v" id="v-pm25">—</span><span class="u">㎍/㎥</span></div></div>
-    <div class="glass card" id="c-gas"><div class="k">가스<small>아두이노 MQ2 · 상대 트리거</small></div>
-      <div class="rv"><span class="trend flat" id="t-gas">·</span><span class="v" id="v-gas">—</span><span class="u">raw</span></div></div>
-    <div class="glass card" id="c-temp"><div class="k">온도<small>아두이노 / 코웨이</small></div>
-      <div class="rv"><span class="trend flat" id="t-temp">·</span><span class="v" id="v-temp">—</span><span class="u">℃</span></div></div>
-    <div class="glass card" id="c-hum"><div class="k">습도<small>아두이노 DHT11 · 적정 40~60%</small></div>
-      <div class="rv"><span class="trend flat" id="t-hum">·</span><span class="v" id="v-hum">—</span><span class="u">%</span></div></div>
+  <!-- 차트 -->
+  <div class="glass chartbox">
+    <div class="chart-h"><span class="t">📈 실시간 추이</span>
+      <span class="lg"><span><i style="background:#5b8cff"></i>CO₂</span><span><i style="background:#42d77d"></i>PM2.5</span>
+      <span><i style="background:#c792ea"></i>온도</span><span><i style="background:#ffb028"></i>습도</span></span></div>
+    <div class="cwrap"><canvas id="chart"></canvas></div>
   </div>
 
-  <!-- 우측 -->
-  <div class="right">
-    <div class="glass chartbox">
-      <div class="chart-h">
-        <span class="t">📈 실시간 추이</span>
-        <span class="lg">
-          <span><i style="background:#5b8cff"></i>CO₂</span>
-          <span><i style="background:#ff8c42"></i>가스</span>
-          <span><i style="background:#c792ea"></i>온도</span>
-          <span><i style="background:#33e08a"></i>습도</span>
-        </span>
-      </div>
-      <div class="cwrap"><canvas id="chart"></canvas></div>
-    </div>
+  <!-- 가전 오케스트레이션 -->
+  <div class="glass orch">
+    <h3>💨 가전 오케스트레이션 <span class="ach" id="achTarget">목표 ACH —</span></h3>
+    <div id="orchList"></div>
+  </div>
 
-    <div class="glass formula">
-      <div class="ftitle">🧬 감염확률 산출 · Rudnick-Milton CO₂ 재호흡 모델 <span class="eq">P = 1 − exp(−f·(I/n)·q·t)</span></div>
-      <div class="fchain" id="fchain">센서 수신 대기 중…</div>
-    </div>
+  <!-- 평면도 히트맵 -->
+  <div class="glass heat"><h3>🗺️ 병동 위험 히트맵</h3><div class="hgrid" id="heatgrid"></div></div>
 
-    <div class="glass panel">
-      <span class="badge"><span class="bi">📍</span>지역
-        <select id="regionSel" onchange="selectRegion()"><option>로딩…</option></select></span>
-      <span class="badge" id="extBadge"><span class="bi">🌐</span>외부확산 <b id="ext-sig">— 지역 선택</b></span>
-      <span class="badge live"><span class="bi">💨</span>코웨이
-        <span class="pw" id="cw-pw"><span class="pd"></span><span id="cw-power">—</span></span>
-        · <b id="cw-fan">—</b> · <b id="cw-watt">—</b>W</span>
-      <span class="badge"><span class="bi">⚖️</span>IAQ법 <b id="iaq-ex">정상</b></span>
+  <!-- 이벤트 타임라인 -->
+  <div class="glass tl"><h3>📋 이벤트 타임라인</h3><div id="tlList"></div></div>
+
+  <!-- 제어 + 외부신호 -->
+  <div class="glass ctrl">
+    <div class="fchain" id="fchain">센서 수신 대기 중…</div>
+    <div class="row1">
+      <span class="badge">📍<select id="regionSel" onchange="selectRegion()"><option>로딩…</option></select></span>
+      <span class="badge">🌐<b id="ext-sig">지역 선택</b></span>
       <span class="gov idle" id="gov">대기</span>
-      <span class="sep"></span>
-      <button onclick="ctl('on')">전원 ON</button>
-      <button onclick="ctl('off')">전원 OFF</button>
-      <button onclick="ctl('rapid')">급속</button>
-      <button onclick="ctl('auto')">자동</button>
+    </div>
+    <div class="btns">
+      <button onclick="ctl('on')">전원 ON</button><button onclick="ctl('off')">전원 OFF</button>
+      <button onclick="ctl('rapid')">급속</button><button onclick="ctl('auto')">자동</button>
       <button id="approveBtn" class="approve" style="display:none" onclick="approve()">⚠️ 고위험 승인</button>
     </div>
   </div>
@@ -202,194 +186,159 @@
 
 <script>
 const SPACE='ward_a';
-// ----- 음성 안내 (대시보드 띄운 기기 스피커) -----
 const VOICE={ALERT:new Audio('/static/voice_alert.mp3'),HIGH_RISK:new Audio('/static/voice_high_risk.mp3'),CRITICAL:new Audio('/static/voice_critical.mp3')};
 const VOICE_RESTORE=new Audio('/static/voice_restore.mp3');
-let _lastVoiceTier=null,_audioOn=false;
+let _lastVoiceTier=null,_audioOn=false,_lastTs=null;
 document.body.addEventListener('click',()=>{_audioOn=true;},{once:true});
-
 const TIER={
-  MONITOR:{ko:"정상 감시",c:"#33e08a",p:.10,d:"환경 양호 · 자동 감시 중"},
-  CAUTION:{ko:"주의",c:"#ffd166",p:.32,d:"환기 권고 · 모니터링 강화"},
-  ALERT:{ko:"경보",c:"#ff8c42",p:.55,d:"공기청정기 자동 가동"},
-  HIGH_RISK:{ko:"고위험",c:"#ff5d5d",p:.80,d:"자동 제어 + 관리자 알림"},
-  CRITICAL:{ko:"위급",c:"#d11149",p:1.0,d:"보건소 신고 기준 · 승인 필요"},
+  MONITOR:{ko:"정상 감시",c:"#33e08a",p:.10,d:"환경 양호 · 자동 감시",ach:2},
+  CAUTION:{ko:"주의",c:"#ffd166",p:.32,d:"환기 권고 · 모니터링↑",ach:4},
+  ALERT:{ko:"경보",c:"#ff8c42",p:.55,d:"공청기 급속 + 환기 ACH6",ach:6},
+  HIGH_RISK:{ko:"고위험",c:"#ff5d5d",p:.80,d:"자동 제어 + 관리자 알림",ach:8},
+  CRITICAL:{ko:"위급",c:"#d11149",p:1.0,d:"보건소 신고 · 승인 필요",ach:10},
 };
+const RANK={MONITOR:0,CAUTION:1,ALERT:2,HIGH_RISK:3,CRITICAL:4};
 const MAXPTS=24;
-let _lastTs=null;
 
-// ----- 차트 (gradient fill, 4 line) -----
+// 가전 오케스트레이션 정의 (Wells-Riley 레버) — tier별 동작
+const APPLIANCES=[
+  {ic:"🌀",n:"공기청정기",lever:"여과 λ",live:true,act:t=>RANK[t]>=2?"급속":(RANK[t]>=1?"자동":"대기")},
+  {ic:"❄️",n:"에어컨",lever:"T·Q_aux",act:t=>RANK[t]>=2?"송풍/제습":(RANK[t]>=1?"순환":"대기")},
+  {ic:"🌬️",n:"환기장치",lever:"Q (ACH)",act:t=>RANK[t]>=2?"ACH 6+":(RANK[t]>=1?"ACH 4":"ACH 2")},
+  {ic:"💧",n:"가습/제습",lever:"RH 40~60",act:t=>RANK[t]>=1?"RH 보정":"유지"},
+  {ic:"☀️",n:"보일러",lever:"T↑",act:t=>"계절 연동"},
+  {ic:"🤖",n:"로봇청소기",lever:"표면",act:t=>RANK[t]>=3?"표면 살균":"정기"},
+  {ic:"👕",n:"스타일러",lever:"의류 살균",act:t=>RANK[t]>=2?"의류 살균":"대기"},
+];
+
 const ctx=document.getElementById('chart').getContext('2d');
-function grad(c){const g=ctx.createLinearGradient(0,0,0,260);g.addColorStop(0,c+'44');g.addColorStop(1,c+'02');return g;}
-const mk=(label,c,axis)=>({label,data:[],borderColor:c,backgroundColor:grad(c),borderWidth:2,tension:.38,pointRadius:0,fill:true,yAxisID:axis,spanGaps:true});
+function grad(c){const g=ctx.createLinearGradient(0,0,0,240);g.addColorStop(0,c+'44');g.addColorStop(1,c+'02');return g;}
+const mk=(l,c,a)=>({label:l,data:[],borderColor:c,backgroundColor:grad(c),borderWidth:2,tension:.38,pointRadius:0,fill:true,yAxisID:a,spanGaps:true});
 const chart=new Chart(ctx,{type:'line',
-  data:{labels:[],datasets:[mk('CO₂','#5b8cff','yL'),mk('가스','#ff8c42','yL'),mk('온도','#c792ea','yR'),mk('습도','#33e08a','yR')]},
-  options:{responsive:true,maintainAspectRatio:false,animation:false,
-    interaction:{intersect:false,mode:'index'},
-    plugins:{legend:{display:false},
-      tooltip:{backgroundColor:'#0e1424',borderColor:'#2c3858',borderWidth:1,padding:9,titleColor:'#cfd6e6',bodyColor:'#aeb9d6'}},
-    scales:{x:{ticks:{color:'#5c6a8a',maxTicksLimit:8,font:{size:10}},grid:{color:'rgba(40,52,84,.4)'}},
-      yL:{position:'left',ticks:{color:'#5c6a8a',font:{size:10}},grid:{color:'rgba(40,52,84,.4)'},title:{display:true,text:'CO₂ / 가스',color:'#8a96b3',font:{size:10}}},
-      yR:{position:'right',ticks:{color:'#5c6a8a',font:{size:10}},grid:{drawOnChartArea:false},title:{display:true,text:'온도 / 습도',color:'#8a96b3',font:{size:10}}}}}
+  data:{labels:[],datasets:[mk('CO₂','#5b8cff','yL'),mk('PM2.5','#42d77d','yL'),mk('온도','#c792ea','yR'),mk('습도','#ffb028','yR')]},
+  options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{intersect:false,mode:'index'},
+    plugins:{legend:{display:false},tooltip:{backgroundColor:'#0e1424',borderColor:'#2c3858',borderWidth:1,padding:8}},
+    scales:{x:{ticks:{color:'#5c6a8a',maxTicksLimit:8,font:{size:9}},grid:{color:'rgba(40,52,84,.4)'}},
+      yL:{position:'left',ticks:{color:'#5c6a8a',font:{size:9}},grid:{color:'rgba(40,52,84,.4)'},title:{display:true,text:'CO₂ / PM2.5',color:'#8a96b3',font:{size:9}}},
+      yR:{position:'right',ticks:{color:'#5c6a8a',font:{size:9}},grid:{drawOnChartArea:false},title:{display:true,text:'온도 / 습도',color:'#8a96b3',font:{size:9}}}}}
 });
 
-// ----- 값 카운트업(스무스) + 추세 화살표 -----
-const _cur={},_prev={};
-function setVal(id,val,dp){
-  const el=document.getElementById('v-'+id);
+const _cur={};
+function setVal(id,val,dp){const el=document.getElementById('v-'+id);
   if(val===null||val===undefined){el.textContent='—';return;}
-  const from=(_cur[id]??val), to=val; _prev[id]=_cur[id]; _cur[id]=to;
-  const tr=document.getElementById('t-'+id);
-  if(tr){const dlt=(_prev[id]==null)?0:to-_prev[id];
-    if(dlt>0.05){tr.className='trend up';tr.textContent='▲';}
-    else if(dlt<-0.05){tr.className='trend down';tr.textContent='▼';}
-    else{tr.className='trend flat';tr.textContent='·';}}
-  const t0=performance.now(),dur=450;
-  function step(t){const k=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-k,3);
-    const v=from+(to-from)*e; el.textContent=(dp?v.toFixed(dp):Math.round(v*10)/10);
-    if(k<1)requestAnimationFrame(step);}
-  requestAnimationFrame(step);
+  const from=(_cur[id]??val);_cur[id]=val;const t0=performance.now();
+  (function step(t){const k=Math.min(1,(t-t0)/420),e=1-Math.pow(1-k,3),v=from+(val-from)*e;
+    el.textContent=(dp?v.toFixed(dp):Math.round(v*10)/10);if(k<1)requestAnimationFrame(step);})(t0);
 }
 function pct(x,dp){return(x===null||x===undefined)?'—':(x*100).toFixed(dp||1)+'%';}
 function num(x){return(x===null||x===undefined)?'—':(Math.round(x*10)/10);}
+function warn(id,w,c){const el=document.getElementById(id);el.classList.toggle('warn',!!w&&!c);el.classList.toggle('crit',!!c);}
 
-function setTier(t){
-  const i=TIER[t]||TIER.MONITOR;
-  document.getElementById('tierText').textContent=t||'—';
-  document.getElementById('tierText').style.color=i.c;
-  document.getElementById('tierKo').textContent=i.ko;
-  document.getElementById('tierDesc').textContent=i.d;
-  const tb=document.getElementById('tierbox');
-  tb.style.setProperty('--tc',i.c); tb.style.borderColor=i.c;
-  tb.style.boxShadow='0 0 30px -8px '+i.c;
-  const r=document.getElementById('ring'); r.style.setProperty('--tc',i.c); r.style.setProperty('--p',i.p);
+function setTier(t){const i=TIER[t]||TIER.MONITOR;
+  document.getElementById('tierText').textContent=t||'—';document.getElementById('tierText').style.color=i.c;
+  document.getElementById('tierKo').textContent=i.ko;document.getElementById('tierDesc').textContent=i.d;
+  const tb=document.getElementById('tierbox');tb.style.setProperty('--tc',i.c);tb.style.borderColor=i.c;tb.style.boxShadow='0 0 28px -10px '+i.c;
+  const r=document.getElementById('ring');r.style.setProperty('--tc',i.c);r.style.setProperty('--p',i.p);
+  document.getElementById('achTarget').textContent='목표 ACH '+i.ach;
+  renderOrch(t);
 }
-
-// ----- 마지막 갱신 "n초 전" -----
-function tickUpdated(){
-  const u=document.getElementById('updated');
-  if(_lastTs==null){return;}
-  const s=Math.round((Date.now()-_lastTs)/1000);
-  u.textContent=(s<2?'방금':s+'초 전')+' 수신';
-  u.style.color=s>10?'#ff8c42':'#5c6a8a';
+function renderOrch(t){
+  document.getElementById('orchList').innerHTML=APPLIANCES.map(a=>{
+    const act=a.act(t);const isOn=act!=='대기'&&act!=='유지'&&act!=='정기'&&act!=='계절 연동';
+    const cls=a.live?'live':(isOn?'on':'std');
+    const tag=a.live?'실연동':(isOn?act:act);
+    return `<div class="arow"><span class="ic">${a.ic}</span><span class="an"><b>${a.n}</b><small>${a.lever}</small></span><span class="ast ${cls}">${a.live?'🟢 '+act:tag}</span></div>`;
+  }).join('');
 }
+function tickUpdated(){const u=document.getElementById('updated');if(_lastTs==null)return;
+  const s=Math.round((Date.now()-_lastTs)/1000);u.textContent=(s<2?'방금':s+'초 전')+' 수신';u.style.color=s>10?'#ff8c42':'#5c6a8a';}
 setInterval(tickUpdated,1000);
-setInterval(()=>{const c=document.getElementById('clock');
-  c.textContent=new Date().toLocaleTimeString('ko-KR',{hour12:false});},1000);
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('ko-KR',{hour12:false});},1000);
 
-// ----- SSE 실시간 -----
+// 타임라인
+const _tl=[];
+function addEvent(txt){const tm=new Date().toLocaleTimeString('ko-KR',{hour12:false});_tl.unshift({tm,txt});
+  if(_tl.length>30)_tl.pop();
+  document.getElementById('tlList').innerHTML=_tl.map(e=>`<div class="tlrow"><span class="tt">${e.tm}</span><span class="tb">${e.txt}</span></div>`).join('');}
+
+// SSE
 const es=new EventSource('/api/v1/stream/live/'+SPACE);
-es.addEventListener('live_init',()=>{const c=document.getElementById('conn');c.className='conn ok';document.getElementById('connText').textContent='실시간 연결됨';});
+es.addEventListener('live_init',()=>{const c=document.getElementById('conn');c.className='conn ok';document.getElementById('connText').textContent='실시간 연결됨';addEvent('실시간 스트림 연결');});
+let _prevTier=null;
 es.addEventListener('sensor',(e)=>{
-  const d=JSON.parse(e.data); _lastTs=Date.now(); tickUpdated();
-  setTier(d.tier);
-  // 음성 (tier 변화 시)
-  if(_audioOn && d.tier!==_lastVoiceTier){
-    const active=['ALERT','HIGH_RISK','CRITICAL'];
+  const d=JSON.parse(e.data);_lastTs=Date.now();tickUpdated();setTier(d.tier);
+  if(d.tier!==_prevTier){addEvent(`<b style="color:${(TIER[d.tier]||TIER.MONITOR).c}">${d.tier}</b> 전환 (${(TIER[d.tier]||{}).ko||''})`);_prevTier=d.tier;}
+  if(_audioOn&&d.tier!==_lastVoiceTier){const active=['ALERT','HIGH_RISK','CRITICAL'];
     [VOICE.ALERT,VOICE.HIGH_RISK,VOICE.CRITICAL,VOICE_RESTORE].forEach(a=>{a.pause();a.currentTime=0;});
     if(VOICE[d.tier])VOICE[d.tier].play().catch(()=>{});
     else if(active.includes(_lastVoiceTier)&&!active.includes(d.tier))VOICE_RESTORE.play().catch(()=>{});
-    _lastVoiceTier=d.tier;
-  }
+    _lastVoiceTier=d.tier;}
   if(d.co2_ppm!=null)setVal('co2',d.co2_ppm);
   if(d.pm25!=null)setVal('pm25',d.pm25);
-  setVal('gas',d.gas_raw); setVal('temp',d.temp_c,1); setVal('hum',d.humidity,1);
-  warn('c-co2',(d.co2_ppm||0)>1000,(d.co2_ppm||0)>2000);
-  warn('c-pm25',(d.pm25||0)>35,(d.pm25||0)>75);
-  warn('c-gas',(d.gas_raw||0)>=400,(d.gas_raw||0)>=700);
-  warn('c-hum',(d.humidity!=null&&(d.humidity>=65||d.humidity<=30)),(d.humidity!=null&&(d.humidity>=75||d.humidity<=20)));
-  warn('c-temp',(d.temp_c||0)>=29,(d.temp_c||0)>=31);
-  const ex=document.getElementById('iaq-ex');
-  ex.textContent=(d.iaq_exceed&&d.iaq_exceed.length)?d.iaq_exceed.join(', '):'정상';
-  ex.style.color=(d.iaq_exceed&&d.iaq_exceed.length)?'#ff8c42':'#9fe6b0';
-  renderFormula(d);
-  renderGov(d);
-  // 차트
-  const t=new Date().toLocaleTimeString('ko-KR',{hour12:false});
-  const L=chart.data.labels; L.push(t); if(L.length>MAXPTS)L.shift();
+  setVal('temp',d.temp_c,1);setVal('hum',d.humidity,1);
+  warn('k-co2',(d.co2_ppm||0)>1000,(d.co2_ppm||0)>2000);
+  warn('k-pm25',(d.pm25||0)>35,(d.pm25||0)>75);
+  warn('k-temp',(d.temp_c||0)>=29,(d.temp_c||0)>=31);
+  warn('k-hum',(d.humidity!=null&&(d.humidity>=65||d.humidity<=30)),(d.humidity!=null&&(d.humidity>=75||d.humidity<=20)));
+  renderFormula(d);renderGov(d);
+  const t=new Date().toLocaleTimeString('ko-KR',{hour12:false});const L=chart.data.labels;L.push(t);if(L.length>MAXPTS)L.shift();
   const push=(i,v)=>{const a=chart.data.datasets[i].data;a.push(v??null);if(a.length>MAXPTS)a.shift();};
-  push(0,d.co2_ppm);push(1,d.gas_raw);push(2,d.temp_c);push(3,d.humidity);
-  chart.update('none');
+  push(0,d.co2_ppm);push(1,d.pm25);push(2,d.temp_c);push(3,d.humidity);chart.update('none');
 });
-es.addEventListener('approved',()=>{document.getElementById('approveBtn').style.display='none';});
+es.addEventListener('approved',()=>{document.getElementById('approveBtn').style.display='none';addEvent('관리자 승인 → 고위험 제어 실행');});
 es.onerror=()=>{const c=document.getElementById('conn');c.className='conn off';document.getElementById('connText').textContent='연결 끊김 — 재시도';};
 
-function warn(id,w,c){const el=document.getElementById(id);el.classList.toggle('warn',!!w&&!c);el.classList.toggle('crit',!!c);}
-
-// ----- 공식 체인: CO2면 Rudnick-Milton, 아니면 트리거 근거 -----
-function renderFormula(d){
-  const fm=d.formula||{}, col=(TIER[d.tier]||TIER.MONITOR).c;
-  const res=`<span class="res" style="background:${col}22;color:${col}">${d.tier}</span>`;
-  let html;
-  if(fm.co2!=null && fm.poi!=null){
-    html=`CO₂ <b>${num(fm.co2)}</b>ppm<span class="arw">→</span>재호흡률 f <b>${pct(fm.f,2)}</b>`
-      +`<span class="arw">→</span>감염확률 PoI <b>${pct(fm.poi,1)}</b><span class="arw">→</span>${res}`;
-  } else {
-    const drv=[]; if(d.gas_raw!=null)drv.push(`가스 <b>${num(d.gas_raw)}</b>`);
-    if(d.temp_c!=null)drv.push(`온도 <b>${num(d.temp_c)}℃</b>`);
-    if(d.humidity!=null)drv.push(`습도 <b>${num(d.humidity)}%</b>`);
-    html=`${drv.join('<span class="arw">·</span>')}<span class="arw">→</span>환경위험 트리거<span class="arw">→</span>${res}`;
-    if(d.governance==='auto'||['ALERT','HIGH_RISK'].includes(d.tier)) html+=` <span style="color:#9fc0ff;font-size:12px">(외부 선제경보 반영 가능)</span>`;
-  }
-  document.getElementById('fchain').innerHTML=html;
+function renderFormula(d){const fm=d.formula||{},col=(TIER[d.tier]||TIER.MONITOR).c;
+  const res=`<b style="color:${col}">${d.tier}</b>`;
+  if(fm.co2!=null&&fm.poi!=null){
+    document.getElementById('fchain').innerHTML=`CO₂ <b>${num(fm.co2)}</b><span class="arw">→</span>재호흡 f <b>${pct(fm.f,2)}</b><span class="arw">→</span>PoI <b>${pct(fm.poi,1)}</b><span class="arw">→</span>${res}`;
+  }else{const drv=[];if(d.temp_c!=null)drv.push(`온도 <b>${num(d.temp_c)}℃</b>`);if(d.humidity!=null)drv.push(`습도 <b>${num(d.humidity)}%</b>`);
+    document.getElementById('fchain').innerHTML=`${drv.join('<span class="arw">·</span>')}<span class="arw">→</span>환경위험<span class="arw">→</span>${res}`;}
 }
-function renderGov(d){
-  const g=document.getElementById('gov');
-  const map={auto:'🤖 AI 자동제어',approval_required:'⏳ 승인 대기',auto_restore:'↩ 정상복귀 자동',approved:'✓ 승인됨',none:'대기'};
-  const cls=(d.governance&&d.governance!=='none')?d.governance:'idle';
-  g.className='gov '+cls; g.textContent=map[d.governance]||'대기';
+function renderGov(d){const g=document.getElementById('gov');
+  const map={auto:'🤖 AI 자동제어',approval_required:'⏳ 승인 대기',auto_restore:'↩ 정상복귀',approved:'✓ 승인됨',none:'대기'};
+  g.className='gov '+((d.governance&&d.governance!=='none')?d.governance:'idle');g.textContent=map[d.governance]||'대기';
   document.getElementById('approveBtn').style.display=d.approval_required?'inline-block':'none';
+  if(d.governance==='auto')addEvent('🤖 공청기 자동 급속 가동');
+  if(d.governance==='auto_restore')addEvent('↩ 정상 복귀 — 자동 종료');
 }
-
-// ----- 제어 -----
-async function ctl(a){try{await fetch('/api/v1/sensor/control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({space_id:SPACE,action:a})});}catch(e){}}
+async function ctl(a){try{await fetch('/api/v1/sensor/control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({space_id:SPACE,action:a})});addEvent('수동 제어: '+a.toUpperCase());}catch(e){}}
 async function approve(){try{await fetch('/api/v1/sensor/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({space_id:SPACE})});document.getElementById('approveBtn').style.display='none';}catch(e){}}
 
-// ----- 외부신호 지역 -----
-async function loadRegions(){
-  try{const r=await fetch('/api/v1/external/regions');const j=await r.json();
-    const sel=document.getElementById('regionSel');
-    if(j.available&&j.regions&&j.regions.length){
-      sel.innerHTML='<option value="">— 지역 선택 —</option>'+
-        j.regions.map(x=>`<option value="${x.region}">${x.region} · 시즌피크 ${x.peak_score}(${x.peak_level}) · ${x.lead_days!=null?x.lead_days+'일 선행':'—'}</option>`).join('');
-    }else{sel.innerHTML='<option value="">UIS 미연결</option>';}
-  }catch(e){document.getElementById('regionSel').innerHTML='<option>오류</option>';}
-}
-async function selectRegion(){
-  const region=document.getElementById('regionSel').value;
-  const el=document.getElementById('ext-sig'); const bd=document.getElementById('extBadge');
-  if(!region){el.textContent='— 지역 미선택';bd.classList.add('flash');setTimeout(()=>bd.classList.remove('flash'),600);return;}
-  try{const r=await fetch('/api/v1/external/select-region',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({region})});
-    const j=await r.json();
-    if(j.selected){const s=j.selected;
-      const lead=s.lead_days!=null?`<b style="color:#42d77d">${s.lead_days}일 선행</b> `:'';
-      el.innerHTML=`${lead}<b>${s.basis_level}</b> → 선제 <b style="color:#ff8c42">${j.boost_tier}</b>`;
-      bd.classList.add('flash');setTimeout(()=>bd.classList.remove('flash'),600);
-      if(s.leading_signals&&s.leading_signals.length){
-        bd.title=`선행신호 ${s.leading_signals.map(x=>x.layer+':'+x.value).join(', ')} → 확진피크 ${s.conf_peak_date}`;
-      }
-    }else{el.textContent='데이터 없음';}
-  }catch(e){el.textContent='오류';}
-}
-
-// ----- 코웨이 상태(8초) — SSE 가 갱신한 CO2/PM2.5 는 덮어쓰지 않음 -----
-async function loadCoway(){
-  try{const r=await fetch('/api/v1/sensor/coway-status');const j=await r.json();
-    const pw=document.getElementById('cw-pw');
-    if(j.available){
-      document.getElementById('cw-power').textContent=j.is_on?'ON':'OFF';
-      pw.classList.toggle('on',!!j.is_on);
-      document.getElementById('cw-fan').textContent=j.rapid_mode?'급속':(j.auto_mode?'자동':('단계'+(j.fan_speed??'-')));
-      document.getElementById('cw-watt').textContent=(j.power_est_w!=null?j.power_est_w:'—');
-      // 센서 미수신 시에만 코웨이 실측으로 카드 채움(SSE 우선)
-      if(_lastTs==null||Date.now()-_lastTs>9000){
-        if(j.co2!=null)setVal('co2',j.co2); if(j.pm25!=null)setVal('pm25',j.pm25);
-      }
-    }else{document.getElementById('cw-power').textContent='미연결';pw.classList.remove('on');
-      document.getElementById('modeTag').textContent='시뮬';}
+// 다병동 그리드 + 히트맵 (overview 폴링)
+async function loadOverview(){
+  try{const r=await fetch('/api/v1/sensor/spaces/overview');const j=await r.json();
+    if(!j.spaces)return;
+    document.getElementById('wardstrip').innerHTML=j.spaces.map(s=>{const c=(TIER[s.tier]||TIER.MONITOR).c;
+      const act=s.source==='실센서'?'active':'';
+      return `<div class="wcard ${act}" style="--wc:${c}"><span class="wsrc">${s.source}</span>
+        <div class="wn">${s.space_name}</div><div class="wt">${s.tier}</div>
+        <div class="ws">${(TIER[s.tier]||{}).ko||''}</div></div>`;}).join('');
+    document.getElementById('heatgrid').innerHTML=j.spaces.map(s=>{const c=(TIER[s.tier]||TIER.MONITOR).c;
+      return `<div class="hcell" style="--hc:${c};background:${c}"><div class="hn">${s.space_name.replace(' 다인실','').replace('1층 ','')}</div>${s.tier.slice(0,4)}</div>`;}).join('');
   }catch(e){}
 }
-loadRegions(); loadCoway(); setInterval(loadCoway,8000);
+
+async function loadRegions(){try{const r=await fetch('/api/v1/external/regions');const j=await r.json();const sel=document.getElementById('regionSel');
+  if(j.available&&j.regions&&j.regions.length){sel.innerHTML='<option value="">— 지역 선택 —</option>'+
+    j.regions.map(x=>`<option value="${x.region}">${x.region} · 피크 ${x.peak_score}(${x.peak_level}) · ${x.lead_days!=null?x.lead_days+'일선행':'—'}</option>`).join('');}
+  else sel.innerHTML='<option value="">UIS 미연결</option>';}catch(e){document.getElementById('regionSel').innerHTML='<option>오류</option>';}}
+async function selectRegion(){const region=document.getElementById('regionSel').value;const el=document.getElementById('ext-sig');
+  if(!region){el.textContent='지역 미선택';return;}
+  try{const r=await fetch('/api/v1/external/select-region',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({region})});const j=await r.json();
+    if(j.selected){const s=j.selected;const lead=s.lead_days!=null?`<b style="color:#42d77d">${s.lead_days}일선행</b> `:'';
+      el.innerHTML=`${lead}<b>${s.basis_level}</b>→선제 <b style="color:#ff8c42">${j.boost_tier}</b>`;
+      addEvent(`🌐 ${region} 외부신호 → 선제 ${j.boost_tier}`);}else el.textContent='데이터 없음';}catch(e){el.textContent='오류';}}
+const AQG={1:'좋음',2:'보통',3:'나쁨',4:'매우나쁨'};
+async function loadCoway(){try{const r=await fetch('/api/v1/sensor/coway-status');const j=await r.json();
+  if(j.available){
+    if(j.pm10!=null)document.getElementById('v-pm10').textContent=Math.round(j.pm10);
+    if(j.aq_grade!=null)document.getElementById('aqgrade').textContent='등급 '+j.aq_grade+'·'+(AQG[j.aq_grade]||'');
+    if(_lastTs==null||Date.now()-_lastTs>9000){if(j.pm25!=null)setVal('pm25',j.pm25);if(j.co2!=null)setVal('co2',j.co2);}
+  }else document.getElementById('modeTag').textContent='시뮬';}catch(e){}}
+
+loadOverview();setInterval(loadOverview,5000);
+loadRegions();loadCoway();setInterval(loadCoway,8000);
 </script>
 </body>
 </html>
