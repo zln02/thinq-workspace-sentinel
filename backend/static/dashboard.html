@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" translate="no">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="google" content="notranslate" />
 <title>ThinQ Sentinel · 감염관리 통합관제</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
@@ -159,8 +160,8 @@
       <div class="mapwrap"><svg id="korea" viewBox="0 0 320 200"></svg></div>
       <div class="maplegend"><span><i style="background:#dc2626"></i>높음</span><span><i style="background:#f97316"></i>주의</span><span><i style="background:#fbbf24"></i>관심</span><span><i style="background:#cbd5e1"></i>낮음</span></div>
       <div class="extsel" id="ext-sig">지역을 클릭하면 선제 경보 연동</div></div>
-    <div class="card"><div class="ct">가전 오케스트레이션 <span class="meta" id="achTarget">목표 ACH —</span></div><div class="orch" id="orchList" style="max-height:165px"></div></div>
-    <div class="card orch"><div class="ct">이벤트 로그</div><div class="tl" id="tlList" style="max-height:none"></div></div>
+    <div class="card"><div class="ct">가전 오케스트레이션 <span class="meta" id="achTarget">목표 ACH —</span></div><div class="orch" id="orchList"></div></div>
+    <div class="card" style="display:flex;flex-direction:column;min-height:0"><div class="ct">이벤트 로그</div><div class="tl" id="tlList" style="flex:1;max-height:none"></div></div>
   </div>
 
   <!-- 하단: 타임라인 통합 / 제어 -->
