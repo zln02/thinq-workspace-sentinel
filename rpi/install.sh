@@ -36,9 +36,22 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now sentinel-bridge.service
 echo "[install] 브릿지 서비스 기동 — 상태: systemctl status sentinel-bridge"
 
-# 4) 키오스크 autostart (LXDE/Wayfire 데스크톱 세션)
-cp "${HERE}/kiosk.sh" "${APP_DIR}/kiosk.sh"
-chmod +x "${APP_DIR}/kiosk.sh"
+# 4) 키오스크 + 브릿지 autostart
+#    Raspberry Pi OS Bookworm 기본 컴포지터는 labwc(Wayland)다.
+#    SSH 로 chromium 을 띄우면 세션 밖이라 창이 안 뜨므로(검증됨),
+#    labwc autostart(세션 내부)로 브릿지+키오스크를 함께 올린다.
+cp "${HERE}/kiosk.sh" "${APP_DIR}/kiosk.sh" 2>/dev/null || true
+chmod +x "${APP_DIR}/kiosk.sh" 2>/dev/null || true
+sudo apt-get install -y -qq swayidle wtype 2>/dev/null || true
+
+if [ -d /usr/bin ] && command -v labwc >/dev/null 2>&1 || [ -d "${HOME_DIR}/.config/labwc" ] || true; then
+  # labwc(Wayland) — 권장 (브릿지+키오스크 일괄, 시리얼 중복 방지 포함)
+  mkdir -p "${HOME_DIR}/.config/labwc"
+  cp "${HERE}/labwc-autostart" "${HOME_DIR}/.config/labwc/autostart"
+  chmod +x "${HOME_DIR}/.config/labwc/autostart"
+  echo "[install] labwc autostart 등록 (브릿지+키오스크) — 재부팅 시 자동 기동"
+fi
+# (구형 LXDE/X11 폴백) — .config/autostart .desktop
 AUTOSTART_DIR="${HOME_DIR}/.config/autostart"
 mkdir -p "${AUTOSTART_DIR}"
 cat > "${AUTOSTART_DIR}/sentinel-kiosk.desktop" <<EOF
@@ -51,7 +64,7 @@ EOF
 chown -R "${USER_NAME}:${USER_NAME}" "${APP_DIR}" "${HOME_DIR}/.config" || true
 
 echo
-echo "[install] 완료 ✅"
-echo "  - 브릿지: sudo systemctl status sentinel-bridge   (로그: journalctl -u sentinel-bridge -f)"
-echo "  - 키오스크: 재부팅 또는 데스크톱 재로그인 시 자동 풀스크린"
-echo "  - 수동 키오스크 테스트: ${APP_DIR}/kiosk.sh"
+echo "[install] 완료 ✅  → 재부팅하면 브릿지+대시보드 자동 기동"
+echo "  - labwc(Bookworm/Wayland): ~/.config/labwc/autostart 가 브릿지+키오스크 일괄 기동"
+echo "  - 브릿지 로그: tail -f ~/bridge.log"
+echo "  - 브릿지 systemd 대안: sudo systemctl status sentinel-bridge"

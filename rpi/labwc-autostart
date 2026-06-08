@@ -1,0 +1,38 @@
+#!/bin/sh
+# ThinQ Sentinel 시연 자동시작 (Raspberry Pi OS Bookworm · labwc/Wayland)
+#
+# 배치 위치: ~/.config/labwc/autostart  (로그인 세션 시작 시 자동 실행)
+# 설치:      bash rpi/install.sh  (또는 이 파일을 위 경로에 복사 후 chmod +x)
+#
+# 재부팅 한 번으로 ① 센서 브릿지 ② 키오스크 대시보드 둘 다 기동된다.
+# 주의: Raspberry Pi OS Bookworm 기본 컴포지터는 labwc(Wayland)다.
+#       SSH 로 chromium 을 띄우면 세션 밖이라 창이 안 뜨므로, 반드시
+#       이 autostart(세션 내부)로 키오스크를 올려야 한다.
+
+# 환경 (필요시 수정)
+GCP_API="http://100.96.227.23:8003"        # GCP Tailscale IP
+SPACE="ward_a"
+
+# 1) 센서 브릿지 — python 중복 정리 후 1개만 (시리얼 충돌 방지)
+for p in $(pgrep -f "bridge.py"); do
+  [ "$(cat /proc/$p/comm 2>/dev/null)" = "python3" ] && kill -9 "$p" 2>/dev/null
+done
+(
+  export SENTINEL_API="${GCP_API}/api/v1/sensor/reading" SPACE_ID="${SPACE}"
+  # 아두이노 USB(/dev/ttyACM0) 인식 대기
+  for i in $(seq 1 20); do [ -e /dev/ttyACM0 ] && break; sleep 1; done
+  sleep 2
+  python3 -u "$HOME/bridge.py" >"$HOME/bridge.log" 2>&1
+) &
+
+# 2) 절전/화면꺼짐 차단
+swayidle -w timeout 0 "" 2>/dev/null &
+
+# 3) 키오스크 대시보드 (Wayland ozone, 풀스크린)
+(
+  sleep 8   # 네트워크/백엔드 준비 대기
+  chromium --ozone-platform=wayland --kiosk --noerrdialogs --disable-infobars \
+    --disable-session-crashed-bubble --no-first-run --incognito --password-store=basic \
+    --disable-features=Translate --check-for-update-interval=31536000 \
+    "${GCP_API}/dashboard"
+) &

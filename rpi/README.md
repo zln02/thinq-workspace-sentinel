@@ -11,9 +11,16 @@
 | 파일 | 역할 |
 |---|---|
 | `bridge.py` | `/dev/ttyACM0` 시리얼 파싱 → `POST /api/v1/sensor/reading` (가스 이동평균 평활) |
-| `sentinel-bridge.service` | 브릿지 systemd 상주 서비스 (`Restart=always` — 시연 중 끊겨도 자동 복구) |
-| `kiosk.sh` | 크로미움 풀스크린 키오스크 (절전 차단 + 백엔드 헬스 대기 + 크래시 팝업 억제) |
-| `install.sh` | 원샷 설치 (의존성 + 브릿지 서비스 + 키오스크 autostart) |
+| `labwc-autostart` | **(권장)** Bookworm/Wayland 세션 자동시작 — 브릿지+키오스크 일괄, 시리얼 중복 방지 |
+| `sentinel-bridge.service` | 브릿지 systemd 상주 서비스 (대안, `Restart=always`) |
+| `kiosk.sh` | 크로미움 풀스크린 키오스크 스크립트 (수동 테스트용) |
+| `install.sh` | 원샷 설치 (의존성 + autostart 등록) |
+
+## ⚠️ 컴포지터 주의 (실측 검증)
+Raspberry Pi OS **Bookworm 기본 컴포지터는 labwc(Wayland)**다.
+- **SSH 로 `chromium` 을 띄우면 세션 밖이라 창이 안 뜬다**(프로세스는 잠깐 살았다 죽음). 키오스크는 반드시 **세션 내부 autostart**(`~/.config/labwc/autostart`)로 올려야 한다.
+- 브릿지가 **2개 이상 뜨면 `/dev/ttyACM0` 시리얼을 동시 점유해 읽기가 깨진다**(데이터 안 흐름). autostart 가 python 브릿지를 정리 후 1개만 띄운다.
+- `pkill -f bridge.py` 는 **SSH `--cmd` 문자열까지 매칭해 자기 세션을 죽일 수 있다**. python 프로세스만 골라 종료할 것: `for p in $(pgrep -f bridge.py); do [ "$(cat /proc/$p/comm)" = python3 ] && kill -9 $p; done`
 
 ## 설치 (라파이에서 1회)
 ```bash
