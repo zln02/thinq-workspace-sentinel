@@ -37,7 +37,8 @@
   .sec-t{font-size:13px;font-weight:700;color:#334155;padding:14px 16px 2px}
   .act{display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid #f1f5f9}
   .act:first-of-type{border-top:none}
-  .act .ai{width:38px;height:38px;border-radius:10px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:19px;flex:none}
+  .act .ai{width:40px;height:40px;border-radius:11px;background:var(--brandbg);color:var(--brand);display:flex;align-items:center;justify-content:center;flex:none}
+  .act .ai svg{width:22px;height:22px}
   .act .at{flex:1}.act .at b{font-size:14px;font-weight:700}.act .at small{display:block;font-size:11.5px;color:var(--muted);margin-top:1px}
   .act .as{font-size:12px;font-weight:800;padding:4px 11px;border-radius:20px;white-space:nowrap}
   .as.on{background:var(--okbg);color:var(--ok)}.as.off{background:#f1f5f9;color:var(--dim)}
@@ -79,10 +80,10 @@
 
   <!-- 지금 병원이 하는 일 -->
   <div class="card">
-    <div class="sec-t">🛡️ 지금 병원이 하는 일</div>
-    <div class="act"><div class="ai">🌀</div><div class="at"><b>공기청정기</b><small>병동 공기를 정화합니다</small></div><div class="as off" id="a-purifier">대기</div></div>
-    <div class="act"><div class="ai">🌬️</div><div class="at"><b>환기 시스템</b><small>신선한 공기로 교체합니다</small></div><div class="as off" id="a-vent">기본</div></div>
-    <div class="act"><div class="ai">👁️</div><div class="at"><b>24시간 자동 감시</b><small>감염 위험을 실시간 확인합니다</small></div><div class="as on">가동 중</div></div>
+    <div class="sec-t">지금 병원이 하는 일</div>
+    <div class="act"><div class="ai" id="ic-purifier"></div><div class="at"><b>공기청정기</b><small>병동 공기를 정화합니다</small></div><div class="as off" id="a-purifier">대기</div></div>
+    <div class="act"><div class="ai" id="ic-vent"></div><div class="at"><b>환기 시스템</b><small>신선한 공기로 교체합니다</small></div><div class="as off" id="a-vent">기본</div></div>
+    <div class="act"><div class="ai" id="ic-eye"></div><div class="at"><b>24시간 자동 감시</b><small>감염 위험을 실시간 확인합니다</small></div><div class="as on">가동 중</div></div>
   </div>
 
   <!-- 공기 상태 -->
@@ -180,6 +181,11 @@ async function loadRegion(){try{
      ${ld?`<br><span style="font-size:11.5px;color:#94a3b8">${ld}</span>`:''}`;
   }catch(e){document.getElementById('region').textContent='지역 정보를 불러오지 못했습니다.';}}
 
+// 가전 아이콘 (Lucide MIT)
+const _svg=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+document.getElementById('ic-purifier').innerHTML=_svg('<path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/>');
+document.getElementById('ic-vent').innerHTML=_svg('<circle cx="12" cy="12" r="9"/><path d="M12 12 8 8M12 12l5 1M12 12l-2 5"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/>');
+document.getElementById('ic-eye').innerHTML=_svg('<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>');
 if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
 if('Notification' in window&&Notification.permission==='granted'){_notif=true;document.getElementById('notifBtn').textContent='켜짐 ✓';document.getElementById('notifBtn').style.background='#15803d';}
 setState('MONITOR');loadCoway();setInterval(loadCoway,8000);loadRegion();setInterval(loadRegion,15000);
