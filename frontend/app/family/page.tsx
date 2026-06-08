@@ -3,9 +3,18 @@
 
 import Link from "next/link";
 import { Home, Heart, Activity, Wind, Bell, ShieldAlert, Thermometer, HeartPulse, AlertCircle } from "lucide-react";
+import { useLiveWard } from "@/lib/useSentinel";
+
+function pm25Grade(v: number | null) {
+  if (v == null) return "측정중";
+  if (v <= 15) return "좋음";
+  if (v <= 35) return "보통";
+  if (v <= 75) return "나쁨";
+  return "매우나쁨";
+}
 
 export default function FamilyPage() {
-  // 💡 위험도가 높은 202호 박점순 어르신 데이터를 예시로 사용
+  // 환자 바이탈은 별도 의료 API 영역(유지). 병실 환경 수치는 실센서(ward_a) 실연동.
   const mockPatient = {
     room: "202",
     name: "박점순",
@@ -13,6 +22,10 @@ export default function FamilyPage() {
     status: "고열 감지",
     vitals: { bt: 38.5, hr: 115, bp: "155/100" }
   };
+  const { data: live } = useLiveWard("ward_a");
+  const tempTxt = live?.temp_c != null ? live.temp_c.toFixed(1) : "—";
+  const humTxt = live?.humidity != null ? Math.round(live.humidity).toString() : "—";
+  const pm25 = live?.pm25 ?? null;
 
   return (
     <main className="min-h-screen bg-slate-200 flex items-center justify-center py-10 font-sans">
@@ -69,13 +82,13 @@ export default function FamilyPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-1.5 text-center">
                 <Thermometer className="text-blue-500 mb-1" size={24} />
-                <span className="text-sm font-bold text-slate-700">26.1°C / 60%</span>
-                <span className="text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded-md">에어컨 냉방 가동중</span>
+                <span className="text-sm font-bold text-slate-700">{tempTxt}°C / {humTxt}%</span>
+                <span className="text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded-md">실센서 실시간</span>
               </div>
               <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-1.5 text-center">
                 <Activity className="text-orange-500 mb-1" size={24} />
-                <span className="text-sm font-bold text-slate-700">나쁨 (38μg)</span>
-                <span className="text-[10px] text-orange-600 font-bold bg-orange-50 px-2 py-0.5 rounded-md">환기시스템 최대가동</span>
+                <span className="text-sm font-bold text-slate-700">{pm25Grade(pm25)}{pm25 != null ? ` (${Math.round(pm25)}μg)` : ""}</span>
+                <span className="text-[10px] text-orange-600 font-bold bg-orange-50 px-2 py-0.5 rounded-md">코웨이 실측</span>
               </div>
             </div>
           </div>
