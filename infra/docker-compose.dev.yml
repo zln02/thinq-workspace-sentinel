@@ -66,6 +66,9 @@ services:
       # 코웨이 실기기 어댑터 계정 (.env 에서 주입, 미설정 시 어댑터 graceful 비활성)
       COWAY_USERNAME: ${COWAY_USERNAME:-}
       COWAY_PASSWORD: ${COWAY_PASSWORD:-}
+      # 삼성 SmartThings 에어컨 (PAT 토큰, 미설정 시 graceful 비활성)
+      SMARTTHINGS_TOKEN: ${SMARTTHINGS_TOKEN:-}
+      SMARTTHINGS_AC_DEVICE_ID: ${SMARTTHINGS_AC_DEVICE_ID:-}
     depends_on:
       sentinel-db-dev:
         condition: service_healthy

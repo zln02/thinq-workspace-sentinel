@@ -162,6 +162,31 @@ async def _power_coway(on: bool) -> Optional[dict]:
     return None
 
 
+async def _control_ac(on: bool, mode: str = "WIND", wind: str = "HIGH") -> Optional[dict]:
+    """삼성 에어컨(SmartThings) 제어 — 위험 시 송풍/제습으로 환기 보조(Q_aux).
+
+    SMARTTHINGS_TOKEN 미설정 시 어댑터 None → 조용히 skip(데모는 오케스트레이션 표시).
+    """
+    try:
+        from backend.api.main import state
+
+        ac = state.get("ac")
+        if not ac:
+            return None
+        if not on:
+            return await ac.async_post_device_control(
+                "ac-1", {"operation": {"airConOperationMode": "OFF"}}
+            )
+        return await ac.async_post_device_control("ac-1", {
+            "operation": {"airConOperationMode": "ON"},
+            "airConMode": {"mode": mode},
+            "airFlow": {"windStrength": wind},
+        })
+    except Exception as e:  # noqa: BLE001
+        logger.warning("에어컨 제어 실패: %s", e)
+    return None
+
+
 async def _ward_list(con) -> list[tuple]:
     """전체 WARD (site_id, space_id) 목록 — space_name 순. 60초 캐시."""
     now = time.time()
@@ -260,9 +285,11 @@ async def ingest_reading(r: SensorReading):
     elif tier in _ACTIVE_TIERS and prev not in _ACTIVE_TIERS:
         await _power_coway(True)                             # 전원 확실히 ON
         coway_action = await _control_coway("TURBO")        # ALERT/HIGH_RISK 진입 → 자동 급속
+        await _control_ac(True, mode="WIND", wind="HIGH")   # 에어컨 송풍 → 환기 보조(Q_aux)
         governance = "auto"
     elif tier not in _ACTIVE_TIERS and prev in _ACTIVE_TIERS:
         coway_action = await _power_coway(False)            # 정상 복귀 → 전원 OFF (시연)
+        await _control_ac(False)                            # 에어컨도 OFF
         _pending_approval.pop(r.space_id, None)
         governance = "auto_restore"
 
@@ -331,6 +358,10 @@ async def manual_control(req: ControlReq):
         res = await _control_coway("TURBO")
     elif a == "auto":
         res = await _control_coway("LOW")
+    elif a == "ac_on":
+        res = await _control_ac(True, mode="WIND", wind="HIGH")
+    elif a == "ac_off":
+        res = await _control_ac(False)
     else:
         return {"ok": False, "reason": f"알 수 없는 action: {req.action}"}
     publish_live(req.space_id, {
@@ -350,6 +381,20 @@ async def coway_status():
             return {"available": False, "reason": "코웨이 어댑터 미설정"}
         aq = await coway.async_get_air_quality()
         return {"available": True, **aq}
+    except Exception as e:  # noqa: BLE001
+        return {"available": False, "error": str(e)[:120]}
+
+
+@router.get("/ac-status")
+async def ac_status():
+    """삼성 에어컨(SmartThings) 실시간 상태 — 전원/모드/설정온도/풍량/실내온도."""
+    try:
+        from backend.api.main import state
+
+        ac = state.get("ac")
+        if not ac:
+            return {"available": False, "reason": "SmartThings 에어컨 어댑터 미설정 (토큰 필요)"}
+        return await ac.async_get_status()
     except Exception as e:  # noqa: BLE001
         return {"available": False, "error": str(e)[:120]}
 
