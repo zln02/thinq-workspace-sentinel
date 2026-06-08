@@ -36,8 +36,8 @@ from backend.services.uis_reader import (
 )
 from pipeline.simulator.runner import SCENARIO_SEASON, run
 
-DB_DSN = os.getenv("DATABASE_URL",
-                   "postgresql://uis_user:uis_dev_placeholder_20260414@localhost:5433/urban_immune")
+# 자격증명은 소스에 두지 않음 — DATABASE_URL 을 .env/compose 로 주입 (미설정 시 비번 없는 로컬 기본)
+DB_DSN = os.getenv("DATABASE_URL", "postgresql://sentinel@localhost:55432/sentinel_dev")
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6380/0")
 
 state: dict = {}
@@ -100,29 +100,32 @@ app.mount(
 )
 
 
+_STATIC_DIR = _pl.Path(__file__).parent.parent / "static"
+_NOCACHE = {"Cache-Control": "no-cache, no-store, must-revalidate"}
+
+
+def _serve_html(filename: str):
+    """HTML 서빙 — 변경 API 인증키(SENTINEL_API_KEY)를 placeholder 에 주입.
+
+    데모(키 미설정)면 빈 문자열 → 인증 비활성과 정합. 운영(키 설정)이면
+    브라우저 제어 fetch 가 동일 키를 X-API-Key 로 전송(same-origin)."""
+    from fastapi.responses import HTMLResponse
+
+    html = (_STATIC_DIR / filename).read_text(encoding="utf-8")
+    html = html.replace("__SENTINEL_API_KEY__", os.getenv("SENTINEL_API_KEY", ""))
+    return HTMLResponse(html, headers=_NOCACHE)
+
+
 @app.get("/dashboard")
 async def dashboard():
     """라파이 크로미움 키오스크용 실시간 대시보드(단일 HTML, same-origin SSE)."""
-    import pathlib
-
-    from fastapi.responses import FileResponse
-
-    p = pathlib.Path(__file__).parent.parent / "static" / "dashboard.html"
-    # 키오스크가 항상 최신 대시보드를 받도록 no-cache (배포 후 새로고침만으로 반영)
-    return FileResponse(str(p), media_type="text/html",
-                        headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
-
-
-_STATIC_DIR = _pl.Path(__file__).parent.parent / "static"
+    return _serve_html("dashboard.html")
 
 
 @app.get("/m")
 async def mobile_pwa():
     """PWA 모바일 대시보드 (홈화면 설치 · 경보 알림)."""
-    from fastapi.responses import FileResponse
-
-    return FileResponse(str(_STATIC_DIR / "m.html"), media_type="text/html",
-                        headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
+    return _serve_html("m.html")
 
 
 @app.get("/sw.js")

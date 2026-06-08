@@ -18,9 +18,10 @@ from typing import Optional
 import asyncpg
 
 # UIS DB는 sentinel DB와 별개 — 전용 DSN (urban_immune)
+# 자격증명은 소스에 두지 않음 — UIS_DATABASE_URL 을 .env 로 주입 (미설정 시 비번 없는 기본)
 UIS_DSN = os.getenv(
     "UIS_DATABASE_URL",
-    "postgresql://uis_user:uis_dev_placeholder_20260414@localhost:5432/urban_immune",
+    "postgresql://uis_user@localhost:5432/urban_immune",
 )
 
 # UIS 병원체명 → sentinel 병원체 코드

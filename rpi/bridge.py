@@ -25,6 +25,7 @@ PORT = os.getenv("SERIAL_PORT", "/dev/ttyACM0")
 BAUD = int(os.getenv("BAUD", "9600"))
 API = os.getenv("SENTINEL_API", "http://100.96.227.23:8003/api/v1/sensor/reading")
 SPACE = os.getenv("SPACE_ID", "ward_a")
+API_KEY = os.getenv("SENTINEL_API_KEY", "")  # 백엔드 인증키(설정 시 헤더 전송)
 
 PAT = re.compile(r"온도:([\d.]+)C 습도:([\d.]+)% 단계:(\d+) 가스:(\d+)")
 
@@ -53,7 +54,8 @@ def main():
             "gas_raw": round(gas_smooth, 1),
         }
         try:
-            r = requests.post(API, json=payload, timeout=4)
+            hdr = {"X-API-Key": API_KEY} if API_KEY else {}
+            r = requests.post(API, json=payload, headers=hdr, timeout=4)
             j = r.json()
             print(f"  {temp}C {hum}% gas={gas} → tier={j.get('tier')} coway={j.get('coway')}")
         except Exception as e:  # noqa: BLE001
