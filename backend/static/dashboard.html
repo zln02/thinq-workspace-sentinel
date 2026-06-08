@@ -323,17 +323,32 @@ async function approve(){try{await fetch('/api/v1/sensor/approve',{method:'POST'
 // 병동 클릭 → 3D 방 가전 가동현황
 let _spaces=[];
 function appOn(act){return !['대기','유지','정기','계절 연동','기본'].includes(act);}
+// 공간 타입별 가구 평면도 (다인실·음압격리·식당·휴게실 차별화)
+const RTYPE={WARD:'다인실',ISOLATION:'음압격리실',DINING:'공용식당',LOUNGE:'휴게실'};
+function furniture(sp){const t=sp.space_type;
+  if(t==='ISOLATION')
+    return `<rect x="190" y="92" width="80" height="52" rx="7" fill="#fff" stroke="#c4b5fd"/><rect x="190" y="92" width="80" height="15" rx="7" fill="#f3e8ff"/><text x="230" y="126" text-anchor="middle" font-size="9" fill="#9333ea">격리병상 1</text>
+      <text x="230" y="62" text-anchor="middle" font-size="11" font-weight="800" fill="#9333ea">⊖ 음압 유지 · 단독공조</text>
+      <line x1="110" y1="175" x2="155" y2="155" stroke="#9333ea" stroke-width="2" marker-end="url(#ar)"/><line x1="350" y1="175" x2="305" y2="155" stroke="#9333ea" stroke-width="2" marker-end="url(#ar)"/>`;
+  if(t==='DINING'){let s='',n=0;[100,210,320].forEach(x=>[78,158].forEach(y=>{if(n++<6)
+    s+=`<circle cx="${x}" cy="${y}" r="23" fill="#fff" stroke="#cdd6e6"/><circle cx="${x}" cy="${y}" r="9" fill="#fef3e8"/><circle cx="${x-29}" cy="${y}" r="5" fill="#e8edf5"/><circle cx="${x+29}" cy="${y}" r="5" fill="#e8edf5"/><circle cx="${x}" cy="${y-29}" r="5" fill="#e8edf5"/><circle cx="${x}" cy="${y+29}" r="5" fill="#e8edf5"/>`;}));
+    return s+`<text x="230" y="206" text-anchor="middle" font-size="9" fill="#94a3b8">${sp.max_occupancy||50}인 식당 · 식사시간 밀집</text>`;}
+  if(t==='LOUNGE')
+    return `<rect x="75" y="58" width="100" height="28" rx="9" fill="#fff" stroke="#cdd6e6"/><rect x="75" y="98" width="28" height="80" rx="9" fill="#fff" stroke="#cdd6e6"/>
+      <rect x="210" y="135" width="130" height="32" rx="9" fill="#fff" stroke="#cdd6e6"/><ellipse cx="185" cy="118" rx="38" ry="22" fill="#eef5fc" stroke="#cdd6e6"/>
+      <text x="230" y="206" text-anchor="middle" font-size="9" fill="#94a3b8">휴게 라운지 · 소파/탁자</text>`;
+  // WARD 다인실 — 병상 배치
+  const cap=Math.min(sp.max_occupancy||4,6);let s='';const bx=[70,150,230,310];
+  for(let b=0;b<cap;b++){const x=bx[b%4]||70,y=b<4?52:150;
+    s+=`<rect x="${x}" y="${y}" width="58" height="40" rx="5" fill="#fff" stroke="#cdd6e6"/><rect x="${x}" y="${y}" width="58" height="13" rx="5" fill="#e8edf5"/><text x="${x+29}" y="${y+30}" text-anchor="middle" font-size="9" fill="#94a3b8">병상${b+1}</text>`;}
+  return s;}
+
 function openRoom(idx){const sp=_spaces[idx];if(!sp)return;const i=TIER[sp.tier]||TIER.MONITOR;
-  document.getElementById('rm-name').textContent=sp.space_name+(sp.source==='실센서'?' · 실센서':'');
+  const ty=RTYPE[sp.space_type]||sp.space_type, area=sp.area_m2?` · ${Math.round(sp.area_m2)}㎡`:'';
+  document.getElementById('rm-name').innerHTML=`${sp.space_name} <span style="font-size:12px;font-weight:600;color:#94a3b8">${ty}${area}${sp.source==='실센서'?' · 실센서':''}</span>`;
   const rt=document.getElementById('rm-tier');rt.textContent=i.ko;rt.style.background=i.bg;rt.style.color=i.c;
-  // 방 평면도: 외곽 + 출입문 + 병상 배치
-  const cap=Math.min(sp.max_occupancy||4,6);
-  const bedXs=[70,150,230,310];const beds=[];
-  for(let b=0;b<cap;b++){const bx=bedXs[b%4]||70;const by=b<4?52:150;
-    beds.push(`<rect x="${bx}" y="${by}" width="58" height="40" rx="5" fill="#fff" stroke="#cdd6e6"/>
-      <rect x="${bx}" y="${by}" width="58" height="13" rx="5" fill="#e8edf5"/><text x="${bx+29}" y="${by+30}" text-anchor="middle" font-size="9" fill="#94a3b8">병상${b+1}</text>`);}
-  // 가전 위치(평면도 둘레): 공청기·에어컨(천장)·환기(벽)·가습제습
-  const A=APPLIANCES.slice(0,4);const pos=[[62,206,'공기청정기'],[230,28,'에어컨(천장)'],[404,120,'환기구'],[404,206,'가습/제습']];
+  // 가전 위치(둘레): 공청기·에어컨(천장)·환기구·가습제습 — 가동 시 글로우
+  const A=APPLIANCES.slice(0,4);const pos=[[62,206,'공기청정기'],[230,30,'에어컨(천장)'],[404,118,'환기구'],[404,206,'가습/제습']];
   let mk='';
   A.forEach((a,k)=>{const act=a.act(sp.tier);const on=appOn(act);const x=pos[k][0],y=pos[k][1];
     mk+=`${on?`<circle cx="${x}" cy="${y}" r="20" fill="${i.c}" opacity=".16"><animate attributeName="r" values="14;22;14" dur="2s" repeatCount="indefinite"/></circle>`:''}
@@ -341,9 +356,10 @@ function openRoom(idx){const sp=_spaces[idx];if(!sp)return;const i=TIER[sp.tier]
       <g transform="translate(${x-8},${y-8}) scale(0.66)" color="#fff" stroke="#fff">${a.ic}</g>
       <text x="${x}" y="${y+25}" text-anchor="middle" font-size="9.5" font-weight="700" fill="#475569">${pos[k][2]}</text>`;});
   document.getElementById('rm-svg').innerHTML=
-    `<rect x="40" y="22" width="380" height="196" rx="10" fill="#f7f9fc" stroke="#cdd6e6" stroke-width="2"/>
+    `<defs><marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#9333ea"/></marker></defs>
+     <rect x="40" y="22" width="380" height="196" rx="10" fill="#f7f9fc" stroke="#cdd6e6" stroke-width="2"/>
      <rect x="200" y="214" width="60" height="6" fill="#fff"/><text x="230" y="232" text-anchor="middle" font-size="9" fill="#94a3b8">출입문</text>
-     ${beds.join('')}${mk}`;
+     ${furniture(sp)}${mk}`;
   document.getElementById('rm-apps').innerHTML=APPLIANCES.map(a=>{const act=a.act(sp.tier);const on=appOn(act);
     return `<div class="appitem ${on?'on':''}"><span class="ai">${a.ic}</span><span class="at"><b>${a.n}</b><small>${a.lever}</small></span><span class="as">${a.live?'🟢 ':''}${on?act:'대기'}</span></div>`;}).join('');
   document.getElementById('rmodal').classList.add('on');}
