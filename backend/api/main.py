@@ -12,14 +12,18 @@
 from __future__ import annotations
 
 import os
+import pathlib as _pl
 from contextlib import asynccontextmanager
 
 import asyncpg
 import redis.asyncio as redis
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from backend.api.external_live import router as external_router
+from backend.api.sensor import router as sensor_router
 from backend.api.sse import router as sse_router
 from backend.services.external_signal import (
     compute_external_risk_boost,
@@ -43,6 +47,14 @@ state: dict = {}
 async def lifespan(app: FastAPI):
     state["db"] = await asyncpg.create_pool(DB_DSN, min_size=1, max_size=4)
     state["redis"] = redis.from_url(REDIS_URL, decode_responses=True)
+    # 코웨이 실기기 어댑터 (COWAY_USERNAME 설정 시에만 활성, 미설정/미설치면 None)
+    try:
+        from backend.services.coway_adapter import CowayAdapter
+
+        state["coway"] = CowayAdapter() if os.getenv("COWAY_USERNAME") else None
+    except Exception as e:  # noqa: BLE001
+        print(f"[main] Coway 어댑터 비활성: {str(e)[:100]}")
+        state["coway"] = None
     # UIS DB(urban_immune)는 sentinel DB와 별개 — read-only 외부신호 소비용 별도 풀
     try:
         state["uis_db"] = await asyncpg.create_pool(UIS_DSN, min_size=1, max_size=2)
@@ -67,6 +79,26 @@ app.add_middleware(
 )
 
 app.include_router(sse_router)
+app.include_router(sensor_router)
+app.include_router(external_router)
+
+# 음성 안내 mp3 등 정적 파일 (대시보드가 /static/voice_*.mp3 재생 → 띄운 기기 스피커)
+app.mount(
+    "/static",
+    StaticFiles(directory=str(_pl.Path(__file__).parent.parent / "static")),
+    name="static",
+)
+
+
+@app.get("/dashboard")
+async def dashboard():
+    """라파이 크로미움 키오스크용 실시간 대시보드(단일 HTML, same-origin SSE)."""
+    import pathlib
+
+    from fastapi.responses import FileResponse
+
+    p = pathlib.Path(__file__).parent.parent / "static" / "dashboard.html"
+    return FileResponse(str(p), media_type="text/html")
 
 @app.get("/health")
 async def health():
