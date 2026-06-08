@@ -12,17 +12,19 @@
 from __future__ import annotations
 
 import os
+import pathlib as _pl
 from contextlib import asynccontextmanager
 
 import asyncpg
 import redis.asyncio as redis
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from backend.api.sse import router as sse_router
-from backend.api.sensor import router as sensor_router
 from backend.api.external_live import router as external_router
+from backend.api.sensor import router as sensor_router
+from backend.api.sse import router as sse_router
 from backend.services.external_signal import (
     compute_external_risk_boost,
     normalize_signals,
@@ -81,10 +83,6 @@ app.include_router(sensor_router)
 app.include_router(external_router)
 
 # 음성 안내 mp3 등 정적 파일 (대시보드가 /static/voice_*.mp3 재생 → 띄운 기기 스피커)
-import pathlib as _pl
-
-from fastapi.staticfiles import StaticFiles
-
 app.mount(
     "/static",
     StaticFiles(directory=str(_pl.Path(__file__).parent.parent / "static")),
