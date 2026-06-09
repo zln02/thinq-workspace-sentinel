@@ -80,9 +80,13 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="ThinQ Workspace Sentinel", version="0.3.0", lifespan=lifespan)
 
+# 배포·발표장 도메인은 CORS_ORIGINS 환경변수(콤마분리)로 추가. 미설정 시 로컬 기본값만.
+_cors_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
+_cors_origins += [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

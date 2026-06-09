@@ -144,14 +144,28 @@
   button.approve{background:var(--high);color:#fff;border-color:var(--high)}
   .badge{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px}
   .badge b{color:#0f172a}
+  .hcenter{display:flex;align-items:center;gap:14px}
+  .perf{display:flex;gap:16px}
+  .perf span{display:flex;flex-direction:column;align-items:center;line-height:1.1}
+  .perf b{font-size:18px;font-weight:800;color:var(--brand)}
+  .perf small{font-size:9.5px;color:var(--dim)}
 </style>
 </head>
 <body>
 <header>
   <div class="brand"><div class="logo">🏥</div>
     <div><h1>ThinQ Sentinel</h1><div class="sub">LG 디지털요양병원 · 감염관리 통합관제</div></div></div>
-  <div class="hcenter"><div class="hstat" id="hstat" style="background:var(--okbg);color:var(--ok)"><span class="d" style="background:var(--ok)"></span>전체 정상</div></div>
-  <div class="hright"><div class="clock" id="clock">--:--:--</div>
+  <div class="hcenter">
+    <div class="hstat" id="hstat" style="background:var(--okbg);color:var(--ok)"><span class="d" style="background:var(--ok)"></span>전체 정상</div>
+    <div class="perf" id="perf" title="경영성과 지표 (최근 24시간)">
+      <span><b id="p-act">—</b><small>자동 선제대응</small></span>
+      <span><b id="p-poi">—</b><small>평균 PoI저감</small></span>
+      <span><b id="p-spaces">—</b><small>모니터링 병동</small></span>
+    </div>
+  </div>
+  <div class="hright">
+    <button id="demoBtn" onclick="toggleDemo()" style="background:var(--brand);color:#fff;border-color:var(--brand)">▶ 시연 75초</button>
+    <div class="clock" id="clock">--:--:--</div>
     <div id="conn" class="conn off"><span class="d"></span><span id="connText">연결 대기</span></div></div>
 </header>
 <main>
@@ -166,7 +180,7 @@
       <div class="fd" id="tierDesc">센서 수신 대기 중</div><div class="fu" id="updated">— 수신 없음</div>
       <div class="tscale" id="tscale"></div></div>
     <div class="kpis">
-      <div class="kpi" id="k-co2"><div class="kk">CO₂ (SCD41 예정)</div><div class="kv"><span id="v-co2">—</span> <span>ppm</span></div></div>
+      <div class="kpi" id="k-co2" title="현재 코웨이 공청기 실측 CO₂ + 가스 트리거 보조. 표준 CO₂센서(SCD41/MH-Z19B) 연결 시 재호흡률 모델 실측 전환."><div class="kk">CO₂ <span style="color:var(--dim);font-weight:500">보조측정</span></div><div class="kv"><span id="v-co2">—</span> <span>ppm</span></div></div>
       <div class="kpi" id="k-pm25"><div class="kk">PM2.5/10 <span id="aqgrade" style="color:var(--dim)">코웨이</span></div><div class="kv"><span id="v-pm25">—</span>/<span id="v-pm10">—</span></div></div>
       <div class="kpi" id="k-temp"><div class="kk">온도</div><div class="kv"><span id="v-temp">—</span> <span>℃</span></div></div>
       <div class="kpi" id="k-hum"><div class="kk">습도</div><div class="kv"><span id="v-hum">—</span> <span>%</span></div></div>
@@ -290,8 +304,9 @@ function addEvent(txt){const tm=new Date().toLocaleTimeString('ko-KR',{hour12:fa
 
 const es=new EventSource('/api/v1/stream/live/'+SPACE);
 es.addEventListener('live_init',()=>{const c=document.getElementById('conn');c.className='conn ok';document.getElementById('connText').textContent='실시간 연결';addEvent('실시간 스트림 연결됨');});
-let _prevTier=null;
-es.addEventListener('sensor',(e)=>{const d=JSON.parse(e.data);_lastTs=Date.now();tickUpdated();setTier(d.tier);
+let _prevTier=null,_demo=false;
+es.addEventListener('sensor',(e)=>{if(_demo)return;feed(JSON.parse(e.data));});
+function feed(d){_lastTs=Date.now();tickUpdated();setTier(d.tier);
   if(d.tier!==_prevTier){addEvent(`<b style="color:${(TIER[d.tier]||TIER.MONITOR).c}">${d.tier} ${(TIER[d.tier]||{}).ko||''}</b> 전환`);_prevTier=d.tier;}
   if(_audioOn&&d.tier!==_lastVoiceTier){const A=['ALERT','HIGH_RISK','CRITICAL'];
     [VOICE.ALERT,VOICE.HIGH_RISK,VOICE.CRITICAL,VOICE_RESTORE].forEach(a=>{a.pause();a.currentTime=0;});
@@ -303,9 +318,44 @@ es.addEventListener('sensor',(e)=>{const d=JSON.parse(e.data);_lastTs=Date.now()
   renderFormula(d);renderGov(d);
   const t=new Date().toLocaleTimeString('ko-KR',{hour12:false});const L=chart.data.labels;L.push(t);if(L.length>MAXPTS)L.shift();
   const ps=(i,v)=>{const a=chart.data.datasets[i].data;a.push(v??null);if(a.length>MAXPTS)a.shift();};
-  ps(0,d.co2_ppm);ps(1,d.pm25);ps(2,d.temp_c);ps(3,d.humidity);chart.update('none');});
+  ps(0,d.co2_ppm);ps(1,d.pm25);ps(2,d.temp_c);ps(3,d.humidity);chart.update('none');}
 es.addEventListener('approved',()=>{document.getElementById('approveBtn').style.display='none';addEvent('관리자 승인 → 고위험 제어 실행');});
 es.onerror=()=>{const c=document.getElementById('conn');c.className='conn off';document.getElementById('connText').textContent='연결 끊김';};
+
+// ── 시연 75초 자동 시나리오 (발표장 실센서/네트워크 무관 폴백 보험) ──
+// 기존 feed() 렌더링 경로를 그대로 사용 → 실연동과 동일한 화면. _demo=true 동안 라이브 sensor 무시.
+const _demoSeq=[
+ {s:'정상 모니터링',tier:'MONITOR',co2:620,pm25:12,temp:23.5,hum:52,f:0.008,poi:0.004,gov:'none',d:6},
+ {s:'외부 선제경보 — 지역 확산 감지',tier:'CAUTION',co2:780,pm25:18,temp:24.2,hum:55,f:0.015,poi:0.011,gov:'none',d:8},
+ {s:'재실 밀집 — CO₂ 상승',tier:'ALERT',co2:1180,pm25:32,temp:25.6,hum:60,f:0.028,poi:0.082,gov:'auto',d:10},
+ {s:'고위험 — 관리자 승인 대기',tier:'HIGH_RISK',co2:1620,pm25:58,temp:26.8,hum:64,f:0.041,poi:0.171,gov:'approval_required',d:10},
+ {s:'위급 — 긴급 방역 절차',tier:'CRITICAL',co2:1980,pm25:82,temp:27.4,hum:67,f:0.052,poi:0.252,gov:'approval_required',d:8},
+ {s:'승인 → 공청기 급속 가동',tier:'HIGH_RISK',co2:1280,pm25:46,temp:26.0,hum:62,f:0.035,poi:0.121,gov:'approved',d:8},
+ {s:'가전 자동 대응 — 회복 중',tier:'ALERT',co2:900,pm25:24,temp:24.8,hum:57,f:0.02,poi:0.04,gov:'auto',d:9},
+ {s:'정상 복귀',tier:'CAUTION',co2:720,pm25:15,temp:23.9,hum:53,f:0.012,poi:0.009,gov:'auto_restore',d:8},
+ {s:'시연 종료 — 정상',tier:'MONITOR',co2:600,pm25:11,temp:23.4,hum:51,f:0.007,poi:0.003,gov:'none',d:8},
+];
+function _mkD(k){return {tier:k.tier,co2_ppm:k.co2,pm25:k.pm25,temp_c:k.temp,humidity:k.hum,formula:{co2:k.co2,f:k.f,poi:k.poi},governance:k.gov};}
+let _demoTimer=null;
+async function toggleDemo(){const b=document.getElementById('demoBtn');
+  if(_demo){_demo=false;clearTimeout(_demoTimer);b.textContent='▶ 시연 75초';b.style.background='var(--brand)';addEvent('시연 모드 종료 — 실센서 복귀');return;}
+  _demo=true;b.textContent='■ 시연 중지';b.style.background='var(--high)';addEvent('🎬 시연 모드 시작 (75초 자동 시나리오)');
+  for(const k of _demoSeq){if(!_demo)break;addEvent('▸ '+k.s);
+    const steps=Math.max(1,Math.round(k.d/1.2));
+    for(let i=0;i<steps;i++){if(!_demo)break;
+      const jit=(v,p)=>v+(Math.random()-0.5)*p;
+      feed(_mkD({...k,co2:Math.round(jit(k.co2,30)),pm25:Math.round(jit(k.pm25,4)),temp:Math.round(jit(k.temp,2)*10)/10,hum:Math.round(jit(k.hum,2))}));
+      await new Promise(r=>_demoTimer=setTimeout(r,1200));}}
+  if(_demo){_demo=false;b.textContent='▶ 시연 75초';b.style.background='var(--brand)';addEvent('시연 완료 — 실센서 복귀');}
+}
+
+// ── Performance Tracker (경영성과 지표 24h) ──
+async function loadPerf(){try{const r=await fetch('/api/v1/sensor/kpi');const j=await r.json();
+  if(j.auto_actions!=null)document.getElementById('p-act').textContent=j.auto_actions+'회';
+  if(j.poi_reduction_pct!=null)document.getElementById('p-poi').textContent=j.poi_reduction_pct+'%';
+  if(j.spaces_monitored!=null)document.getElementById('p-spaces').textContent=j.spaces_monitored+'개';
+}catch(e){}}
+loadPerf();setInterval(loadPerf,30000);
 
 function renderFormula(d){const fm=d.formula||{},col=(TIER[d.tier]||TIER.MONITOR).c,res=`<b style="color:${col}">${d.tier}</b>`;
   if(fm.co2!=null&&fm.poi!=null)document.getElementById('fchain').innerHTML=`CO₂ <b>${num(fm.co2)}</b>ppm<span class="arw">→</span>재호흡률 f <b>${pct(fm.f,2)}</b><span class="arw">→</span>감염확률 PoI <b>${pct(fm.poi,1)}</b><span class="arw">→</span>${res}`;
