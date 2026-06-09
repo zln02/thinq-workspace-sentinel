@@ -269,6 +269,16 @@ async def ingest_reading(r: SensorReading):
                     "VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7, $8)",
                     site_uuid, space_uuid, r.device_id, co2, pm25, r.temp_c, r.humidity, r.gas_raw,
                 )
+                # REHVA 결과 적재 — Performance Tracker(/sensor/kpi)가 집계하는 소스.
+                # poi 0~1, risk_tier 1~5 (DB CHECK 제약). best-effort.
+                await con.execute(
+                    "INSERT INTO sentinel.rehva_results "
+                    "(calculated_at, site_id, space_id, poi, r_event, risk_tier, i_value, q_value) "
+                    "VALUES (NOW(), $1, $2, $3, NULL, $4, $5, $6)",
+                    site_uuid, space_uuid,
+                    min(max(poi, 0.0), 1.0), _TIER_RANK.get(tier, 0) + 1,
+                    float(DEMO_INFECTORS), float(DEMO_QUANTA),
+                )
     except Exception as e:  # noqa: BLE001
         logger.warning("sensor 적재 실패(데모 진행): %s", e)
 
