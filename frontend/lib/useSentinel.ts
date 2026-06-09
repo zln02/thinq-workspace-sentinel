@@ -126,6 +126,38 @@ export function useAcStatus(intervalMs = 10000) {
   return status;
 }
 
+export type Kpi = {
+  auto_actions: number;
+  avg_poi: number;
+  poi_reduction_pct: number;
+  spaces_monitored: number;
+  source: string;
+};
+
+/** Performance Tracker(경영성과 24h) 폴링. */
+export function useKpi(intervalMs = 30000) {
+  const [kpi, setKpi] = useState<Kpi | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const r = await fetch("/api/sentinel/sensor/kpi");
+        const j = await r.json();
+        if (alive) setKpi(j);
+      } catch {
+        /* ignore */
+      }
+    };
+    load();
+    const t = setInterval(load, intervalMs);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, [intervalMs]);
+  return kpi;
+}
+
 /** 제어 명령 (코웨이/에어컨 ON·OFF·급속 등). */
 export async function sendControl(action: string, spaceId = "ward_a") {
   try {
