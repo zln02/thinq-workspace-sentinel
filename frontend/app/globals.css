@@ -61,6 +61,16 @@ body {
 
 /* ── iOS 네이티브 앱 느낌 ───────────────────────────────────── */
 .guardian-app {
+  /* 보호자 앱은 항상 라이트(안심 톤) — 전역 다크모드 하위여도 라이트 토큰 고정 */
+  color-scheme: light;
+  --care-bg: #f4f4f5;
+  --care-card: #ffffff;
+  --care-ink: #18181b;
+  --care-ink-2: #52525b;
+  --care-ink-3: #71717a;
+  --care-line: #ececef;
+  --care-shadow: 0 2px 16px rgba(17, 17, 26, 0.07);
+  --care-shadow-lg: 0 6px 28px rgba(17, 17, 26, 0.1);
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
   -webkit-user-select: none;

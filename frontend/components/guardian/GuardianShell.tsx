@@ -23,6 +23,16 @@ export default function GuardianShell({ children }: { children: React.ReactNode 
   const { data } = useLiveWard(session?.space_id ?? "ward_a");
   const prevTier = useRef<Tier | null>(null);
 
+  // 보호자 앱은 항상 라이트(안심 톤). 전역 기본 다크모드(ThemeProvider) 영향 차단.
+  useEffect(() => {
+    const root = document.documentElement;
+    const had = root.classList.contains("dark");
+    if (had) root.classList.remove("dark");
+    return () => {
+      if (had) root.classList.add("dark"); // 대시보드 등으로 나갈 때 원복
+    };
+  }, []);
+
   // SW 등록 (basePath 자동 보정)
   useEffect(() => {
     if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
