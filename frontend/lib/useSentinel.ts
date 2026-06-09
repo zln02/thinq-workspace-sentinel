@@ -20,24 +20,29 @@ export type LiveSensor = {
   formula?: Record<string, unknown>;
 };
 
-/** 실센서 병동(ward_a=201호) SSE 실시간 구독. */
+/** 실센서 병동(ward_a=201호) SSE 실시간 구독.
+ *  lastTs: 마지막 데이터 수신 시각(ms). 끊김 시 stale 판단에 사용. */
 export function useLiveWard(spaceId = "ward_a") {
   const [data, setData] = useState<LiveSensor | null>(null);
   const [connected, setConnected] = useState(false);
+  const [lastTs, setLastTs] = useState<number | null>(null);
   useEffect(() => {
     const es = new EventSource(`/api/sentinel/stream/live/${spaceId}`);
     es.addEventListener("live_init", () => setConnected(true));
     es.addEventListener("sensor", (e) => {
       try {
         setData(JSON.parse((e as MessageEvent).data));
+        setConnected(true);
+        setLastTs(Date.now());
       } catch {
         /* ignore */
       }
     });
+    // EventSource는 onerror 후 자동 재연결 시도. 끊김만 표시(데이터는 stale로 유지).
     es.onerror = () => setConnected(false);
     return () => es.close();
   }, [spaceId]);
-  return { data, connected };
+  return { data, connected, lastTs };
 }
 
 export type SpaceOverview = {

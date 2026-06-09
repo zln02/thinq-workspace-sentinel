@@ -7,8 +7,8 @@ export const metadata: Metadata = {
   title: "LG ThinQ 케어 · 가족 안심",
   description: "요양병원 보호자를 위한 실시간 안심 서비스",
   manifest: `${BASE}/manifest.webmanifest`,
-  // iOS 홈화면 추가 시 네이티브 앱처럼: 상태바 투명(헤더가 노치까지 풀블리드) + 전용 아이콘
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "ThinQ 케어" },
+  // iOS 홈화면 추가 시 네이티브 앱처럼: 화이트 헤더 → 상태바 검은 글씨(default) + 전용 아이콘
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "ThinQ 케어" },
   icons: {
     icon: `${BASE}/icon-192.png`,
     apple: `${BASE}/icon-192.png`,
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#A50034",
+  themeColor: "#ffffff",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

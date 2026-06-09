@@ -2,26 +2,93 @@
 @tailwind components;
 @tailwind utilities;
 
-body { font-family: ui-sans-serif, system-ui, "Apple SD Gothic Neo", sans-serif; }
+/* LG ThinQ 본문 폰트 — Pretendard (LG EI Text 대체, ThinQ 앱 한글 렌더 관행) */
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
 
-/* ── 보호자 앱: iOS 네이티브 앱 느낌 ───────────────────────────── */
-/* 홈화면(standalone)에서 진짜 앱처럼: 바운스 스크롤·탭 하이라이트·확대·텍스트 선택 차단 */
+body {
+  font-family: "Pretendard Variable", Pretendard, ui-sans-serif, system-ui, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+}
+
+/* ── 보호자 앱(LG ThinQ 케어) 디자인 토큰 ─────────────────────────
+   실제 LG ThinQ 5.0 앱 디자인 언어:
+   - 강조색은 디지털용 Active Red (인쇄용 Heritage #A50034 아님)
+   - 따뜻한 화이트 베이스 + soft shadow(보더 없음)
+   토큰 1줄 수정으로 전체 톤 전환 가능 */
+:root {
+  --care-red: #e4002b;        /* LG Active Red — 앱 강조(포인트) */
+  --care-red-press: #c00020;  /* 눌림/hover */
+  --care-red-soft: #fdeef0;   /* 연한 레드 배경 */
+  --care-bg: #f4f4f5;         /* 페이지 배경(따뜻한 뉴트럴 그레이) */
+  --care-card: #ffffff;       /* 카드 표면 */
+  --care-ink: #18181b;        /* 본문 텍스트 */
+  --care-ink-2: #52525b;      /* 보조 텍스트(대비 확보 ≥4.5:1) */
+  --care-ink-3: #71717a;      /* 캡션(대비 ≥3.9:1) */
+  --care-line: #ececef;       /* 구분선 */
+  --care-shadow: 0 2px 16px rgba(17, 17, 26, 0.07);   /* ThinQ soft elevation */
+  --care-shadow-lg: 0 6px 28px rgba(17, 17, 26, 0.1);
+  /* 공기질 4단계 (LG PuriCare 관행: 좋음=파랑) */
+  --aq-good: #0a84ff;
+  --aq-moderate: #34c759;
+  --aq-bad: #ff9f0a;
+  --aq-verybad: #ff3b30;
+}
+.dark {
+  --care-bg: #0a0a0b;
+  --care-card: #1c1c1f;
+  --care-ink: #fafafa;
+  --care-ink-2: #c4c4c8;
+  --care-ink-3: #9a9aa0;
+  --care-line: #2a2a2e;
+  --care-shadow: 0 2px 16px rgba(0, 0, 0, 0.4);
+  --care-shadow-lg: 0 6px 28px rgba(0, 0, 0, 0.5);
+}
+
+/* ── 컴포넌트 유틸 ──────────────────────────────────────────── */
+@layer components {
+  .care-card {
+    background: var(--care-card);
+    border-radius: 20px;            /* ThinQ 큰 라운드 */
+    box-shadow: var(--care-shadow); /* 보더 없이 그림자로 부상 */
+  }
+  .care-btn {
+    border-radius: 9999px;          /* pill */
+    height: 52px;
+    font-weight: 700;
+    transition: transform .12s ease, background .12s ease;
+  }
+  .care-btn:active { transform: scale(.975); }
+}
+
+/* ── iOS 네이티브 앱 느낌 ───────────────────────────────────── */
 .guardian-app {
-  -webkit-tap-highlight-color: transparent;     /* 탭 시 회색 박스 제거 */
-  -webkit-touch-callout: none;                  /* 길게 눌러도 메뉴 안 뜸 */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
-  overscroll-behavior: none;                    /* 당겨서 새로고침/바운스 차단 */
+  overscroll-behavior: none;
   text-size-adjust: 100%;
   -webkit-text-size-adjust: 100%;
 }
-/* 입력 필드는 선택·편집 허용 */
 .guardian-app input,
 .guardian-app textarea {
   -webkit-user-select: text;
   user-select: text;
 }
-/* 노치/다이내믹 아일랜드·홈인디케이터 회피용 safe-area 유틸 */
 .pt-safe { padding-top: calc(env(safe-area-inset-top) + 0.5rem); }
 .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
-.guardian-scroll { -webkit-overflow-scrolling: touch; }  /* iOS 관성 스크롤 */
+.guardian-scroll { -webkit-overflow-scrolling: touch; }
+
+/* 화면 진입 페이드(네이티브 전환 느낌) */
+@keyframes care-fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.care-enter { animation: care-fade-up .26s ease-out both; }
+
+/* 스켈레톤 펄스 */
+@keyframes care-pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+.care-skeleton {
+  background: var(--care-line);
+  border-radius: 12px;
+  animation: care-pulse 1.4s ease-in-out infinite;
+}

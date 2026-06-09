@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Home, Activity, Bell, Settings as SettingsIcon } from "lucide-react";
 import { useLiveWard } from "@/lib/useSentinel";
-import { getSession, pushAlert, TIER_STATE } from "@/lib/guardian";
+import { getSession, pushAlert, TIER_STATE, getNotifEnabled } from "@/lib/guardian";
 import type { Tier } from "@/lib/tier";
 
 const TABS = [
@@ -42,7 +42,7 @@ export default function GuardianShell({ children }: { children: React.ReactNode 
     if (prevTier.current && t !== prevTier.current) {
       pushAlert(t, Date.now());
       const rank: Record<Tier, number> = { MONITOR: 0, CAUTION: 1, ALERT: 2, HIGH_RISK: 3, CRITICAL: 4 };
-      if (rank[t] >= 2 && Notification?.permission === "granted") {
+      if (rank[t] >= 2 && getNotifEnabled() && Notification?.permission === "granted") {
         const s = TIER_STATE[t];
         try {
           new Notification(`${s.emoji} ${session?.room ?? "병동"} — ${s.st}`, { body: s.msg });
@@ -55,20 +55,22 @@ export default function GuardianShell({ children }: { children: React.ReactNode 
   }, [data?.tier, session?.room]);
 
   return (
-    <div className="guardian-app min-h-screen w-full flex justify-center bg-slate-100 dark:bg-black">
-      <div className="relative w-full max-w-[430px] min-h-screen bg-[#f6f7fb] dark:bg-[#0b0f1a] flex flex-col shadow-xl">
-        <div className="guardian-scroll flex-1 overflow-y-auto" style={{ paddingBottom: isAuthPage ? 0 : "calc(4rem + env(safe-area-inset-bottom))" }}>
+    <div className="guardian-app min-h-screen w-full flex justify-center bg-zinc-200 dark:bg-black">
+      <div className="relative w-full max-w-[430px] min-h-screen bg-care-bg flex flex-col shadow-xl">
+        <div key={pathname} className="guardian-scroll care-enter flex-1 overflow-y-auto" style={{ paddingBottom: isAuthPage ? 0 : "calc(4.5rem + env(safe-area-inset-bottom))" }}>
           {children}
         </div>
         {!isAuthPage && (
-          <nav className="absolute bottom-0 left-0 right-0 bg-white/95 dark:bg-[#111827]/95 backdrop-blur border-t border-slate-200 dark:border-slate-800 flex pb-safe">
+          <nav className="absolute bottom-0 left-0 right-0 bg-[var(--care-card)]/92 backdrop-blur-xl border-t border-[var(--care-line)] flex pb-safe">
             {TABS.map((t) => {
               const active = pathname?.startsWith(t.href);
               const Icon = t.icon;
               return (
-                <Link key={t.href} href={t.href} className={`flex-1 h-16 flex flex-col items-center justify-center gap-0.5 text-[10.5px] font-bold ${active ? "text-[#A50034]" : "text-slate-400"}`}>
-                  <Icon size={21} strokeWidth={active ? 2.6 : 2} />
-                  {t.label}
+                <Link key={t.href} href={t.href} className="flex-1 h-[58px] flex flex-col items-center justify-center gap-1 text-[11px] font-bold">
+                  <span className={`flex items-center justify-center w-12 h-7 rounded-full transition-colors ${active ? "bg-care-red-soft" : ""}`}>
+                    <Icon size={20} strokeWidth={active ? 2.6 : 2} className={active ? "text-care-red" : "text-care-ink-3"} />
+                  </span>
+                  <span className={active ? "text-care-red" : "text-care-ink-3"}>{t.label}</span>
                 </Link>
               );
             })}
