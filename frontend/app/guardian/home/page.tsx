@@ -36,7 +36,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col">
       {/* 헤더 */}
-      <header className="px-5 pt-12 pb-3 bg-[#A50034] text-white">
+      <header className="px-5 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3 bg-[#A50034] text-white">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-[11px] text-white/70">LG 디지털요양병원</p>

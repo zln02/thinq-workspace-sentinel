@@ -23,7 +23,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col px-6 pt-14 pb-8">
+    <div className="min-h-screen flex flex-col px-6 pt-[calc(env(safe-area-inset-top)+1.25rem)] pb-[calc(env(safe-area-inset-bottom)+1.25rem)]">
       <div className="flex items-center gap-3 mb-8">
         <div className="w-12 h-12 rounded-2xl bg-[#A50034] flex items-center justify-center text-white">
           <ShieldCheck size={26} />
