@@ -324,29 +324,38 @@ es.onerror=()=>{const c=document.getElementById('conn');c.className='conn off';d
 
 // ── 시연 75초 자동 시나리오 (발표장 실센서/네트워크 무관 폴백 보험) ──
 // 기존 feed() 렌더링 경로를 그대로 사용 → 실연동과 동일한 화면. _demo=true 동안 라이브 sensor 무시.
+// 차별성 서사: 타사='나빠지면 대응'(사후) vs Sentinel='유행 감지 시 선제'(예측) + 자동 증빙
 const _demoSeq=[
- {s:'정상 모니터링',tier:'MONITOR',co2:620,pm25:12,temp:23.5,hum:52,f:0.008,poi:0.004,gov:'none',d:6},
- {s:'외부 선제경보 — 지역 확산 감지',tier:'CAUTION',co2:780,pm25:18,temp:24.2,hum:55,f:0.015,poi:0.011,gov:'none',d:8},
- {s:'재실 밀집 — CO₂ 상승',tier:'ALERT',co2:1180,pm25:32,temp:25.6,hum:60,f:0.028,poi:0.082,gov:'auto',d:10},
- {s:'고위험 — 관리자 승인 대기',tier:'HIGH_RISK',co2:1620,pm25:58,temp:26.8,hum:64,f:0.041,poi:0.171,gov:'approval_required',d:10},
- {s:'위급 — 긴급 방역 절차',tier:'CRITICAL',co2:1980,pm25:82,temp:27.4,hum:67,f:0.052,poi:0.252,gov:'approval_required',d:8},
- {s:'승인 → 공청기 급속 가동',tier:'HIGH_RISK',co2:1280,pm25:46,temp:26.0,hum:62,f:0.035,poi:0.121,gov:'approved',d:8},
- {s:'가전 자동 대응 — 회복 중',tier:'ALERT',co2:900,pm25:24,temp:24.8,hum:57,f:0.02,poi:0.04,gov:'auto',d:9},
- {s:'정상 복귀',tier:'CAUTION',co2:720,pm25:15,temp:23.9,hum:53,f:0.012,poi:0.009,gov:'auto_restore',d:8},
- {s:'시연 종료 — 정상',tier:'MONITOR',co2:600,pm25:11,temp:23.4,hum:51,f:0.007,poi:0.003,gov:'none',d:8},
+ {s:'정상 — 센서·외부신호 모두 안정',tier:'MONITOR',co2:620,pm25:12,temp:23.5,hum:52,f:0.008,poi:0.004,gov:'none',d:6},
+ {s:'🔬 외부 유행 감지 — 질병청 지역 인플루엔자 유행주의보 (센서는 아직 정상)',tier:'CAUTION',co2:720,pm25:14,temp:23.8,hum:53,f:0.012,poi:0.009,gov:'none',d:9},
+ {s:'⚡ 선제 환기·청정 가동 — 공기 나빠지기 전 미리 (← 핵심 차별점)',tier:'ALERT',co2:820,pm25:18,temp:24.2,hum:55,f:0.016,poi:0.03,gov:'auto',d:10},
+ {s:'재실 밀집 겹침 — CO₂·PM 동반 상승',tier:'ALERT',co2:1180,pm25:32,temp:25.6,hum:60,f:0.028,poi:0.082,gov:'auto',d:8},
+ {s:'고위험 — 관리자 승인 대기 (하이브리드 거버넌스)',tier:'HIGH_RISK',co2:1620,pm25:58,temp:26.8,hum:64,f:0.041,poi:0.171,gov:'approval_required',d:9},
+ {s:'위급 — 긴급 환기 강화 + 자동 기록',tier:'CRITICAL',co2:1980,pm25:82,temp:27.4,hum:67,f:0.052,poi:0.252,gov:'approval_required',d:7},
+ {s:'승인 → 공청기 급속 + 에어컨 송풍 가동',tier:'HIGH_RISK',co2:1280,pm25:46,temp:26.0,hum:62,f:0.035,poi:0.121,gov:'approved',d:8},
+ {s:'회복 중 — 자동 대응 효과 + 적정성평가 증빙 자동 생성',tier:'ALERT',co2:900,pm25:24,temp:24.8,hum:57,f:0.02,poi:0.04,gov:'auto',d:9},
+ {s:'정상 복귀 — 대응 이력 자동 문서화 완료',tier:'CAUTION',co2:720,pm25:15,temp:23.9,hum:53,f:0.012,poi:0.009,gov:'auto_restore',d:8},
+ {s:'시연 종료 — 선제 대응 + 자동 증빙 사이클 완결',tier:'MONITOR',co2:600,pm25:11,temp:23.4,hum:51,f:0.007,poi:0.003,gov:'none',d:8},
 ];
 function _mkD(k){return {tier:k.tier,co2_ppm:k.co2,pm25:k.pm25,temp_c:k.temp,humidity:k.hum,formula:{co2:k.co2,f:k.f,poi:k.poi},governance:k.gov};}
+// 차별성 배너 (시연 중에만 표시) — 벤치마킹 결론을 발표장에서 각인
+function _demoBanner(on){let el=document.getElementById('demoBanner');
+  if(on){if(!el){el=document.createElement('div');el.id='demoBanner';
+    el.style.cssText='position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:9999;background:#0f172a;color:#fff;padding:9px 18px;border-radius:999px;font-size:12.5px;font-weight:700;box-shadow:0 6px 24px rgba(0,0,0,.25);white-space:nowrap';
+    el.innerHTML='🔬 타사 가전: <span style="color:#fca5a5">"나빠지면 대응"</span> &nbsp;·&nbsp; ThinQ Sentinel: <span style="color:#86efac">"유행 감지 시 선제 가동 + 적정성평가 자동 증빙"</span>';
+    document.body.appendChild(el);}el.style.display='block';}
+  else if(el){el.style.display='none';}}
 let _demoTimer=null;
 async function toggleDemo(){const b=document.getElementById('demoBtn');
-  if(_demo){_demo=false;clearTimeout(_demoTimer);b.textContent='▶ 시연 75초';b.style.background='var(--brand)';addEvent('시연 모드 종료 — 실센서 복귀');return;}
-  _demo=true;b.textContent='■ 시연 중지';b.style.background='var(--high)';addEvent('🎬 시연 모드 시작 (75초 자동 시나리오)');
+  if(_demo){_demo=false;clearTimeout(_demoTimer);_demoBanner(false);b.textContent='▶ 시연 75초';b.style.background='var(--brand)';addEvent('시연 모드 종료 — 실센서 복귀');return;}
+  _demo=true;_demoBanner(true);b.textContent='■ 시연 중지';b.style.background='var(--high)';addEvent('🎬 시연 모드 시작 (75초 자동 시나리오)');
   for(const k of _demoSeq){if(!_demo)break;addEvent('▸ '+k.s);
     const steps=Math.max(1,Math.round(k.d/1.2));
     for(let i=0;i<steps;i++){if(!_demo)break;
       const jit=(v,p)=>v+(Math.random()-0.5)*p;
       feed(_mkD({...k,co2:Math.round(jit(k.co2,30)),pm25:Math.round(jit(k.pm25,4)),temp:Math.round(jit(k.temp,2)*10)/10,hum:Math.round(jit(k.hum,2))}));
       await new Promise(r=>_demoTimer=setTimeout(r,1200));}}
-  if(_demo){_demo=false;b.textContent='▶ 시연 75초';b.style.background='var(--brand)';addEvent('시연 완료 — 실센서 복귀');}
+  if(_demo){_demo=false;_demoBanner(false);b.textContent='▶ 시연 75초';b.style.background='var(--brand)';addEvent('시연 완료 — 실센서 복귀');}
 }
 
 // ── Performance Tracker (경영성과 지표 24h) ──
@@ -457,7 +466,7 @@ async function loadRegions(){try{const r=await fetch('/api/v1/external/regions')
   else sel.innerHTML='<option value="">UIS 미연결</option>';}catch(e){document.getElementById('regionSel').innerHTML='<option>오류</option>';}}
 async function selectRegion(){const region=document.getElementById('regionSel').value;const el=document.getElementById('ext-sig');
   if(!region){el.textContent='지역을 클릭하면 선제 경보 연동';return;}
-  try{const r=await fetch('/api/v1/external/select-region',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({region})});const j=await r.json();
+  try{const r=await fetch('/api/v1/external/select-region',{method:'POST',headers:POST_HDR,body:JSON.stringify({region})});const j=await r.json();
     if(j.selected){const s=j.selected;const sig=(s.leading_signals||[]).slice(0,3).map(x=>`${x.layer} ${x.value}`).join(' · ');
       const lead=s.lead_days!=null?`<b style="color:#15803d">${s.lead_days}일 선행 포착</b>`:'';const bc=(TIER[j.boost_tier]||TIER.MONITOR);
       el.innerHTML=`<b>${region}</b> · 조기경보 <span class="pill" style="background:${bc.bg};color:${bc.c}">${s.basis_level}</span> ${lead}<br>

@@ -16,8 +16,10 @@ mode:
 """
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+
+from backend.api.auth import require_api_key
 
 router = APIRouter(prefix="/api/v1/external", tags=["external"])
 
@@ -176,7 +178,7 @@ class RegionSel(BaseModel):
     mode: str = "replay"  # replay=시즌 조기경보 재현 / live=현재 실시간
 
 
-@router.post("/select-region")
+@router.post("/select-region", dependencies=[Depends(require_api_key)])
 async def select_region(sel: RegionSel):
     """지역 선택 → 조기경보 risk_score 로 tier boost 등록 (선제 경보 + 리드타임 증거)."""
     pool = await _uis_pool()
