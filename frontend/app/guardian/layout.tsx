@@ -7,7 +7,13 @@ export const metadata: Metadata = {
   title: "LG ThinQ 케어 · 가족 안심",
   description: "요양병원 보호자를 위한 실시간 안심 서비스",
   manifest: `${BASE}/manifest.webmanifest`,
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "ThinQ 케어" },
+  // iOS 홈화면 추가 시 네이티브 앱처럼: 상태바 투명(헤더가 노치까지 풀블리드) + 전용 아이콘
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "ThinQ 케어" },
+  icons: {
+    icon: `${BASE}/icon-192.png`,
+    apple: `${BASE}/icon-192.png`,
+  },
+  formatDetection: { telephone: false },
 };
 
 export const viewport: Viewport = {
@@ -15,6 +21,9 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  userScalable: false,
+  // 노치/홈인디케이터 영역까지 콘텐츠를 채우고 safe-area로 회피 (네이티브 풀스크린 느낌)
+  viewportFit: "cover",
 };
 
 export default function GuardianLayout({ children }: { children: React.ReactNode }) {

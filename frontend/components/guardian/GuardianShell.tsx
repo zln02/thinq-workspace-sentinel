@@ -55,16 +55,18 @@ export default function GuardianShell({ children }: { children: React.ReactNode 
   }, [data?.tier, session?.room]);
 
   return (
-    <div className="min-h-screen w-full flex justify-center bg-slate-100 dark:bg-black">
+    <div className="guardian-app min-h-screen w-full flex justify-center bg-slate-100 dark:bg-black">
       <div className="relative w-full max-w-[430px] min-h-screen bg-[#f6f7fb] dark:bg-[#0b0f1a] flex flex-col shadow-xl">
-        <div className="flex-1 overflow-y-auto pb-20">{children}</div>
+        <div className="guardian-scroll flex-1 overflow-y-auto" style={{ paddingBottom: isAuthPage ? 0 : "calc(4rem + env(safe-area-inset-bottom))" }}>
+          {children}
+        </div>
         {!isAuthPage && (
-          <nav className="absolute bottom-0 left-0 right-0 h-16 bg-white/95 dark:bg-[#111827]/95 backdrop-blur border-t border-slate-200 dark:border-slate-800 flex">
+          <nav className="absolute bottom-0 left-0 right-0 bg-white/95 dark:bg-[#111827]/95 backdrop-blur border-t border-slate-200 dark:border-slate-800 flex pb-safe">
             {TABS.map((t) => {
               const active = pathname?.startsWith(t.href);
               const Icon = t.icon;
               return (
-                <Link key={t.href} href={t.href} className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[10.5px] font-bold ${active ? "text-[#A50034]" : "text-slate-400"}`}>
+                <Link key={t.href} href={t.href} className={`flex-1 h-16 flex flex-col items-center justify-center gap-0.5 text-[10.5px] font-bold ${active ? "text-[#A50034]" : "text-slate-400"}`}>
                   <Icon size={21} strokeWidth={active ? 2.6 : 2} />
                   {t.label}
                 </Link>

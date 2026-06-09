@@ -3,3 +3,25 @@
 @tailwind utilities;
 
 body { font-family: ui-sans-serif, system-ui, "Apple SD Gothic Neo", sans-serif; }
+
+/* ── 보호자 앱: iOS 네이티브 앱 느낌 ───────────────────────────── */
+/* 홈화면(standalone)에서 진짜 앱처럼: 바운스 스크롤·탭 하이라이트·확대·텍스트 선택 차단 */
+.guardian-app {
+  -webkit-tap-highlight-color: transparent;     /* 탭 시 회색 박스 제거 */
+  -webkit-touch-callout: none;                  /* 길게 눌러도 메뉴 안 뜸 */
+  -webkit-user-select: none;
+  user-select: none;
+  overscroll-behavior: none;                    /* 당겨서 새로고침/바운스 차단 */
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+/* 입력 필드는 선택·편집 허용 */
+.guardian-app input,
+.guardian-app textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+/* 노치/다이내믹 아일랜드·홈인디케이터 회피용 safe-area 유틸 */
+.pt-safe { padding-top: calc(env(safe-area-inset-top) + 0.5rem); }
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+.guardian-scroll { -webkit-overflow-scrolling: touch; }  /* iOS 관성 스크롤 */

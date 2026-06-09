@@ -31,7 +31,7 @@ export default function SettingsPage() {
 
   return (
     <div className="flex flex-col">
-      <header className="px-5 pt-12 pb-4 bg-[#A50034] text-white">
+      <header className="px-5 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-4 bg-[#A50034] text-white">
         <p className="text-[11px] text-white/70">설정</p>
         <h1 className="text-lg font-extrabold">내 정보 · 알림</h1>
       </header>
