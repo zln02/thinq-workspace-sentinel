@@ -468,3 +468,46 @@ async def spaces_overview():
                 "tier": tier, "poi": poi, "source": source, **vals,
             })
     return {"spaces": out, "boost": boost, "count": len(out)}
+
+
+@router.get("/kpi")
+async def performance_kpi():
+    """Performance Tracker — 경영성과 지표(최근 24h). 대시보드 상단 카드용.
+
+    - auto_actions: 자동 선제대응 횟수(tier≥ALERT 산출 건수)
+    - avg_poi / poi_reduction_pct: 평균 감염확률 + 피크 대비 저감율(모델 기반)
+    - spaces_monitored: 모니터링 중인 공간 수
+    DB 미연결/데이터 부족 시 시연용 폴백값(정직 표기: 시뮬 기반).
+    """
+    from backend.api.main import state
+
+    pool = state.get("db")
+    fallback = {"auto_actions": 6, "avg_poi": 0.04, "poi_reduction_pct": 83,
+                "spaces_monitored": 8, "source": "시뮬"}
+    if not pool:
+        return fallback
+    try:
+        async with pool.acquire() as con:
+            row = await con.fetchrow(
+                "SELECT COUNT(*) FILTER (WHERE risk_tier >= 3) AS acts, "
+                "AVG(poi) AS avg_poi, MAX(poi) AS max_poi, "
+                "COUNT(DISTINCT space_id) AS spaces "
+                "FROM sentinel.rehva_results "
+                "WHERE calculated_at > NOW() - INTERVAL '24 hours'"
+            )
+            total_spaces = await con.fetchval("SELECT COUNT(*) FROM sentinel.spaces")
+        if not row or row["acts"] is None or (row["avg_poi"] is None):
+            return fallback
+        avg_poi = float(row["avg_poi"] or 0)
+        max_poi = float(row["max_poi"] or 0)
+        reduction = round((1 - avg_poi / max_poi) * 100) if max_poi > 0 else 0
+        return {
+            "auto_actions": int(row["acts"] or 0),
+            "avg_poi": round(avg_poi, 4),
+            "poi_reduction_pct": reduction,
+            "spaces_monitored": int(total_spaces or row["spaces"] or 0),
+            "source": "실측",
+        }
+    except Exception as e:  # noqa: BLE001
+        logger.warning("KPI 집계 실패(폴백): %s", e)
+        return fallback

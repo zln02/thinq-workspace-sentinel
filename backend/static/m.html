@@ -117,7 +117,13 @@
 </div>
 
 <script>
-const SPACE='ward_a';
+// 보호자/병실 정보는 URL 파라미터로 주입(?space=&name=&room=). 미지정 시 시연 예시 폴백.
+const _q=new URLSearchParams(location.search);
+const SPACE=_q.get('space')||'ward_a';
+const NAME=_q.get('name'), ROOMQ=_q.get('room');
+const ROOM=ROOMQ||'201호 다인실';
+const _demoTag=(!NAME&&!ROOMQ)?' · 시연 예시':'';
+document.getElementById('who').textContent=(NAME||'김복순 어르신')+' · '+ROOM+_demoTag;
 // 보호자 관점: tier → 안심 메시지 (기술용어 숨김)
 const STATE={
   MONITOR:{emoji:"🌿",st:"안전",c:"#15803d",bg:"#eafaf0",bd:"#bfe8cd",msg:"병동 환경이 쾌적하게 관리되고 있습니다"},
@@ -143,7 +149,7 @@ function setState(tier){const s=STATE[tier]||STATE.MONITOR;
 function setAct(id,txt,on){const el=document.getElementById(id);el.textContent=txt;el.className='as '+(on?'on':'off');}
 
 function notify(tier){if(!_notif)return;const s=STATE[tier];
-  const title=`${s.emoji} 201호 — ${s.st}`,body=s.msg;
+  const title=`${s.emoji} ${ROOM} — ${s.st}`,body=s.msg;
   try{if(navigator.serviceWorker&&navigator.serviceWorker.ready)navigator.serviceWorker.ready.then(r=>r.showNotification(title,{body,icon:'/static/icon-192.png',vibrate:[200,100,200],tag:'fam'}));
     else new Notification(title,{body,icon:'/static/icon-192.png'});}catch(e){}}
 async function enableNotif(){try{const p=await Notification.requestPermission();_notif=(p==='granted');
