@@ -52,6 +52,18 @@ export const TIER_RANK: Record<Tier, number> = {
   MONITOR: 0, CAUTION: 1, ALERT: 2, HIGH_RISK: 3, CRITICAL: 4,
 };
 
+// 실내 공기 등급(0~4) → LG PuriCare 관행 색(좋음=파랑) + 한국어 라벨
+export const AQ_LABELS = ["—", "좋음", "보통", "나쁨", "매우 나쁨"];
+export const AQ_COLORS = ["#71717a", "#0a84ff", "#34c759", "#ff9f0a", "#ff3b30"];
+
+// 개별 수치 → 좋음/주의/나쁨 색 (warn·bad 임계 기준)
+export function metricColor(v: number | null, warn: number, bad: number): string {
+  if (v == null) return "#a1a1aa";
+  if (v >= bad) return "#ff3b30";
+  if (v >= warn) return "#ff9f0a";
+  return "#34c759";
+}
+
 export function tierState(tier?: string | null): TierState {
   return TIER_STATE[(tier as Tier) ?? "MONITOR"] ?? TIER_STATE.MONITOR;
 }
@@ -79,6 +91,16 @@ export function pushAlert(tier: Tier, tsMs: number) {
   const list = getAlerts();
   list.unshift({ ts: tsMs, tier, st: s.st, msg: s.msg });
   localStorage.setItem(ALERTS_KEY, JSON.stringify(list.slice(0, 50)));
+}
+
+// 알림 수신 on/off (OS 권한과 별개로 앱 차원에서 끔 — P0: granted여도 끌 수 있게)
+const NOTIF_KEY = "sentinel_guardian_notif";
+export function getNotifEnabled(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(NOTIF_KEY) === "1";
+}
+export function setNotifEnabled(on: boolean) {
+  localStorage.setItem(NOTIF_KEY, on ? "1" : "0");
 }
 
 export function relTime(ts: number): string {
