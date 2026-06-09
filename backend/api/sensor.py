@@ -276,7 +276,8 @@ async def ingest_reading(r: SensorReading):
                     "(calculated_at, site_id, space_id, poi, r_event, risk_tier, i_value, q_value) "
                     "VALUES (NOW(), $1, $2, $3, NULL, $4, $5, $6)",
                     site_uuid, space_uuid,
-                    min(max(poi, 0.0), 1.0), _TIER_RANK.get(tier, 0) + 1,
+                    min(max(poi if poi is not None else 0.0, 0.0), 1.0),  # 가스 단독 경로는 poi=None
+                    _TIER_RANK.get(tier, 0) + 1,
                     float(DEMO_INFECTORS), float(DEMO_QUANTA),
                 )
     except Exception as e:  # noqa: BLE001
