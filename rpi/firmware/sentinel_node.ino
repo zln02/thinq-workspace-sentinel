@@ -6,7 +6,7 @@
  *   [아두이노 → 라파이] 1초마다 한 줄:
  *     온도:23.80C 습도:48.00% CO2:650 재실:1
  *       - CO2 : MH-Z19B(NDIR) ppm. 워밍업/오류 시 -1 (bridge가 무시)
- *       - 재실: HLK-LD2310C(24GHz mmWave) OUT. 1=사람 있음 / 0=빈 병실
+ *       - 재실: HLK-LD2410C(24GHz mmWave) OUT. 1=사람 있음 / 0=빈 병실
  *
  *   [라파이 → 아두이노] 백엔드 판정 tier 회신:
  *     TIER:CAUTION\n  → 5단계 LED 게이지(누적) 점등
@@ -16,7 +16,7 @@
  * 배선표 (Arduino Uno/Nano)
  *   DHT11/22 (온습도)  DATA → D2,  VCC → 5V,  GND → GND
  *   MH-Z19B (CO2)      TX → D10(아두이노 RX),  RX → D11(아두이노 TX),  Vin → 5V,  GND → GND
- *   HLK-LD2310C (재실) OUT → D8,  VCC → 5V,  GND → GND
+ *   HLK-LD2410C (재실) OUT → D8,  VCC → 5V,  GND → GND
  *   LED 게이지 5개 (각 애노드 → 220Ω → 핀, 캐소드 → GND):
  *     D3=🟢MONITOR  D4=🟡CAUTION  D5=🔴ALERT  D6=🔴HIGH_RISK  D7=🔴CRITICAL
  *
@@ -28,10 +28,10 @@
 
 // ── 핀 정의 ───────────────────────────────────────────────
 #define DHT_PIN    2
-#define DHT_TYPE   DHT11      // DHT22면 DHT22로 변경
+#define DHT_TYPE   DHT22      // 흰색 격자 AM2302 = DHT22 (파란 소형이면 DHT11로)
 #define MHZ_RX     10         // 아두이노 RX ← MH-Z19B TX
 #define MHZ_TX     11         // 아두이노 TX → MH-Z19B RX
-#define PRESENCE_PIN 8        // LD2310C OUT
+#define PRESENCE_PIN 8        // LD2410C OUT
 
 // LED 게이지: index 0=MONITOR .. 4=CRITICAL (누적 점등)
 const int LED_PINS[5] = {3, 4, 5, 6, 7};
@@ -59,7 +59,7 @@ int readCO2() {
   byte resp[9];
   unsigned long t0 = millis();
   int idx = 0;
-  while (idx < 9 && millis() - t0 < 1000) {
+  while (idx < 9 && millis() - t0 < 400) {   // 센서 미연결 시 400ms만 대기(출력 끊김 방지)
     if (mhz.available()) resp[idx++] = mhz.read();
   }
   if (idx < 9 || resp[0] != 0xFF || resp[1] != 0x86) return -1;
