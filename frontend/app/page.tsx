@@ -38,9 +38,12 @@ export default function LandingPage() {
     router.push(r.href);
   };
 
+  // 데모 PW는 환경변수로 주입(NEXT_PUBLIC_DEMO_PW). 미설정 시 로컬 개발 폴백.
+  const DEMO_PW = process.env.NEXT_PUBLIC_DEMO_PW || "1234";
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password !== "1234") { setError("비밀번호가 일치하지 않습니다. (데모 PW: 1234)"); return; }
+    if (password !== DEMO_PW) { setError("비밀번호가 일치하지 않습니다."); return; }
     const r = ROLES.find((x) => x.id === id);
     if (r) enter(r);
     else setError("존재하지 않는 계정입니다. (nurse, director, fm 중 입력)");
@@ -120,7 +123,7 @@ export default function LandingPage() {
               </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="비밀번호 (1234)" className="w-full bg-[#0B1120] border border-slate-700 text-white text-sm px-9 py-2.5 rounded-lg focus:outline-none focus:border-[#A50034]" required />
+                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="비밀번호" className="w-full bg-[#0B1120] border border-slate-700 text-white text-sm px-9 py-2.5 rounded-lg focus:outline-none focus:border-[#A50034]" required />
               </div>
               {error && <p className="text-red-500 text-xs font-medium text-center">{error}</p>}
               <button type="submit" className="w-full bg-[#A50034] hover:bg-red-700 text-white text-sm font-bold py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors">로그인 <ArrowRight size={16} /></button>

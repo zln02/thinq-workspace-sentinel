@@ -19,19 +19,22 @@ services:
       - sentinel-redis
     networks: [sentinel_net, uis_default]
 
-  sentinel-rehva:
-    build: ../ml
-    container_name: sentinel-rehva
-    restart: unless-stopped
-    env_file: ../.env
-    environment:
-      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@uis-timescaledb:5432/uis
-      DB_SCHEMA: sentinel
-      KAFKA_BOOTSTRAP: uis-kafka:9092
-      REDIS_URL: redis://sentinel-redis:6379/1
-    depends_on:
-      - sentinel-redis
-    networks: [sentinel_net, uis_default]
+  # [비활성화] ml/ 에 Dockerfile/코드가 없어 `build: ../ml` 가 compose up 을 깨뜨림.
+  # REHVA 결과는 현재 backend(sensor.py)가 직접 sentinel.rehva_results 에 적재하므로
+  # 이 독립 서비스는 불필요. ml/ 모델 추론 서비스 실재 시 Dockerfile 추가 후 복구할 것.
+  # sentinel-rehva:
+  #   build: ../ml
+  #   container_name: sentinel-rehva
+  #   restart: unless-stopped
+  #   env_file: ../.env
+  #   environment:
+  #     DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@uis-timescaledb:5432/uis
+  #     DB_SCHEMA: sentinel
+  #     KAFKA_BOOTSTRAP: uis-kafka:9092
+  #     REDIS_URL: redis://sentinel-redis:6379/1
+  #   depends_on:
+  #     - sentinel-redis
+  #   networks: [sentinel_net, uis_default]
 
   sentinel-collector:
     build: ../pipeline

@@ -52,16 +52,10 @@ PAT = re.compile(
 )
 
 
-def main():
-    ser = serial.Serial(PORT, BAUD, timeout=2)
-    time.sleep(2.5)  # 아두이노 리셋 부팅 대기
-    ser.reset_input_buffer()
-    print(f"[bridge] {PORT}@{BAUD} → {API}")
+def _read_loop(ser):
+    """단일 시리얼 세션의 read→POST 루프. 시리얼 단절 시 예외를 올려 재연결."""
     while True:
-        try:
-            line = ser.readline().decode("utf-8", "ignore").strip()
-        except Exception:
-            continue
+        line = ser.readline().decode("utf-8", "ignore").strip()
         m = PAT.search(line)
         if not m:
             continue
@@ -88,6 +82,31 @@ def main():
             print(f"  {temp}C {hum}% co2={co2} 재실={presence} → tier={tier} coway={j.get('coway')}")
         except Exception as e:  # noqa: BLE001
             print(f"  POST 실패: {e}")
+
+
+def main():
+    """시리얼 단절(USB 뽑힘/리셋) 시 자체 재연결. systemd 재시작에 의존하지 않음."""
+    while True:
+        ser = None
+        try:
+            port = _find_port()  # 재연결마다 포트 재탐색(ttyACM0↔ACM1 유동)
+            ser = serial.Serial(port, BAUD, timeout=2)
+            time.sleep(2.5)  # 아두이노 리셋 부팅 대기
+            ser.reset_input_buffer()
+            print(f"[bridge] {port}@{BAUD} → {API}")
+            _read_loop(ser)
+        except (OSError, serial.SerialException) as e:
+            print(f"[bridge] 시리얼 단절: {e} — 3초 후 재연결")
+            time.sleep(3)
+        except KeyboardInterrupt:
+            print("[bridge] 종료")
+            break
+        finally:
+            if ser is not None and ser.is_open:
+                try:
+                    ser.close()
+                except Exception:  # noqa: BLE001
+                    pass
 
 
 if __name__ == "__main__":

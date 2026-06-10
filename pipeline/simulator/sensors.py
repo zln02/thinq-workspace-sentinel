@@ -144,7 +144,7 @@ def infer_ach_from_co2(co2_indoor: float, co2_outdoor: float, occupancy: int, vo
     G = 인당 CO2 발생량 ≈ 0.288 m³/h (성인 좌식, ASHRAE)
     ACH = Q / V
     """
-    if co2_indoor <= co2_outdoor + 10 or occupancy <= 0:
+    if co2_indoor <= co2_outdoor + 10 or occupancy <= 0 or volume_m3 <= 0:
         return 0.0
     g_per_person = 0.288 * 1e6 / volume_m3
     delta_ppm = co2_indoor - co2_outdoor

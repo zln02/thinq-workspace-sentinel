@@ -20,7 +20,7 @@ import redis.asyncio as redis
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from backend.api.external_live import router as external_router
 from backend.api.sensor import router as sensor_router
@@ -246,8 +246,9 @@ def list_scenarios():
 
 class SimRequest(BaseModel):
     scenario: str
-    minutes: int = 120
-    dt: float = 1.0
+    # 입력 상한/하한으로 시뮬 루프 폭주(CPU DoS) 차단. steps = minutes/dt.
+    minutes: int = Field(120, ge=1, le=1440)  # 최대 24시간
+    dt: float = Field(1.0, ge=0.5, le=60.0)   # step 0.5~60분
 
 
 @app.post("/api/v1/simulate")
