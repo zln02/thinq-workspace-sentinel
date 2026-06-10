@@ -6,13 +6,15 @@ import { useRouter } from "next/navigation";
 import { 
   ShieldAlert, LogOut, Clock, Users, AlertTriangle, HeartPulse, FileText, 
   ActivitySquare, CheckCircle2, Zap, BatteryCharging, Wrench, TrendingDown, 
-  X, Check, AlertCircle, Activity, TrendingUp, DownloadCloud, Leaf, Wind, Thermometer, Power 
+  X, Check, AlertCircle, Activity, TrendingUp, DownloadCloud, Leaf, Wind, Thermometer, Power, Radio
 } from "lucide-react";
 import { 
   ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
   ResponsiveContainer, BarChart, LineChart 
 } from 'recharts';
 import { FloorPlan } from "@/components/domain/FloorPlan";
+import { useLiveWard } from "@/lib/useSentinel";
+import { ROOM_DATA, tierRank, autoResponse } from "@/lib/wardData";
 
 // ============================================================================
 // 🧱 재사용 컴포넌트: 모달 껍데기 (스크롤바 숨김 적용)
@@ -205,6 +207,8 @@ export default function DashboardPage() {
   const [role, setRole] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [time, setTime] = useState<string>("");
+  // 201호 실센서 SSE — 헤더 전역 LIVE 인디케이터용(영상에서 실데이터 가동 상시 노출)
+  const { data: live, connected: liveConnected } = useLiveWard("ward_a");
 
   useEffect(() => {
     const savedRole = localStorage.getItem("role");
@@ -238,6 +242,14 @@ export default function DashboardPage() {
             </div>
           )}
           
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold border transition-colors ${liveConnected ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-400" : "bg-slate-700/30 border-slate-600 text-slate-400"}`}>
+            <span className="relative flex h-2 w-2">
+              {liveConnected && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />}
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${liveConnected ? "bg-emerald-400" : "bg-slate-500"}`} />
+            </span>
+            <Radio size={14} /> 201호 실센서 {liveConnected ? `LIVE · ${live?.tier ?? "···"}` : "연결중"}
+          </div>
+
           <div className="flex items-center gap-2 text-slate-400 font-medium"><Clock size={16} className="text-slate-500"/> {time}</div>
           
           <div className="flex items-center gap-4 border-l border-slate-700 pl-8">
@@ -263,81 +275,128 @@ export default function DashboardPage() {
 // 👩‍⚕️ 1. 간호사(ICN) 대시보드
 // ============================================================================
 function NurseView() {
-  const [modal, setModal] = useState<"DANGER" | "VITALS" | null>(null);
+  const [modal, setModal] = useState<"DANGER" | null>(null);
+  // 201호 실센서 tier 를 시드 병동에 반영 → 환경 관제·자동대응이 라이브로 움직임
+  const { data: live } = useLiveWard("ward_a");
+  const rooms = ROOM_DATA.map((r) =>
+    r.roomCode === "201" && live
+      ? { ...r, snapshot: { ...r.snapshot, tier: live.tier ?? r.snapshot.tier } }
+      : r
+  );
+  const atRisk = rooms
+    .filter((r) => tierRank(r.snapshot.tier) >= 1) // CAUTION+
+    .sort((a, b) => tierRank(b.snapshot.tier) - tierRank(a.snapshot.tier));
+  const responding = rooms
+    .filter((r) => tierRank(r.snapshot.tier) >= 2) // ALERT+ → ThinQ 자동대응
+    .sort((a, b) => tierRank(b.snapshot.tier) - tierRank(a.snapshot.tier));
+
+  const devIcon = (t: string) =>
+    t === "vent" ? <Activity size={13} /> : t === "ac" ? <Thermometer size={13} /> : <Wind size={13} />;
+  const liveTier = live?.tier ?? "···";
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col lg:flex-row gap-6 h-auto lg:h-[300px]">
-        {/* 💡 간호사 뷰 리스트 영역 스크롤바 숨김 */}
-        <div className="w-full lg:w-3/4 bg-[#111827] border border-slate-800 rounded-2xl p-6 shadow-lg flex flex-col h-full">
-          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2"><FileText className="text-blue-400"/> 수간호사 인수인계사항</h3>
-          <div className="space-y-3 flex-1 overflow-y-auto pr-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <div className="p-4 bg-red-900/10 border border-red-900/30 rounded-xl">
-              <p className="text-xs text-slate-400 mb-1">오늘 08:00 AM 작성</p>
-              <p className="text-sm text-red-200 font-bold leading-relaxed">🚨 202호 박점순 환자 밤새 미열 지속 및 혈압 변동 확인. 오전 10시 체온 재측정 필수. 302호 환경 상태 주의 깊게 관찰 요망.</p>
-            </div>
-            <div className="p-4 bg-slate-800/50 border border-slate-700/50 rounded-xl">
-              <p className="text-xs text-slate-400 mb-1">오늘 07:30 AM 작성</p>
-              <p className="text-sm text-slate-200 leading-relaxed">302호 조병규 환자 조식 후 혈압 약 복용 완료. 병실 공기청정기 필터 교체 시설팀(FM)에 요청 접수됨.</p>
-            </div>
-          </div>
+      {/* 상단 KPI — 환경·감염·ThinQ 자동대응 중심 */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-[#111827] border border-slate-800 rounded-2xl p-5 shadow-lg flex items-center gap-4">
+          <div className="w-11 h-11 rounded-xl bg-blue-900/20 flex items-center justify-center text-blue-400 border border-blue-500/20 shrink-0"><Activity size={20} /></div>
+          <div><p className="text-[11px] font-bold text-slate-400 mb-0.5">실시간 감시 병실</p><div className="text-2xl font-black text-white">{rooms.length}<span className="text-xs text-slate-500 ml-1 font-normal">개</span></div></div>
+        </div>
+        <div onClick={() => setModal("DANGER")} className="bg-[#111827] border border-[#A50034]/50 rounded-2xl p-5 shadow-lg flex items-center gap-4 cursor-pointer hover:bg-slate-800 transition group">
+          <div className="w-11 h-11 rounded-xl bg-red-900/30 flex items-center justify-center text-[#A50034] border border-[#A50034]/30 shrink-0"><AlertTriangle size={20} /></div>
+          <div><p className="text-[11px] font-bold text-slate-400 mb-0.5 group-hover:text-red-400 transition-colors">주의·위험 병실</p><div className="text-2xl font-black text-white">{atRisk.length}<span className="text-xs text-slate-500 ml-1 font-normal">개소</span></div></div>
+        </div>
+        <div className="bg-[#111827] border border-emerald-500/30 rounded-2xl p-5 shadow-lg flex items-center gap-4">
+          <div className="w-11 h-11 rounded-xl bg-emerald-900/20 flex items-center justify-center text-emerald-400 border border-emerald-500/20 shrink-0"><Radio size={20} /></div>
+          <div><p className="text-[11px] font-bold text-slate-400 mb-0.5 flex items-center gap-1">201호 실센서 <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" /></p><div className="text-xl font-black text-white">{liveTier}</div></div>
+        </div>
+        <div className="bg-[#111827] border border-emerald-500/30 rounded-2xl p-5 shadow-lg flex items-center gap-4">
+          <div className="w-11 h-11 rounded-xl bg-emerald-900/20 flex items-center justify-center text-emerald-400 border border-emerald-500/20 shrink-0"><Zap size={20} /></div>
+          <div><p className="text-[11px] font-bold text-slate-400 mb-0.5">ThinQ 자동대응</p><div className="text-2xl font-black text-white">{responding.length}<span className="text-xs text-slate-500 ml-1 font-normal">개실 가동</span></div></div>
+        </div>
+      </div>
+
+      {/* 메인: 병동 환경 관제맵 + ThinQ 자동대응 라이브 */}
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        <div className="xl:col-span-3 space-y-3">
+          <h3 className="text-lg font-bold text-white flex items-center gap-2"><Wind className="text-blue-400" size={20} /> 병동 환경 관제맵 <span className="text-xs font-normal text-slate-500">· CO₂·재실 실센서 → AI 5-Tier</span></h3>
+          <FloorPlan />
         </div>
 
-        <div className="w-full lg:w-1/4 flex flex-col gap-4 h-full">
-          <div className="flex-1 bg-[#111827] border border-slate-800 rounded-2xl p-5 shadow-lg flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-blue-400 border border-slate-700 shrink-0"><Users size={20}/></div>
-            <div><p className="text-[11px] font-bold text-slate-400 mb-0.5">총 재실 인원</p><div className="text-2xl font-black text-white">34<span className="text-xs text-slate-500 ml-1 font-normal">명</span></div></div>
-          </div>
-          <div onClick={() => setModal("DANGER")} className="flex-1 bg-[#111827] border border-[#A50034]/50 rounded-2xl p-5 shadow-lg flex items-center gap-4 cursor-pointer hover:bg-slate-800 transition relative overflow-hidden group">
-            <div className="absolute inset-0 bg-[#A50034]/5 group-hover:bg-[#A50034]/10 transition"></div>
-            <div className="w-10 h-10 rounded-xl bg-red-900/30 flex items-center justify-center text-[#A50034] border border-[#A50034]/30 shrink-0 relative z-10"><AlertTriangle size={20}/></div>
-            <div className="relative z-10"><p className="text-[11px] font-bold text-slate-400 mb-0.5 group-hover:text-red-400 transition-colors">주의/위험 병실</p><div className="text-2xl font-black text-white">2<span className="text-xs text-slate-500 ml-1 font-normal">개소</span></div></div>
-          </div>
-          <div onClick={() => setModal("VITALS")} className="flex-1 bg-[#111827] border border-orange-500/50 rounded-2xl p-5 shadow-lg flex items-center gap-4 cursor-pointer hover:bg-slate-800 transition relative overflow-hidden group">
-            <div className="absolute inset-0 bg-orange-500/5 group-hover:bg-orange-500/10 transition"></div>
-            <div className="w-10 h-10 rounded-xl bg-orange-900/30 flex items-center justify-center text-orange-400 border border-orange-500/30 shrink-0 relative z-10"><HeartPulse size={20}/></div>
-            <div className="relative z-10"><p className="text-[11px] font-bold text-slate-400 mb-0.5 group-hover:text-orange-400 transition-colors">생체 이상 감지</p><div className="text-2xl font-black text-white">4<span className="text-xs text-slate-500 ml-1 font-normal">명</span></div></div>
+        <div className="xl:col-span-1">
+          <div className="bg-[#111827] border border-emerald-500/20 rounded-2xl p-5 shadow-lg h-full flex flex-col">
+            <h3 className="text-base font-bold text-white flex items-center gap-2 mb-1"><Zap className="text-emerald-400" size={18} /> ThinQ 자동대응 라이브</h3>
+            <p className="text-[11px] text-slate-500 mb-4">위험 감지 시 가전이 자동 가동됩니다</p>
+            <div className="space-y-3 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              {responding.length === 0 ? (
+                <div className="text-center py-12 text-slate-500 text-sm"><CheckCircle2 className="mx-auto mb-2 text-emerald-500" size={28} />전 병실 안정<br />자동대응 대기중</div>
+              ) : responding.map((room) => {
+                const tier = room.snapshot.tier;
+                const isCrit = tierRank(tier) >= 4;
+                return (
+                  <div key={room.roomCode} className={`rounded-xl border p-3 ${isCrit ? "bg-[#A50034]/10 border-[#A50034]/40" : "bg-slate-800/40 border-slate-700"}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-black text-white">{room.roomCode}호</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${isCrit ? "bg-[#A50034] text-white" : "bg-orange-900/50 text-orange-300"}`}>{tier}</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {autoResponse(tier).map((d, i) => (
+                        <div key={i} className="flex items-center gap-2 text-xs bg-[#0B1120]/60 rounded-lg px-2 py-1.5">
+                          <span className="text-emerald-400 shrink-0">{devIcon(d.type)}</span>
+                          <span className="text-slate-300 flex-1 truncate">{d.name}</span>
+                          <span className="text-emerald-300 font-bold shrink-0">{d.mode}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
 
-      <FloorPlan />
+      {/* 하단: 수간호사 인수인계 (축소) */}
+      <div className="bg-[#111827] border border-slate-800 rounded-2xl p-6 shadow-lg">
+        <h3 className="text-base font-bold text-white mb-3 flex items-center gap-2"><FileText className="text-blue-400" size={18} /> 수간호사 인수인계</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="p-4 bg-red-900/10 border border-red-900/30 rounded-xl">
+            <p className="text-xs text-slate-400 mb-1">오늘 08:00 작성</p>
+            <p className="text-sm text-red-200 font-medium leading-relaxed">🚨 202호 환경 악화(CO₂·습도↑) — ThinQ 환기 자동가동 중. 오전 회진 시 확인 요망.</p>
+          </div>
+          <div className="p-4 bg-slate-800/50 border border-slate-700/50 rounded-xl">
+            <p className="text-xs text-slate-400 mb-1">오늘 07:30 작성</p>
+            <p className="text-sm text-slate-200 leading-relaxed">302호 공기청정기 필터 교체 시설팀(FM)에 요청 접수됨.</p>
+          </div>
+        </div>
+      </div>
 
       {modal === "DANGER" && (
-        <Modal title="🚨 주의/위험 병실 상세 조회" onClose={() => setModal(null)}>
-          <div className="space-y-4">
-            <div className="p-5 border border-red-900/50 bg-red-900/10 rounded-xl flex items-center justify-between">
-              <div><h4 className="text-xl font-bold text-red-400">202호 (CRITICAL)</h4><p className="text-sm text-slate-300 mt-1">CO2 농도 초과 및 실내 환자 고열 복합 발생</p></div>
-              <span className="px-4 py-1.5 bg-[#A50034] text-white text-sm font-bold rounded-full shadow-lg">즉각 조치 필요</span>
-            </div>
-            <div className="p-5 border border-orange-900/50 bg-orange-900/10 rounded-xl flex items-center justify-between">
-              <div><h4 className="text-xl font-bold text-orange-400">302호 (HIGH RISK)</h4><p className="text-sm text-slate-300 mt-1">온도 27.5도, 습도 65% - 감염균 번식 위험 수치 진입</p></div>
-              <span className="px-4 py-1.5 bg-orange-600 text-white text-sm font-bold rounded-full shadow-lg">주의 관찰 요망</span>
-            </div>
+        <Modal title="🚨 주의·위험 병실 + ThinQ 자동대응 현황" onClose={() => setModal(null)}>
+          <div className="space-y-3">
+            {atRisk.map((room) => {
+              const tier = room.snapshot.tier;
+              const devs = autoResponse(tier);
+              const isCrit = tierRank(tier) >= 3;
+              return (
+                <div key={room.roomCode} className={`p-5 border rounded-xl ${isCrit ? "border-[#A50034]/50 bg-red-900/10" : "border-orange-900/50 bg-orange-900/10"}`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className={`text-xl font-bold ${isCrit ? "text-red-400" : "text-orange-400"}`}>{room.roomCode}호 <span className="text-sm font-normal">({tier})</span></h4>
+                      <p className="text-sm text-slate-300 mt-1">CO₂ {room.snapshot.co2}ppm · 습도 {room.snapshot.rh}% · 감염확률 {(room.snapshot.poi * 100).toFixed(0)}%</p>
+                    </div>
+                    <span className={`px-3 py-1.5 text-white text-xs font-bold rounded-full shadow-lg ${isCrit ? "bg-[#A50034]" : "bg-orange-600"}`}>{isCrit ? "즉각 조치" : "주의 관찰"}</span>
+                  </div>
+                  {devs.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-slate-700/50">
+                      <span className="text-[11px] text-emerald-400 font-bold flex items-center gap-1"><Zap size={12} /> ThinQ 자동가동:</span>
+                      {devs.map((d, i) => (<span key={i} className="text-[11px] bg-emerald-900/30 text-emerald-300 px-2 py-0.5 rounded">{d.name} · {d.mode}</span>))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
-        </Modal>
-      )}
-
-      {modal === "VITALS" && (
-        <Modal title="🩺 생체 이상 감지 환자 리스트" onClose={() => setModal(null)}>
-           <table className="w-full text-left mt-2 border-collapse">
-            <thead>
-              <tr className="text-slate-400 border-b border-slate-700 text-sm">
-                <th className="pb-3 pl-4">호실</th><th className="pb-3">환자명</th><th className="pb-3">체온</th><th className="pb-3">심박수</th><th className="pb-3 text-right pr-4">현재 상태</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-b border-slate-800 hover:bg-slate-800/30 transition">
-                <td className="py-4 pl-4 font-bold text-lg">202호</td><td className="font-medium">박점순 (85세)</td><td className="text-red-400 font-bold text-lg">38.8°C</td><td className="text-red-400 font-bold text-lg">115 bpm</td><td className="text-right pr-4"><span className="bg-red-900/50 text-red-200 px-3 py-1.5 rounded-lg text-xs font-bold inline-block">고열/위험</span></td>
-              </tr>
-              <tr className="border-b border-slate-800 hover:bg-slate-800/30 transition">
-                <td className="py-4 pl-4 font-bold text-lg">202호</td><td className="font-medium">이만구 (91세)</td><td className="text-slate-200 text-lg">37.1°C</td><td className="text-red-400 font-bold text-lg">105 bpm</td><td className="text-right pr-4"><span className="bg-orange-900/50 text-orange-200 px-3 py-1.5 rounded-lg text-xs font-bold inline-block">심박이상</span></td>
-              </tr>
-              <tr className="border-b border-slate-800 hover:bg-slate-800/30 transition">
-                <td className="py-4 pl-4 font-bold text-lg">302호</td><td className="font-medium">조병규 (86세)</td><td className="text-red-400 font-bold text-lg">39.2°C</td><td className="text-red-400 font-bold text-lg">125 bpm</td><td className="text-right pr-4"><span className="bg-[#A50034] text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md inline-block">응급조치요망</span></td>
-              </tr>
-            </tbody>
-          </table>
         </Modal>
       )}
     </div>
