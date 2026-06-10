@@ -47,12 +47,14 @@ export function useLiveWard(spaceId = "ward_a") {
 }
 
 export type SpaceOverview = {
+  space_id: string;
   space_name: string;
   space_type: string;
+  area_m2?: number;
   max_occupancy: number;
   tier: string;
   poi: number | null;
-  source: string;
+  source: string;       // "실센서" | "시뮬"
   gas_raw: number | null;
   temp_c: number | null;
   humidity: number | null;

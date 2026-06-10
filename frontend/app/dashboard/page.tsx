@@ -12,9 +12,9 @@ import {
   ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
   ResponsiveContainer, BarChart, LineChart 
 } from 'recharts';
-import { FloorPlan } from "@/components/domain/FloorPlan";
-import { useLiveWard } from "@/lib/useSentinel";
-import { ROOM_DATA, tierRank, autoResponse } from "@/lib/wardData";
+import { FloorPlan, type SpaceCard } from "@/components/domain/FloorPlan";
+import { useLiveWard, useSpacesOverview } from "@/lib/useSentinel";
+import { tierRank, autoResponse } from "@/lib/wardData";
 
 // ============================================================================
 // 🧱 재사용 컴포넌트: 모달 껍데기 (스크롤바 숨김 적용)
@@ -276,35 +276,38 @@ export default function DashboardPage() {
 // ============================================================================
 function NurseView() {
   const [modal, setModal] = useState<"DANGER" | null>(null);
-  // 201호 실센서 tier 를 시드 병동에 반영 → 환경 관제·자동대응이 라이브로 움직임
+  // 백엔드 overview(전 공간) + 201호 SSE 병합 → 환경 관제·자동대응이 라이브로 움직임
+  const ov = useSpacesOverview(5000);
   const { data: live } = useLiveWard("ward_a");
-  const rooms = ROOM_DATA.map((r) =>
-    r.roomCode === "201" && live
-      ? { ...r, snapshot: { ...r.snapshot, tier: live.tier ?? r.snapshot.tier } }
-      : r
-  );
-  const atRisk = rooms
-    .filter((r) => tierRank(r.snapshot.tier) >= 1) // CAUTION+
+  const spaces: SpaceCard[] = ov.map((s) => {
+    const isLive = s.source === "실센서";
+    const snapshot = isLive && live
+      ? { tier: live.tier ?? s.tier, poi: live.poi ?? s.poi, co2: live.co2_ppm ?? s.co2_ppm, temp_c: live.temp_c ?? s.temp_c, rh: live.humidity ?? s.humidity, pm25: live.pm25 ?? s.pm25 }
+      : { tier: s.tier, poi: s.poi, co2: s.co2_ppm, temp_c: s.temp_c, rh: s.humidity, pm25: s.pm25 };
+    return { space_id: s.space_id, space_name: s.space_name, space_type: s.space_type, max_occupancy: s.max_occupancy, isLive, occ: isLive ? (live?.occupancy ?? null) : null, snapshot };
+  });
+  const atRisk = spaces
+    .filter((s) => tierRank(s.snapshot.tier) >= 1) // CAUTION+
     .sort((a, b) => tierRank(b.snapshot.tier) - tierRank(a.snapshot.tier));
-  const responding = rooms
-    .filter((r) => tierRank(r.snapshot.tier) >= 2) // ALERT+ → ThinQ 자동대응
+  const responding = spaces
+    .filter((s) => tierRank(s.snapshot.tier) >= 2) // ALERT+ → ThinQ 자동대응
     .sort((a, b) => tierRank(b.snapshot.tier) - tierRank(a.snapshot.tier));
 
   const devIcon = (t: string) =>
     t === "vent" ? <Activity size={13} /> : t === "ac" ? <Thermometer size={13} /> : <Wind size={13} />;
-  const liveTier = live?.tier ?? "···";
+  const liveTier = spaces.find((s) => s.isLive)?.snapshot.tier ?? "···";
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      {/* 상단 KPI — 환경·감염·ThinQ 자동대응 중심 */}
+      {/* 상단 KPI — 환경·감염·ThinQ 자동대응 중심 (백엔드 라이브) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-[#111827] border border-slate-800 rounded-2xl p-5 shadow-lg flex items-center gap-4">
           <div className="w-11 h-11 rounded-xl bg-blue-900/20 flex items-center justify-center text-blue-400 border border-blue-500/20 shrink-0"><Activity size={20} /></div>
-          <div><p className="text-[11px] font-bold text-slate-400 mb-0.5">실시간 감시 병실</p><div className="text-2xl font-black text-white">{rooms.length}<span className="text-xs text-slate-500 ml-1 font-normal">개</span></div></div>
+          <div><p className="text-[11px] font-bold text-slate-400 mb-0.5">실시간 감시 공간</p><div className="text-2xl font-black text-white">{spaces.length}<span className="text-xs text-slate-500 ml-1 font-normal">개</span></div></div>
         </div>
         <div onClick={() => setModal("DANGER")} className="bg-[#111827] border border-[#A50034]/50 rounded-2xl p-5 shadow-lg flex items-center gap-4 cursor-pointer hover:bg-slate-800 transition group">
           <div className="w-11 h-11 rounded-xl bg-red-900/30 flex items-center justify-center text-[#A50034] border border-[#A50034]/30 shrink-0"><AlertTriangle size={20} /></div>
-          <div><p className="text-[11px] font-bold text-slate-400 mb-0.5 group-hover:text-red-400 transition-colors">주의·위험 병실</p><div className="text-2xl font-black text-white">{atRisk.length}<span className="text-xs text-slate-500 ml-1 font-normal">개소</span></div></div>
+          <div><p className="text-[11px] font-bold text-slate-400 mb-0.5 group-hover:text-red-400 transition-colors">주의·위험 공간</p><div className="text-2xl font-black text-white">{atRisk.length}<span className="text-xs text-slate-500 ml-1 font-normal">개소</span></div></div>
         </div>
         <div className="bg-[#111827] border border-emerald-500/30 rounded-2xl p-5 shadow-lg flex items-center gap-4">
           <div className="w-11 h-11 rounded-xl bg-emerald-900/20 flex items-center justify-center text-emerald-400 border border-emerald-500/20 shrink-0"><Radio size={20} /></div>
@@ -312,15 +315,15 @@ function NurseView() {
         </div>
         <div className="bg-[#111827] border border-emerald-500/30 rounded-2xl p-5 shadow-lg flex items-center gap-4">
           <div className="w-11 h-11 rounded-xl bg-emerald-900/20 flex items-center justify-center text-emerald-400 border border-emerald-500/20 shrink-0"><Zap size={20} /></div>
-          <div><p className="text-[11px] font-bold text-slate-400 mb-0.5">ThinQ 자동대응</p><div className="text-2xl font-black text-white">{responding.length}<span className="text-xs text-slate-500 ml-1 font-normal">개실 가동</span></div></div>
+          <div><p className="text-[11px] font-bold text-slate-400 mb-0.5">ThinQ 자동대응</p><div className="text-2xl font-black text-white">{responding.length}<span className="text-xs text-slate-500 ml-1 font-normal">개소 가동</span></div></div>
         </div>
       </div>
 
       {/* 메인: 병동 환경 관제맵 + ThinQ 자동대응 라이브 */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         <div className="xl:col-span-3 space-y-3">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2"><Wind className="text-blue-400" size={20} /> 병동 환경 관제맵 <span className="text-xs font-normal text-slate-500">· CO₂·재실 실센서 → AI 5-Tier</span></h3>
-          <FloorPlan />
+          <h3 className="text-lg font-bold text-white flex items-center gap-2"><Wind className="text-blue-400" size={20} /> 병동 환경 관제맵 <span className="text-xs font-normal text-slate-500">· 백엔드 라이브 · CO₂ → AI 5-Tier</span></h3>
+          <FloorPlan spaces={spaces} />
         </div>
 
         <div className="xl:col-span-1">
@@ -329,15 +332,15 @@ function NurseView() {
             <p className="text-[11px] text-slate-500 mb-4">위험 감지 시 가전이 자동 가동됩니다</p>
             <div className="space-y-3 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {responding.length === 0 ? (
-                <div className="text-center py-12 text-slate-500 text-sm"><CheckCircle2 className="mx-auto mb-2 text-emerald-500" size={28} />전 병실 안정<br />자동대응 대기중</div>
-              ) : responding.map((room) => {
-                const tier = room.snapshot.tier;
+                <div className="text-center py-12 text-slate-500 text-sm"><CheckCircle2 className="mx-auto mb-2 text-emerald-500" size={28} />전 공간 안정<br />자동대응 대기중</div>
+              ) : responding.map((s) => {
+                const tier = s.snapshot.tier;
                 const isCrit = tierRank(tier) >= 4;
                 return (
-                  <div key={room.roomCode} className={`rounded-xl border p-3 ${isCrit ? "bg-[#A50034]/10 border-[#A50034]/40" : "bg-slate-800/40 border-slate-700"}`}>
+                  <div key={s.space_id} className={`rounded-xl border p-3 ${isCrit ? "bg-[#A50034]/10 border-[#A50034]/40" : "bg-slate-800/40 border-slate-700"}`}>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-black text-white">{room.roomCode}호</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${isCrit ? "bg-[#A50034] text-white" : "bg-orange-900/50 text-orange-300"}`}>{tier}</span>
+                      <span className="font-black text-white text-sm truncate">{s.space_name}</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded shrink-0 ${isCrit ? "bg-[#A50034] text-white" : "bg-orange-900/50 text-orange-300"}`}>{tier}</span>
                     </div>
                     <div className="space-y-1.5">
                       {autoResponse(tier).map((d, i) => (
@@ -362,28 +365,28 @@ function NurseView() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="p-4 bg-red-900/10 border border-red-900/30 rounded-xl">
             <p className="text-xs text-slate-400 mb-1">오늘 08:00 작성</p>
-            <p className="text-sm text-red-200 font-medium leading-relaxed">🚨 202호 환경 악화(CO₂·습도↑) — ThinQ 환기 자동가동 중. 오전 회진 시 확인 요망.</p>
+            <p className="text-sm text-red-200 font-medium leading-relaxed">🚨 환경 악화 공간 ThinQ 환기 자동가동 중. 오전 회진 시 확인 요망.</p>
           </div>
           <div className="p-4 bg-slate-800/50 border border-slate-700/50 rounded-xl">
             <p className="text-xs text-slate-400 mb-1">오늘 07:30 작성</p>
-            <p className="text-sm text-slate-200 leading-relaxed">302호 공기청정기 필터 교체 시설팀(FM)에 요청 접수됨.</p>
+            <p className="text-sm text-slate-200 leading-relaxed">공용식당 식사시간 밀집 모니터링 — 환기 강화 권고.</p>
           </div>
         </div>
       </div>
 
       {modal === "DANGER" && (
-        <Modal title="🚨 주의·위험 병실 + ThinQ 자동대응 현황" onClose={() => setModal(null)}>
+        <Modal title="🚨 주의·위험 공간 + ThinQ 자동대응 현황" onClose={() => setModal(null)}>
           <div className="space-y-3">
-            {atRisk.map((room) => {
-              const tier = room.snapshot.tier;
+            {atRisk.map((s) => {
+              const tier = s.snapshot.tier;
               const devs = autoResponse(tier);
               const isCrit = tierRank(tier) >= 3;
               return (
-                <div key={room.roomCode} className={`p-5 border rounded-xl ${isCrit ? "border-[#A50034]/50 bg-red-900/10" : "border-orange-900/50 bg-orange-900/10"}`}>
+                <div key={s.space_id} className={`p-5 border rounded-xl ${isCrit ? "border-[#A50034]/50 bg-red-900/10" : "border-orange-900/50 bg-orange-900/10"}`}>
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className={`text-xl font-bold ${isCrit ? "text-red-400" : "text-orange-400"}`}>{room.roomCode}호 <span className="text-sm font-normal">({tier})</span></h4>
-                      <p className="text-sm text-slate-300 mt-1">CO₂ {room.snapshot.co2}ppm · 습도 {room.snapshot.rh}% · 감염확률 {(room.snapshot.poi * 100).toFixed(0)}%</p>
+                      <h4 className={`text-xl font-bold ${isCrit ? "text-red-400" : "text-orange-400"}`}>{s.space_name} <span className="text-sm font-normal">({tier})</span></h4>
+                      <p className="text-sm text-slate-300 mt-1">CO₂ {s.snapshot.co2 ?? "—"}ppm · 습도 {s.snapshot.rh != null ? s.snapshot.rh.toFixed(0) : "—"}% · 감염확률 {s.snapshot.poi != null ? (s.snapshot.poi * 100).toFixed(1) : "—"}%</p>
                     </div>
                     <span className={`px-3 py-1.5 text-white text-xs font-bold rounded-full shadow-lg ${isCrit ? "bg-[#A50034]" : "bg-orange-600"}`}>{isCrit ? "즉각 조치" : "주의 관찰"}</span>
                   </div>

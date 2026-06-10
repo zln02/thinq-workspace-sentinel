@@ -98,3 +98,10 @@ export const AUTO_RESPONSE: Record<string, AutoDevice[]> = {
   MONITOR: [],
 };
 export function autoResponse(tier: string): AutoDevice[] { return AUTO_RESPONSE[tier] ?? []; }
+
+// 백엔드 공간명("201호 다인실")에서 호수 추출 → 시드 환자 목록 (공용공간은 환자 없음)
+export function patientsForSpace(spaceName: string): WardPatient[] {
+  const m = spaceName.match(/(\d+)호/);
+  if (!m) return [];
+  return ROOM_DATA.find((r) => r.roomCode === m[1])?.patients ?? [];
+}
