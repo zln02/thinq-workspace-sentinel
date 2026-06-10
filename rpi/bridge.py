@@ -16,6 +16,7 @@
   BAUD         : 기본 9600
   SPACE_ID     : 기본 ward_a
 """
+import glob
 import os
 import re
 import time
@@ -23,7 +24,23 @@ import time
 import requests
 import serial
 
-PORT = os.getenv("SERIAL_PORT", "/dev/ttyACM0")
+
+def _find_port() -> str:
+    """SERIAL_PORT 지정 시 그대로, 없으면 존재하는 ttyACM*/ttyUSB* 자동 선택.
+
+    아두이노 재업로드/USB 재연결 시 ACM0↔ACM1 번호가 바뀌어도 견고하게 동작.
+    """
+    env = os.getenv("SERIAL_PORT")
+    if env:
+        return env
+    for pat in ("/dev/ttyACM*", "/dev/ttyUSB*"):
+        hits = sorted(glob.glob(pat))
+        if hits:
+            return hits[0]
+    return "/dev/ttyACM0"
+
+
+PORT = _find_port()
 BAUD = int(os.getenv("BAUD", "9600"))
 API = os.getenv("SENTINEL_API", "http://100.96.227.23:8003/api/v1/sensor/reading")
 SPACE = os.getenv("SPACE_ID", "ward_a")
