@@ -13,7 +13,7 @@ import {
   ResponsiveContainer, BarChart, LineChart 
 } from 'recharts';
 import { FloorPlan, type SpaceCard } from "@/components/domain/FloorPlan";
-import { useLiveWard, useSpacesOverview } from "@/lib/useSentinel";
+import { useLiveWard, useSpacesOverview, useExternalSignal } from "@/lib/useSentinel";
 import { tierRank, autoResponse } from "@/lib/wardData";
 
 // ============================================================================
@@ -272,6 +272,46 @@ export default function DashboardPage() {
 }
 
 // ============================================================================
+// 🦠 외부 감염병 조기경보 배너 (질병청·UIS 연동) — "외부 예측 → 선제 예방" 차별점
+// ============================================================================
+const DISEASE_KR: Record<string, string> = { influenza: "인플루엔자", covid: "코로나19", covid19: "코로나19", rsv: "RSV", norovirus: "노로바이러스" };
+const LV_STYLE: Record<string, { dot: string; text: string; bg: string; label: string }> = {
+  GREEN: { dot: "bg-emerald-500", text: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200", label: "평온" },
+  YELLOW: { dot: "bg-amber-500", text: "text-amber-700", bg: "bg-amber-50 border-amber-200", label: "주의" },
+  ORANGE: { dot: "bg-orange-500", text: "text-orange-700", bg: "bg-orange-50 border-orange-200", label: "경계" },
+  RED: { dot: "bg-red-500", text: "text-red-700", bg: "bg-red-50 border-red-200", label: "심각" },
+};
+
+function ExternalForecastBanner() {
+  const regions = useExternalSignal(60000);
+  if (!regions.length) return null;
+  const top = [...regions].sort((a, b) => (b.live_score ?? 0) - (a.live_score ?? 0))[0];
+  const st = LV_STYLE[top.live_level] ?? LV_STYLE.GREEN;
+  const disease = DISEASE_KR[top.disease] ?? top.disease;
+  const peak = top.conf_peak_date ? `${Number(top.conf_peak_date.slice(5, 7))}월 ${Number(top.conf_peak_date.slice(8, 10))}일` : "-";
+  return (
+    <div className={`rounded-2xl border p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 ${st.bg}`}>
+      <div className="flex items-center gap-3 shrink-0">
+        <span className="text-2xl">🦠</span>
+        <div>
+          <p className="text-[11px] font-bold text-slate-500">외부 감염병 조기경보 · 질병청 UIS 연동</p>
+          <p className={`text-sm font-black ${st.text}`}>{top.region} {disease} <span>{st.label}({top.live_score ?? "—"})</span></p>
+        </div>
+      </div>
+      <div className="hidden sm:block h-9 w-px bg-slate-200" />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm text-slate-700 font-bold">📈 유행 피크 예측 {peak}{top.lead_days != null && top.lead_days > 0 ? <span className="text-[#A50034]"> · D-{top.lead_days} 선행 경보</span> : null}</p>
+        <p className="text-xs text-slate-500 mt-0.5">예측 위험 도달 시 ThinQ가 전 병동 <b className="text-slate-700">선제 환기·정화 자동 강화</b> · 전국 {regions.length}개 지역 실시간 감시</p>
+      </div>
+      <span className="relative flex h-2.5 w-2.5 shrink-0">
+        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${st.dot} opacity-60`} />
+        <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${st.dot}`} />
+      </span>
+    </div>
+  );
+}
+
+// ============================================================================
 // 👩‍⚕️ 1. 간호사(ICN) 대시보드
 // ============================================================================
 function NurseView() {
@@ -299,6 +339,9 @@ function NurseView() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
+      {/* 외부 감염병 조기경보 — 외부 예측 → 선제 예방 차별점 */}
+      <ExternalForecastBanner />
+
       {/* 상단 KPI — 환경·감염·ThinQ 자동대응 중심 (백엔드 라이브) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-lg flex items-center gap-4">
