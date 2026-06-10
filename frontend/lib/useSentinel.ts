@@ -15,6 +15,7 @@ export type LiveSensor = {
   temp_c: number | null;
   humidity: number | null;
   gas_raw: number | null;
+  occupancy?: number | null;  // 실측 재실 인원(LD2410C): 0=빈 병실 / >0=재실. 미측정 시 백엔드 DEMO_OCCUPANCY
   governance: string;
   approval_required: boolean;
   formula?: Record<string, unknown>;
