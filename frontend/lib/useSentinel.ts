@@ -182,3 +182,39 @@ export async function sendControl(action: string, spaceId = "ward_a") {
     /* ignore */
   }
 }
+
+export type RegionSignal = {
+  region: string;
+  disease: string;
+  level: string;
+  live_score: number | null;
+  live_level: string;
+  peak_level: string;
+  conf_peak_date: string | null;
+  lead_days: number | null;
+  per_100k: number | null;
+};
+
+/** 외부 감염병 조기경보(질병청·UIS 연동) 전국 지역 신호 폴링 — 선제 예방 차별점. */
+export function useExternalSignal(intervalMs = 60000) {
+  const [regions, setRegions] = useState<RegionSignal[]>([]);
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const r = await fetch(`${API_BASE}/api/sentinel/external/regions`);
+        const j = await r.json();
+        if (alive && j.regions) setRegions(j.regions);
+      } catch {
+        /* ignore */
+      }
+    };
+    load();
+    const t = setInterval(load, intervalMs);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, [intervalMs]);
+  return regions;
+}
