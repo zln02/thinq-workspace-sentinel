@@ -66,12 +66,15 @@ def main():
         if not m:
             continue
         temp, hum, co2, presence = m.groups()
+        t, h = float(temp), float(hum)
         payload = {
             "space_id": SPACE,
             "device_id": "rpi-arduino",
-            "temp_c": float(temp),
-            "humidity": float(hum),
         }
+        # DHT 미연결/오류 시 펌웨어가 0.00 출력 → 온습도 생략(습도 0을 극건조 위험으로 오인 방지)
+        if not (t == 0.0 and h == 0.0):
+            payload["temp_c"] = t
+            payload["humidity"] = h
         # CO2: 유효(>=0)할 때만 전송. 없거나 -1(워밍업/오류)이면 생략→백엔드 코웨이 폴백 유지
         if co2 is not None and int(co2) >= 0:
             payload["co2_ppm"] = float(co2)

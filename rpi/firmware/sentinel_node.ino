@@ -44,7 +44,7 @@ const byte MHZ_READ[9] = {0xFF, 0x01, 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x79};
 
 void setup() {
   Serial.begin(9600);        // 라파이 bridge 와 양방향 (BAUD=9600)
-  mhz.begin(9600);
+  // mhz(SoftwareSerial)는 readCO2()에서만 begin/end — 상시 활성 시 인터럽트가 DHT 타이밍을 깨뜨림
   dht.begin();
   pinMode(PRESENCE_PIN, INPUT);
   for (int i = 0; i < 5; i++) { pinMode(LED_PINS[i], OUTPUT); digitalWrite(LED_PINS[i], LOW); }
@@ -54,6 +54,7 @@ void setup() {
 
 // MH-Z19B CO2 ppm. 실패(워밍업/체크섬오류) 시 -1.
 int readCO2() {
+  mhz.begin(9600);                 // 이 구간만 SoftwareSerial 활성
   while (mhz.available()) mhz.read();
   mhz.write(MHZ_READ, 9);
   byte resp[9];
@@ -62,6 +63,7 @@ int readCO2() {
   while (idx < 9 && millis() - t0 < 400) {   // 센서 미연결 시 400ms만 대기(출력 끊김 방지)
     if (mhz.available()) resp[idx++] = mhz.read();
   }
+  mhz.end();                       // 인터럽트 해제 → 다음 DHT 읽기 타이밍 보호
   if (idx < 9 || resp[0] != 0xFF || resp[1] != 0x86) return -1;
   byte checksum = 0;
   for (int i = 1; i < 8; i++) checksum += resp[i];
@@ -112,7 +114,7 @@ void loop() {
   Serial.print(" 재실:"); Serial.print(presence);
   Serial.println();
 
-  // 라파이 tier 회신 폴링(약 1초 동안 LED 반영)
+  // 라파이 tier 회신 폴링 — DHT22는 최소 2초 샘플 간격 필요 → 주기 ~2초 유지
   unsigned long t0 = millis();
-  while (millis() - t0 < 1000) { pollTier(); }
+  while (millis() - t0 < 1600) { pollTier(); }
 }
