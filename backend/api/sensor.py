@@ -72,11 +72,17 @@ def _env_tier(temp: Optional[float], humidity: Optional[float]) -> str:
     return _TIER_NAMES[rank]
 
 
-def compute_tier(co2, gas_raw, temp=None, humidity=None):
-    """감염위험(CO2 재호흡률/가스) + 환경위험(온습도)을 종합해 더 높은 tier 채택."""
+def compute_tier(co2, gas_raw, temp=None, humidity=None, occupancy=None):
+    """감염위험(CO2 재호흡률/가스) + 환경위험(온습도)을 종합해 더 높은 tier 채택.
+
+    occupancy(재실 인원): None이면 시연 가정 DEMO_OCCUPANCY 사용. 0이면 빈 병실 →
+    infection_probability가 (0, f) 반환 → PoI 0 → MONITOR(사람 없으면 감염위험 0).
+    LD2310C는 재실 '유무'만 주므로 bridge가 재실=상수폴백(None)/부재=0 으로 게이팅.
+    """
+    n = DEMO_OCCUPANCY if occupancy is None else occupancy
     if co2 is not None:
         poi, f = infection_probability(
-            co2, DEMO_INFECTORS, DEMO_OCCUPANCY, DEMO_QUANTA, DEMO_EXPOSURE_H
+            co2, DEMO_INFECTORS, n, DEMO_QUANTA, DEMO_EXPOSURE_H
         )
         base = tier_from_poi(poi)
     elif gas_raw is not None:
@@ -227,6 +233,7 @@ class SensorReading(BaseModel):
     co2_ppm: Optional[float] = None
     gas_raw: Optional[float] = None
     pm25: Optional[float] = None
+    occupancy: Optional[int] = None  # 실측 재실 인원(LD2310C: 재실→None폴백/부재→0). None이면 DEMO_OCCUPANCY
 
 
 @router.post("/reading", dependencies=[Depends(require_api_key)])
@@ -242,7 +249,9 @@ async def ingest_reading(r: SensorReading):
             pm25 = aq.get("pm25")
 
     # 2) Rudnick-Milton 재호흡률 → PoI → tier
-    tier, poi, f = compute_tier(co2, r.gas_raw, r.temp_c, r.humidity)
+    #    재실 실측: None(재실/미측정)→시연 가정 인원, 0(빈 병실)→PoI 0. DB/SSE엔 적용된 n 기록.
+    n_eff = DEMO_OCCUPANCY if r.occupancy is None else r.occupancy
+    tier, poi, f = compute_tier(co2, r.gas_raw, r.temp_c, r.humidity, occupancy=r.occupancy)
     # 외부신호 선제 boost — 선택 지역 감염병 확산이 심하면 센서 정상이어도 tier 상향(사전예방)
     ext_boost = "MONITOR"
     try:
@@ -265,9 +274,9 @@ async def ingest_reading(r: SensorReading):
                 site_uuid, space_uuid = await _resolve_space(con, r.space_id)
                 await con.execute(
                     "INSERT INTO sentinel.sensor_readings "
-                    "(time, site_id, space_id, device_id, co2_ppm, pm25_ugm3, temperature, humidity, gas_raw) "
-                    "VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7, $8)",
-                    site_uuid, space_uuid, r.device_id, co2, pm25, r.temp_c, r.humidity, r.gas_raw,
+                    "(time, site_id, space_id, device_id, co2_ppm, pm25_ugm3, temperature, humidity, gas_raw, occupancy) "
+                    "VALUES (NOW(), $1, $2, $3, $4, $5, $6, $7, $8, $9)",
+                    site_uuid, space_uuid, r.device_id, co2, pm25, r.temp_c, r.humidity, r.gas_raw, n_eff,
                 )
                 # REHVA 결과 적재 — Performance Tracker(/sensor/kpi)가 집계하는 소스.
                 # poi 0~1, risk_tier 1~5 (DB CHECK 제약). best-effort.
@@ -317,13 +326,14 @@ async def ingest_reading(r: SensorReading):
         "co2_ppm": co2,
         "gas_raw": r.gas_raw,
         "pm25": pm25,
+        "occupancy": n_eff,
         "iaq_exceed": exceed,
         "governance": governance,
         "approval_required": approval_required,
         "coway": coway_action,
         "formula": {
             "model": "Rudnick-Milton",
-            "co2": co2, "f": f, "I": DEMO_INFECTORS, "n": DEMO_OCCUPANCY,
+            "co2": co2, "f": f, "I": DEMO_INFECTORS, "n": n_eff,
             "q": DEMO_QUANTA, "t_h": DEMO_EXPOSURE_H, "poi": poi,
         },
     }
