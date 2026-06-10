@@ -4,6 +4,10 @@
 //   /api/sentinel/stream/... → http://127.0.0.1:8003/api/v1/stream/...
 import { useEffect, useState } from "react";
 
+// 배포(basePath=/sentinel) 시 fetch/SSE가 /sentinel/api/... 로 나가야 nginx(/sentinel→:3001)를 거쳐 rewrite됨.
+// dev(basePath="")면 빈 문자열이라 기존 /api/... 그대로.
+const API_BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 export type LiveSensor = {
   space_id: string;
   tier: string;
@@ -28,7 +32,7 @@ export function useLiveWard(spaceId = "ward_a") {
   const [connected, setConnected] = useState(false);
   const [lastTs, setLastTs] = useState<number | null>(null);
   useEffect(() => {
-    const es = new EventSource(`/api/sentinel/stream/live/${spaceId}`);
+    const es = new EventSource(`${API_BASE}/api/sentinel/stream/live/${spaceId}`);
     es.addEventListener("live_init", () => setConnected(true));
     es.addEventListener("sensor", (e) => {
       try {
@@ -69,7 +73,7 @@ export function useSpacesOverview(intervalMs = 5000) {
     let alive = true;
     const load = async () => {
       try {
-        const r = await fetch("/api/sentinel/sensor/spaces/overview");
+        const r = await fetch(`${API_BASE}/api/sentinel/sensor/spaces/overview`);
         const j = await r.json();
         if (alive && j.spaces) setSpaces(j.spaces);
       } catch {
@@ -93,7 +97,7 @@ export function useCowayStatus(intervalMs = 8000) {
     let alive = true;
     const load = async () => {
       try {
-        const r = await fetch("/api/sentinel/sensor/coway-status");
+        const r = await fetch(`${API_BASE}/api/sentinel/sensor/coway-status`);
         const j = await r.json();
         if (alive) setStatus(j);
       } catch {
@@ -117,7 +121,7 @@ export function useAcStatus(intervalMs = 10000) {
     let alive = true;
     const load = async () => {
       try {
-        const r = await fetch("/api/sentinel/sensor/ac-status");
+        const r = await fetch(`${API_BASE}/api/sentinel/sensor/ac-status`);
         const j = await r.json();
         if (alive) setStatus(j);
       } catch {
@@ -149,7 +153,7 @@ export function useKpi(intervalMs = 30000) {
     let alive = true;
     const load = async () => {
       try {
-        const r = await fetch("/api/sentinel/sensor/kpi");
+        const r = await fetch(`${API_BASE}/api/sentinel/sensor/kpi`);
         const j = await r.json();
         if (alive) setKpi(j);
       } catch {
@@ -169,7 +173,7 @@ export function useKpi(intervalMs = 30000) {
 /** 제어 명령 (코웨이/에어컨 ON·OFF·급속 등). */
 export async function sendControl(action: string, spaceId = "ward_a") {
   try {
-    await fetch("/api/sentinel/sensor/control", {
+    await fetch(`${API_BASE}/api/sentinel/sensor/control`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ space_id: spaceId, action }),
