@@ -2,7 +2,12 @@
 """라즈베리파이 센서 브릿지.
 
 아두이노(/dev/ttyACM0)의 시리얼 출력을 읽어 GCP 백엔드로 POST.
-아두이노 출력 형식: "온도:23.80C 습도:48.00% 단계:1 가스:91"
+아두이노 출력 형식: "온도:23.80C 습도:48.00% CO2:650 재실:1"
+  (CO2·재실은 옵셔널 — 둘 다 없는 "온도:..% " 도 동작)
+  CO2 -1 = 센서 워밍업/오류(무시), 재실 1=사람 있음 / 0=빈 병실
+  ※ MQ2 가스센서는 제거(CO2 실측이 폴백을 대체).
+
+백엔드 응답 tier 는 시리얼로 아두이노에 회신("TIER:XXX\\n") → LED 게이지 점등.
 
 사용: python3 bridge.py
 환경변수:
@@ -11,23 +16,40 @@
   BAUD         : 기본 9600
   SPACE_ID     : 기본 ward_a
 """
+import glob
 import os
 import re
 import time
 
 import requests
 import serial
-from collections import deque
 
-_gas_window: deque = deque(maxlen=5)  # 가스값 이동평균(출렁임 완화 → tier 깜빡임 방지)
 
-PORT = os.getenv("SERIAL_PORT", "/dev/ttyACM0")
+def _find_port() -> str:
+    """SERIAL_PORT 지정 시 그대로, 없으면 존재하는 ttyACM*/ttyUSB* 자동 선택.
+
+    아두이노 재업로드/USB 재연결 시 ACM0↔ACM1 번호가 바뀌어도 견고하게 동작.
+    """
+    env = os.getenv("SERIAL_PORT")
+    if env:
+        return env
+    for pat in ("/dev/ttyACM*", "/dev/ttyUSB*"):
+        hits = sorted(glob.glob(pat))
+        if hits:
+            return hits[0]
+    return "/dev/ttyACM0"
+
+
+PORT = _find_port()
 BAUD = int(os.getenv("BAUD", "9600"))
 API = os.getenv("SENTINEL_API", "http://100.96.227.23:8003/api/v1/sensor/reading")
 SPACE = os.getenv("SPACE_ID", "ward_a")
 API_KEY = os.getenv("SENTINEL_API_KEY", "")  # 백엔드 인증키(설정 시 헤더 전송)
 
-PAT = re.compile(r"온도:([\d.]+)C 습도:([\d.]+)% 단계:(\d+) 가스:(\d+)")
+PAT = re.compile(
+    r"온도:([\d.]+)C 습도:([\d.]+)%"
+    r"(?: CO2:(-?\d+))?(?: 재실:([01]))?"  # CO2·재실 옵셔널
+)
 
 
 def main():
@@ -43,21 +65,27 @@ def main():
         m = PAT.search(line)
         if not m:
             continue
-        temp, hum, _lvl, gas = m.groups()
-        _gas_window.append(float(gas))
-        gas_smooth = sum(_gas_window) / len(_gas_window)
+        temp, hum, co2, presence = m.groups()
         payload = {
             "space_id": SPACE,
             "device_id": "rpi-arduino",
             "temp_c": float(temp),
             "humidity": float(hum),
-            "gas_raw": round(gas_smooth, 1),
         }
+        # CO2: 유효(>=0)할 때만 전송. 없거나 -1(워밍업/오류)이면 생략→백엔드 코웨이 폴백 유지
+        if co2 is not None and int(co2) >= 0:
+            payload["co2_ppm"] = float(co2)
+        # 재실: 0(빈 병실)이면 occupancy=0→PoI 0. 1(재실)/미측정이면 생략→백엔드 DEMO_OCCUPANCY 폴백
+        if presence == "0":
+            payload["occupancy"] = 0
         try:
             hdr = {"X-API-Key": API_KEY} if API_KEY else {}
             r = requests.post(API, json=payload, headers=hdr, timeout=4)
             j = r.json()
-            print(f"  {temp}C {hum}% gas={gas} → tier={j.get('tier')} coway={j.get('coway')}")
+            tier = j.get("tier")
+            if tier:  # 아두이노 LED 게이지 회신
+                ser.write(f"TIER:{tier}\n".encode())
+            print(f"  {temp}C {hum}% co2={co2} 재실={presence} → tier={tier} coway={j.get('coway')}")
         except Exception as e:  # noqa: BLE001
             print(f"  POST 실패: {e}")
 
