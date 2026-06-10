@@ -439,8 +439,17 @@ def _sim_reading(space_name: str, space_type: str) -> dict:
     gas = max(60, base_gas + wave * 50)
     temp = 23.5 + (seed % 4) + wave * 1.2
     hum = 50 + (seed % 12) + wave * 6
+    # CO2 라이브: 공간별 baseline + 분단위 변동 → compute_tier가 Rudnick-Milton PoI 자동 산출
+    base_co2 = 480 + (seed % 200)
+    if space_type == "ISOLATION":
+        base_co2 += 280   # 환기 제한 격리실 → 고CO2
+    elif space_type == "DINING":
+        base_co2 += 200   # 식사시간 밀집
+    elif space_type == "LOUNGE":
+        base_co2 += 70
+    co2 = max(420, base_co2 + wave * 140)
     return {"gas_raw": round(gas, 0), "temp_c": round(temp, 1),
-            "humidity": round(hum, 1), "co2_ppm": None, "pm25": round(15 + (seed % 25), 0)}
+            "humidity": round(hum, 1), "co2_ppm": round(co2, 0), "pm25": round(15 + (seed % 25), 0)}
 
 
 @router.get("/spaces/overview")
@@ -484,6 +493,7 @@ async def spaces_overview():
             if _TIER_RANK.get(boost, 0) > _TIER_RANK.get(tier, 0):
                 tier = boost
             out.append({
+                "space_id": str(s["id"]),
                 "space_name": s["space_name"], "space_type": s["space_type"],
                 "area_m2": s["area_m2"], "max_occupancy": s["max_occupancy"],
                 "tier": tier, "poi": poi, "source": source, **vals,
