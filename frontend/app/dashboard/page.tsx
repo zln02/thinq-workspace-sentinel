@@ -13,7 +13,7 @@ import {
   ResponsiveContainer, BarChart, LineChart 
 } from 'recharts';
 import { FloorPlan, type SpaceCard } from "@/components/domain/FloorPlan";
-import { useLiveWard, useSpacesOverview, useExternalSignal } from "@/lib/useSentinel";
+import { useLiveWard, useSpacesOverview, useReport, useExternalSignal } from "@/lib/useSentinel";
 import { tierRank, autoResponse } from "@/lib/wardData";
 
 // ============================================================================
@@ -609,27 +609,44 @@ function FMView() {
 // 💼 3. 병원장(DIRECTOR) 대시보드
 // ============================================================================
 function DirectorView() {
-  const [isGenerating, setIsGenerating] = useState(false);
+  const report = useReport(30);            // 최근 30일 실측 집계 (없으면 null → 로딩/시뮬)
+  const isReal = report?.source === "실측";
 
-  const costData = [
-    { name: '1주차', 수동방역비용: 120, ThinQ자동제어: 45 }, { name: '2주차', 수동방역비용: 130, ThinQ자동제어: 48 },
-    { name: '3주차', 수동방역비용: 110, ThinQ자동제어: 42 }, { name: '4주차', 수동방역비용: 140, ThinQ자동제어: 50 },
-  ];
+  const fmtKRW = (won: number) =>
+    won >= 10000 ? `${(won / 10000).toFixed(won % 10000 ? 1 : 0)}` : `${(won / 1000).toFixed(0)}`;
+  const fmtDate = (iso?: string | null) =>
+    iso ? new Date(iso).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit" }) : "—";
 
-  const handleGenerateESGReport = () => {
-    setIsGenerating(true);
-    setTimeout(() => {
-      setIsGenerating(false);
-      alert("✅ ThinQ Space Sentinel 경영 성과 보고서 생성 완료.\n(서버 연동 시 실제 PDF가 다운로드 됩니다.)");
-    }, 1500);
-  };
+  // 비용 비교 차트: 주차별 '실측' 자동대응 → ThinQ 추정비용 vs 수동 방역비용(추정 기준선)
+  const MANUAL_WEEKLY_KRW = 1_300_000;      // 추정 기준선: 주당 수동 방역 인건/에너지
+  const costData = (report?.weekly?.length
+    ? report.weekly
+    : [{ week: "1주차", actions: 0, est_saved_krw: 0 }]
+  ).map((w) => ({
+    name: w.week,
+    수동방역비용: Math.round(MANUAL_WEEKLY_KRW / 10000),
+    ThinQ자동제어: Math.round(Math.max(MANUAL_WEEKLY_KRW - w.est_saved_krw, 0) / 10000),
+  }));
 
-  // 병원장(구매 결정자) 핵심 KPI — 감염 안전·비용 절감·컴플라이언스
+  // 실제 인쇄/저장 가능한 리포트 (브라우저 인쇄 → PDF 저장). 가짜 alert 제거.
+  const handlePrintReport = () => window.print();
+
+  // 병원장(구매 결정자) 핵심 KPI — 전부 백엔드 실측 집계 연동.
+  // 효능 단정·과장 회피: 유휴(MONITOR)에도 강건한 '활동·기록·최고위험' 지표만 노출.
   const KPIS = [
-    { Icon: HeartPulse, iconCls: "text-blue-600", noteCls: "text-blue-700 bg-blue-50", label: "원내 감염 발생", value: "0", unit: "건", note: "공기질 자동관리로 호흡기 감염 차단" },
-    { Icon: TrendingDown, iconCls: "text-emerald-600", noteCls: "text-emerald-700 bg-emerald-50", label: "월 방역비용 절감", value: "124", unit: "만원", note: "방역 인건비 + 에너지 비용" },
-    { Icon: Zap, iconCls: "text-amber-600", noteCls: "text-amber-700 bg-amber-50", label: "ThinQ 자동대응", value: "124", unit: "건", note: "금일 무인 선제 방역 횟수" },
-    { Icon: ShieldAlert, iconCls: "text-purple-600", noteCls: "text-purple-700 bg-purple-50", label: "법정 컴플라이언스", value: "100", unit: "%", note: "감염관리 의무기록 자동 충족" },
+    { Icon: Zap, iconCls: "text-amber-600", noteCls: "text-amber-700 bg-amber-50",
+      label: "자동 선제대응", value: report ? report.auto_actions.toLocaleString() : "—", unit: "건",
+      note: `최근 ${report?.period.days ?? 30}일 · tier ALERT↑ 무인 대응` },
+    { Icon: ActivitySquare, iconCls: "text-blue-600", noteCls: "text-blue-700 bg-blue-50",
+      label: "연속 모니터링 기록", value: report ? report.readings.toLocaleString() : "—", unit: "건",
+      note: `감염관리 증빙 자동 로깅 · ${report?.spaces_monitored ?? 0}개 공간` },
+    { Icon: TrendingDown, iconCls: "text-emerald-600", noteCls: "text-emerald-700 bg-emerald-50",
+      label: "방역비용 절감(추정)", value: report ? fmtKRW(report.est_cost_saved_krw) : "—",
+      unit: report && report.est_cost_saved_krw >= 10000 ? "만원" : "천원",
+      note: "추정 — 자동대응 1건당 인건·에너지 절감" },
+    { Icon: ShieldAlert, iconCls: "text-purple-600", noteCls: "text-purple-700 bg-purple-50",
+      label: "기간 최고 감염위험", value: report ? (report.peak_poi * 100).toFixed(1) : "—", unit: "%",
+      note: `Wells-Riley PoI 최고치 · CRITICAL 도달 ${report?.alert_events ?? 0}건` },
   ];
 
   return (
@@ -637,19 +654,26 @@ function DirectorView() {
       <div className="flex justify-between items-end border-b border-slate-200 pb-4">
         <div>
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">경영 성과 리포트</h2>
-          <p className="text-sm text-slate-500 mt-1">ThinQ 자동 방역 도입에 따른 감염 안전 · 비용 절감 · 컴플라이언스</p>
+          <p className="text-sm text-slate-500 mt-1">
+            ThinQ 자동 방역 도입에 따른 감염관리 활동 · 위험 저감 · 증빙
+            <span className="ml-2 text-xs font-bold">
+              {report
+                ? <span className={isReal ? "text-emerald-600" : "text-amber-600"}>
+                    ● {isReal ? "실측" : "시뮬"} · {fmtDate(report.period.start)}~{fmtDate(report.period.end)}
+                  </span>
+                : <span className="text-slate-400">● 집계 불러오는 중…</span>}
+            </span>
+          </p>
         </div>
         <button
-          onClick={handleGenerateESGReport}
-          disabled={isGenerating}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all shadow-sm border ${isGenerating ? 'bg-slate-200 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-[#A50034] hover:bg-red-700 text-white border-[#A50034]'}`}
+          onClick={handlePrintReport}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all shadow-sm border bg-[#A50034] hover:bg-red-700 text-white border-[#A50034] print:hidden"
         >
-          {isGenerating ? <Activity className="animate-spin" size={18} /> : <DownloadCloud size={18} />}
-          {isGenerating ? "보고서 PDF 생성 중..." : "성과 리포트 PDF"}
+          <DownloadCloud size={18} /> 성과 리포트 인쇄·PDF
         </button>
       </div>
 
-      {/* 핵심 KPI 4 */}
+      {/* 핵심 KPI 4 (실측 연동) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         {KPIS.map((k, i) => (
           <div key={i} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col gap-3">
@@ -660,10 +684,10 @@ function DirectorView() {
         ))}
       </div>
 
-      {/* 비용 비교 차트 (라이트) */}
+      {/* 비용 비교 차트 — 주차별 실측 자동대응 기반(ThinQ 절감 추정) */}
       <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm flex flex-col h-[420px]">
         <h3 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2"><TrendingDown size={20} className="text-emerald-600" /> 수동 방역 vs ThinQ 자동제어 유지비용</h3>
-        <p className="text-sm text-slate-500 mb-6">방역 인건비·에너지 운영 효율화 (단위: 만원/주)</p>
+        <p className="text-sm text-slate-500 mb-6">주차별 자동대응 실측 기반 절감 추정 (단위: 만원/주)</p>
         <div className="flex-1 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={costData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -672,7 +696,7 @@ function DirectorView() {
               <YAxis stroke="#94A3B8" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E5E7EB', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} />
               <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }} />
-              <Line type="monotone" dataKey="수동방역비용" name="기존 수동 방역·인력" stroke="#F59E0B" strokeWidth={3} dot={{ r: 4 }} />
+              <Line type="monotone" dataKey="수동방역비용" name="기존 수동 방역·인력(추정)" stroke="#F59E0B" strokeWidth={3} dot={{ r: 4 }} />
               <Line type="monotone" dataKey="ThinQ자동제어" name="ThinQ 자동제어 도입" stroke="#A50034" strokeWidth={3} dot={{ r: 4 }} />
             </LineChart>
           </ResponsiveContainer>

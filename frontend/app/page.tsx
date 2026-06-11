@@ -37,9 +37,12 @@ export default function LandingPage() {
     router.push(r.href);
   };
 
+  // 데모 PW는 환경변수로 주입(NEXT_PUBLIC_DEMO_PW). 미설정 시 로컬 개발 폴백.
+  const DEMO_PW = process.env.NEXT_PUBLIC_DEMO_PW || "1234";
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password !== "1234") { setError("비밀번호가 일치하지 않습니다. (데모 PW: 1234)"); return; }
+    if (password !== DEMO_PW) { setError("비밀번호가 일치하지 않습니다."); return; }
     const r = ROLES.find((x) => x.id === id);
     if (r) enter(r);
     else setError("존재하지 않는 계정입니다. (nurse, director, fm 중 입력)");

@@ -194,6 +194,45 @@ export function useKpi(intervalMs = 30000) {
   return kpi;
 }
 
+export type DirectorReport = {
+  period: { start: string | null; end: string | null; days: number };
+  auto_actions: number;
+  alert_events: number;
+  avg_poi: number;
+  peak_poi: number;
+  poi_reduction_pct: number;
+  spaces_monitored: number;
+  readings: number;
+  est_cost_saved_krw: number;
+  compliance_pct: number;
+  weekly: { week: string; date?: string; actions: number; est_saved_krw: number }[];
+  source: string;
+};
+
+/** 병원장(시설장) 경영 리포트 — 최근 N일 실측 집계 폴링. */
+export function useReport(days = 30, intervalMs = 30000) {
+  const [report, setReport] = useState<DirectorReport | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const r = await fetch(`${API_BASE}/api/sentinel/sensor/report?days=${days}`);
+        const j = await r.json();
+        if (alive) setReport(j);
+      } catch {
+        /* ignore */
+      }
+    };
+    load();
+    const t = setInterval(load, intervalMs);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, [days, intervalMs]);
+  return report;
+}
+
 /** 제어 명령 (코웨이/에어컨 ON·OFF·급속 등). */
 export async function sendControl(action: string, spaceId = "ward_a") {
   try {
