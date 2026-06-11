@@ -364,9 +364,6 @@ function NurseView() {
         </div>
       </div>
 
-      {/* 자동 방역 의사결정 흐름 — 외부신호→센서→계산→결정→가전 */}
-      <FlowPanel spaceId="ward_a" />
-
       {/* 메인: 병동 환경 관제맵 + ThinQ 자동대응 라이브 */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         <div className="xl:col-span-3 space-y-3">
@@ -500,6 +497,9 @@ function FMView() {
           <p className="text-3xl font-black text-slate-900 pl-1">450<span className="text-sm font-normal ml-1 text-slate-500">kWh</span></p>
         </div>
       </div>
+
+      {/* 자동 방역 의사결정 흐름 — 외부신호→센서→계산→결정→가전 (시설관리자: 가전 제어 근거) */}
+      <FlowPanel spaceId="ward_a" />
 
       <div className="grid grid-cols-2 gap-6">
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg flex flex-col h-[400px]">
