@@ -37,6 +37,27 @@ _pending_approval: dict[str, dict] = {}
 _space_uuid_cache: dict[str, object] = {}
 _coway_cache: dict[str, object] = {"t": 0.0, "data": None}
 
+# 공간별 직전 측정값 캐시 (carry-forward) — 카메라(occupancy)와 CO2 센서가 서로 다른
+# reading으로 따로 들어와도 직전 신선값으로 미측정 필드를 보충해, 한 피드가 다른 피드를
+# 덮어써 tier가 깜빡이는 걸 막는다. 단일 uvicorn 프로세스 기준 인메모리(기존 _last_tier와 동일 정책).
+_last_env: dict[str, dict] = {}   # space_id -> {field: (value, ts)}
+_ENV_CARRY_TTL = 300.0            # 초: 직전값 유효시간(5분). 넘으면 stale로 폐기.
+
+
+def _carry_forward(space_id: str, field: str, value, now: float):
+    """value가 있으면 캐시 갱신 후 그대로 반환. None이면 신선한 직전값으로 보충(없으면 None).
+
+    occupancy=0(빈 병실)은 None이 아니므로 실측으로 보존된다 — 카운트 0을 carry로 덮지 않음.
+    """
+    cache = _last_env.setdefault(space_id, {})
+    if value is not None:
+        cache[field] = (value, now)
+        return value
+    prev = cache.get(field)
+    if prev and (now - prev[1]) < _ENV_CARRY_TTL:
+        return prev[0]
+    return None
+
 # 시연 병동 파라미터 (Rudnick-Milton 입력)
 DEMO_OCCUPANCY = 10
 DEMO_INFECTORS = 1
@@ -248,10 +269,17 @@ async def ingest_reading(r: SensorReading):
         if pm25 is None:
             pm25 = aq.get("pm25")
 
+    # 1.5) carry-forward — 카메라(occupancy)와 CO2 센서가 따로 들어와도 합쳐지게,
+    #      직전 신선값으로 미측정 필드를 보충. occupancy=0(빈 병실)은 실측이라 그대로 보존.
+    now = time.time()
+    co2 = _carry_forward(r.space_id, "co2", co2, now)
+    pm25 = _carry_forward(r.space_id, "pm25", pm25, now)
+    occ_eff = _carry_forward(r.space_id, "occupancy", r.occupancy, now)
+
     # 2) Rudnick-Milton 재호흡률 → PoI → tier
     #    재실 실측: None(재실/미측정)→시연 가정 인원, 0(빈 병실)→PoI 0. DB/SSE엔 적용된 n 기록.
-    n_eff = DEMO_OCCUPANCY if r.occupancy is None else r.occupancy
-    tier, poi, f = compute_tier(co2, r.gas_raw, r.temp_c, r.humidity, occupancy=r.occupancy)
+    n_eff = DEMO_OCCUPANCY if occ_eff is None else occ_eff
+    tier, poi, f = compute_tier(co2, r.gas_raw, r.temp_c, r.humidity, occupancy=occ_eff)
     # 외부신호 선제 boost — 선택 지역 감염병 확산이 심하면 센서 정상이어도 tier 상향(사전예방)
     ext_boost = "MONITOR"
     try:
