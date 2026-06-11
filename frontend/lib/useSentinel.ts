@@ -31,6 +31,30 @@ export function useLiveWard(spaceId = "ward_a") {
   const [data, setData] = useState<LiveSensor | null>(null);
   const [connected, setConnected] = useState(false);
   const [lastTs, setLastTs] = useState<number | null>(null);
+
+  // 초기 1회 REST 폴백 — SSE 첫 이벤트 전(또는 SSE 차단 환경)에도 첫 화면이 뜨도록.
+  // overview에서 실센서 공간 스냅샷을 LiveSensor로 매핑해 채운다. SSE sensor가 오면 그쪽이 우선.
+  useEffect(() => {
+    let alive = true;
+    fetch(`${API_BASE}/api/sentinel/sensor/spaces/overview`)
+      .then((r) => r.json())
+      .then((j) => {
+        if (!alive || !j?.spaces?.length) return;
+        const sp = j.spaces.find((s: SpaceOverview) => s.source === "실센서") ?? j.spaces[0];
+        if (!sp) return;
+        setData((prev) =>
+          prev ?? {
+            space_id: sp.space_id, tier: sp.tier, poi: sp.poi,
+            co2_ppm: sp.co2_ppm, pm25: sp.pm25, temp_c: sp.temp_c, humidity: sp.humidity,
+            gas_raw: sp.gas_raw, occupancy: null, governance: "none", approval_required: false,
+          }
+        );
+        setLastTs((prev) => prev ?? Date.now());
+      })
+      .catch(() => { /* ignore */ });
+    return () => { alive = false; };
+  }, [spaceId]);
+
   useEffect(() => {
     const es = new EventSource(`${API_BASE}/api/sentinel/stream/live/${spaceId}`);
     es.addEventListener("live_init", () => setConnected(true));
