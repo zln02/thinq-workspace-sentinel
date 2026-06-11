@@ -13,7 +13,7 @@ import {
   ResponsiveContainer, BarChart, LineChart 
 } from 'recharts';
 import { FloorPlan, type SpaceCard } from "@/components/domain/FloorPlan";
-import { useLiveWard, useSpacesOverview } from "@/lib/useSentinel";
+import { useLiveWard, useSpacesOverview, useReport, useExternalSignal } from "@/lib/useSentinel";
 import FlowPanel from "@/components/domain/FlowPanel";
 import { tierRank, autoResponse } from "@/lib/wardData";
 
@@ -135,7 +135,7 @@ function FMFloorPlan() {
                 return (
                   <div key={idx} className="flex items-center justify-between text-xs bg-slate-50/50 px-2 py-1.5 rounded-lg border border-slate-200/50">
                     <div className="flex items-center gap-1.5">
-                      <span className={isOn ? (room.isHeavyLoad ? 'text-red-400' : 'text-blue-400') : 'text-slate-600'}>{d.icon}</span>
+                      <span className={isOn ? (room.isHeavyLoad ? 'text-red-400' : 'text-blue-600') : 'text-slate-600'}>{d.icon}</span>
                       <span className={isOn ? 'text-slate-600 font-medium' : 'text-slate-500'}>{getDeviceLabel(d.type)}</span>
                     </div>
                     <span className={`font-bold ${isOn ? (room.isHeavyLoad ? 'text-red-300' : 'text-slate-900') : 'text-slate-600'}`}>{isOn ? d.mode : 'OFF'}</span>
@@ -169,7 +169,7 @@ function FMFloorPlan() {
               return (
                 <div key={idx} className={`border p-5 rounded-xl flex items-center justify-between transition ${isOn ? 'bg-slate-100/50 border-slate-200' : 'bg-slate-100 border-slate-200 opacity-60'}`}>
                   <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-xl ${!isOn ? 'bg-slate-100 text-slate-600' : (device.mode.includes("터보") || device.mode.includes("부스터") || device.mode.includes("급속") ? 'bg-red-900/30 text-red-400' : 'bg-blue-900/20 text-blue-400')}`}>
+                    <div className={`p-3 rounded-xl ${!isOn ? 'bg-slate-100 text-slate-600' : (device.mode.includes("터보") || device.mode.includes("부스터") || device.mode.includes("급속") ? 'bg-red-900/30 text-red-400' : 'bg-blue-900/20 text-blue-600')}`}>
                       {isOn ? device.icon : <Power size={16}/>}
                     </div>
                     <div>
@@ -214,8 +214,9 @@ export default function DashboardPage() {
   useEffect(() => {
     const savedRole = localStorage.getItem("role");
     const savedName = localStorage.getItem("userName");
-    if (!savedRole) { router.push("/"); } 
-    else { setRole(savedRole); setUserName(savedName); }
+    // 기본 진입은 간호사(ICN) 뷰 — 시연·영상에서 /dashboard 직접 접근 시 바로 운영 화면이 뜨도록
+    setRole(savedRole || "NURSE");
+    setUserName(savedName || "수간호사");
     
     const timer = setInterval(() => {
       const now = new Date();
@@ -229,7 +230,7 @@ export default function DashboardPage() {
   if (!role) return null;
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-700 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F3F7FB] text-slate-700 flex flex-col font-sans">
       <header className="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-30 shadow-md">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 rounded-lg bg-[#A50034]/20 border border-[#A50034]/50 flex items-center justify-center text-[#A50034]"><ShieldAlert size={24} /></div>
@@ -238,24 +239,24 @@ export default function DashboardPage() {
         
         <div className="flex items-center gap-8">
           {role === "DIRECTOR" && (
-            <div className="flex items-center gap-2 bg-green-900/20 border border-green-500/30 px-4 py-1.5 rounded-full text-green-400 text-sm shadow-sm animate-in fade-in zoom-in duration-500">
+            <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-4 py-1.5 rounded-full text-emerald-700 text-sm shadow-sm animate-in fade-in zoom-in duration-500">
               <CheckCircle2 size={16} /><span className="font-bold">법정 컴플라이언스 100% 준수</span>
             </div>
           )}
-          
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold border transition-colors ${liveConnected ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-400" : "bg-slate-700/30 border-slate-600 text-slate-400"}`}>
+
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold border transition-colors ${liveConnected ? "bg-emerald-50 border-emerald-300 text-emerald-700" : "bg-slate-100 border-slate-300 text-slate-500"}`}>
             <span className="relative flex h-2 w-2">
-              {liveConnected && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />}
-              <span className={`relative inline-flex rounded-full h-2 w-2 ${liveConnected ? "bg-emerald-400" : "bg-slate-500"}`} />
+              {liveConnected && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />}
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${liveConnected ? "bg-emerald-500" : "bg-slate-400"}`} />
             </span>
             <Radio size={14} /> 201호 실센서 {liveConnected ? `LIVE · ${live?.tier ?? "···"}` : "연결중"}
           </div>
 
-          <div className="flex items-center gap-2 text-slate-400 font-medium"><Clock size={16} className="text-slate-500"/> {time}</div>
-          
+          <div className="flex items-center gap-2 text-slate-500 font-medium"><Clock size={16} className="text-slate-400"/> {time}</div>
+
           <div className="flex items-center gap-4 border-l border-slate-200 pl-8">
             <span className="text-slate-900 font-bold text-lg">{userName}</span>
-            <button onClick={handleLogout} className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-red-900/50 hover:text-red-400 text-slate-600 rounded-lg text-sm transition-colors border border-slate-200 hover:border-red-800/50">
+            <button onClick={handleLogout} className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-red-50 hover:text-[#A50034] text-slate-600 rounded-lg text-sm transition-colors border border-slate-200 hover:border-red-200">
               <LogOut size={14} /> 로그아웃
             </button>
           </div>
@@ -268,6 +269,46 @@ export default function DashboardPage() {
         {role === "FM" && <FMView />}
         {role === "DIRECTOR" && <DirectorView />}
       </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// 🦠 외부 감염병 조기경보 배너 (질병청·UIS 연동) — "외부 예측 → 선제 예방" 차별점
+// ============================================================================
+const DISEASE_KR: Record<string, string> = { influenza: "인플루엔자", covid: "코로나19", covid19: "코로나19", rsv: "RSV", norovirus: "노로바이러스" };
+const LV_STYLE: Record<string, { dot: string; text: string; bg: string; label: string }> = {
+  GREEN: { dot: "bg-emerald-500", text: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200", label: "평온" },
+  YELLOW: { dot: "bg-amber-500", text: "text-amber-700", bg: "bg-amber-50 border-amber-200", label: "주의" },
+  ORANGE: { dot: "bg-orange-500", text: "text-orange-700", bg: "bg-orange-50 border-orange-200", label: "경계" },
+  RED: { dot: "bg-red-500", text: "text-red-700", bg: "bg-red-50 border-red-200", label: "심각" },
+};
+
+function ExternalForecastBanner() {
+  const regions = useExternalSignal(60000);
+  if (!regions.length) return null;
+  const top = [...regions].sort((a, b) => (b.live_score ?? 0) - (a.live_score ?? 0))[0];
+  const st = LV_STYLE[top.live_level] ?? LV_STYLE.GREEN;
+  const disease = DISEASE_KR[top.disease] ?? top.disease;
+  const peak = top.conf_peak_date ? `${Number(top.conf_peak_date.slice(5, 7))}월 ${Number(top.conf_peak_date.slice(8, 10))}일` : "-";
+  return (
+    <div className={`rounded-2xl border p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 ${st.bg}`}>
+      <div className="flex items-center gap-3 shrink-0">
+        <span className="text-2xl">🦠</span>
+        <div>
+          <p className="text-[11px] font-bold text-slate-500">외부 감염병 조기경보 · 질병청 UIS 연동</p>
+          <p className={`text-sm font-black ${st.text}`}>{top.region} {disease} <span>{st.label}({top.live_score ?? "—"})</span></p>
+        </div>
+      </div>
+      <div className="hidden sm:block h-9 w-px bg-slate-200" />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm text-slate-700 font-bold">📈 유행 피크 예측 {peak}{top.lead_days != null && top.lead_days > 0 ? <span className="text-[#A50034]"> · D-{top.lead_days} 선행 경보</span> : null}</p>
+        <p className="text-xs text-slate-500 mt-0.5">예측 위험 도달 시 ThinQ가 전 병동 <b className="text-slate-700">선제 환기·정화 자동 강화</b> · 전국 {regions.length}개 지역 실시간 감시</p>
+      </div>
+      <span className="relative flex h-2.5 w-2.5 shrink-0">
+        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${st.dot} opacity-60`} />
+        <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${st.dot}`} />
+      </span>
     </div>
   );
 }
@@ -300,23 +341,26 @@ function NurseView() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
+      {/* 외부 감염병 조기경보 — 외부 예측 → 선제 예방 차별점 */}
+      <ExternalForecastBanner />
+
       {/* 상단 KPI — 환경·감염·ThinQ 자동대응 중심 (백엔드 라이브) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-lg flex items-center gap-4">
-          <div className="w-11 h-11 rounded-xl bg-blue-900/20 flex items-center justify-center text-blue-400 border border-blue-500/20 shrink-0"><Activity size={20} /></div>
-          <div><p className="text-[11px] font-bold text-slate-400 mb-0.5">실시간 감시 공간</p><div className="text-2xl font-black text-slate-900">{spaces.length}<span className="text-xs text-slate-500 ml-1 font-normal">개</span></div></div>
+        <div className="bg-white border border-[#D6E2EF] rounded-2xl p-5 shadow-sm flex items-center gap-4 border-t-[3px] border-t-blue-500">
+          <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0"><Activity size={20} /></div>
+          <div><p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">실시간 감시 공간</p><div className="text-2xl font-black text-slate-900">{spaces.length}<span className="text-xs text-slate-400 ml-1 font-normal">개</span></div></div>
         </div>
-        <div onClick={() => setModal("DANGER")} className="bg-white border border-[#A50034]/50 rounded-2xl p-5 shadow-lg flex items-center gap-4 cursor-pointer hover:bg-slate-100 transition group">
-          <div className="w-11 h-11 rounded-xl bg-red-900/30 flex items-center justify-center text-[#A50034] border border-[#A50034]/30 shrink-0"><AlertTriangle size={20} /></div>
-          <div><p className="text-[11px] font-bold text-slate-400 mb-0.5 group-hover:text-red-400 transition-colors">주의·위험 공간</p><div className="text-2xl font-black text-slate-900">{atRisk.length}<span className="text-xs text-slate-500 ml-1 font-normal">개소</span></div></div>
+        <div onClick={() => setModal("DANGER")} className="bg-white border border-[#D6E2EF] rounded-2xl p-5 shadow-sm flex items-center gap-4 cursor-pointer hover:bg-red-50/40 transition group border-t-[3px] border-t-[#A50034]">
+          <div className="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center text-[#A50034] shrink-0"><AlertTriangle size={20} /></div>
+          <div><p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-0.5 group-hover:text-[#A50034] transition-colors">주의·위험 공간</p><div className="text-2xl font-black text-slate-900">{atRisk.length}<span className="text-xs text-slate-400 ml-1 font-normal">개소</span></div></div>
         </div>
-        <div className="bg-white border border-emerald-500/30 rounded-2xl p-5 shadow-lg flex items-center gap-4">
-          <div className="w-11 h-11 rounded-xl bg-emerald-900/20 flex items-center justify-center text-emerald-400 border border-emerald-500/20 shrink-0"><Radio size={20} /></div>
-          <div><p className="text-[11px] font-bold text-slate-400 mb-0.5 flex items-center gap-1">201호 실센서 <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" /></p><div className="text-xl font-black text-slate-900">{liveTier}</div></div>
+        <div className="bg-white border border-[#D6E2EF] rounded-2xl p-5 shadow-sm flex items-center gap-4 border-t-[3px] border-t-emerald-500">
+          <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0"><Radio size={20} /></div>
+          <div><p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-0.5 flex items-center gap-1">201호 실센서 <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /></p><div className="text-xl font-black text-slate-900">{liveTier}</div></div>
         </div>
-        <div className="bg-white border border-emerald-500/30 rounded-2xl p-5 shadow-lg flex items-center gap-4">
-          <div className="w-11 h-11 rounded-xl bg-emerald-900/20 flex items-center justify-center text-emerald-400 border border-emerald-500/20 shrink-0"><Zap size={20} /></div>
-          <div><p className="text-[11px] font-bold text-slate-400 mb-0.5">ThinQ 자동대응</p><div className="text-2xl font-black text-slate-900">{responding.length}<span className="text-xs text-slate-500 ml-1 font-normal">개소 가동</span></div></div>
+        <div className="bg-white border border-[#D6E2EF] rounded-2xl p-5 shadow-sm flex items-center gap-4 border-t-[3px] border-t-emerald-500">
+          <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0"><Zap size={20} /></div>
+          <div><p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">ThinQ 자동대응</p><div className="text-2xl font-black text-slate-900">{responding.length}<span className="text-xs text-slate-400 ml-1 font-normal">개소 가동</span></div></div>
         </div>
       </div>
 
@@ -326,13 +370,13 @@ function NurseView() {
       {/* 메인: 병동 환경 관제맵 + ThinQ 자동대응 라이브 */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         <div className="xl:col-span-3 space-y-3">
-          <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2"><Wind className="text-blue-400" size={20} /> 병동 환경 관제맵 <span className="text-xs font-normal text-slate-500">· 백엔드 라이브 · CO₂ → AI 5-Tier</span></h3>
+          <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2"><Wind className="text-blue-600" size={20} /> 병동 환경 관제맵 <span className="text-xs font-normal text-slate-500">· 백엔드 라이브 · CO₂ → AI 5-Tier</span></h3>
           <FloorPlan spaces={spaces} />
         </div>
 
         <div className="xl:col-span-1">
-          <div className="bg-white border border-emerald-500/20 rounded-2xl p-5 shadow-lg h-full flex flex-col">
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 mb-1"><Zap className="text-emerald-400" size={18} /> ThinQ 자동대응 라이브</h3>
+          <div className="bg-white border border-[#D6E2EF] rounded-2xl p-5 shadow-sm h-full flex flex-col border-t-[3px] border-t-emerald-500">
+            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 mb-1"><Zap className="text-emerald-600" size={18} /> ThinQ 자동대응 라이브</h3>
             <p className="text-[11px] text-slate-500 mb-4">위험 감지 시 가전이 자동 가동됩니다</p>
             <div className="space-y-3 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {responding.length === 0 ? (
@@ -341,17 +385,17 @@ function NurseView() {
                 const tier = s.snapshot.tier;
                 const isCrit = tierRank(tier) >= 4;
                 return (
-                  <div key={s.space_id} className={`rounded-xl border p-3 ${isCrit ? "bg-[#A50034]/10 border-[#A50034]/40" : "bg-slate-100/40 border-slate-200"}`}>
+                  <div key={s.space_id} className={`rounded-xl border p-3 ${isCrit ? "bg-[#A50034]/[0.06] border-[#A50034]/30" : "bg-slate-50 border-slate-200"}`}>
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-black text-slate-900 text-sm truncate">{s.space_name}</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded shrink-0 ${isCrit ? "bg-[#A50034] text-white" : "bg-orange-900/50 text-orange-300"}`}>{tier}</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded shrink-0 ${isCrit ? "bg-[#A50034] text-white" : "bg-orange-100 text-orange-700"}`}>{tier}</span>
                     </div>
                     <div className="space-y-1.5">
                       {autoResponse(tier).map((d, i) => (
-                        <div key={i} className="flex items-center gap-2 text-xs bg-slate-100/60 rounded-lg px-2 py-1.5">
-                          <span className="text-emerald-400 shrink-0">{devIcon(d.type)}</span>
+                        <div key={i} className="flex items-center gap-2 text-xs bg-white border border-slate-200 rounded-lg px-2 py-1.5">
+                          <span className="text-emerald-600 shrink-0">{devIcon(d.type)}</span>
                           <span className="text-slate-600 flex-1 truncate">{d.name}</span>
-                          <span className="text-emerald-300 font-bold shrink-0">{d.mode}</span>
+                          <span className="text-emerald-700 font-bold shrink-0">{d.mode}</span>
                         </div>
                       ))}
                     </div>
@@ -364,15 +408,15 @@ function NurseView() {
       </div>
 
       {/* 하단: 수간호사 인수인계 (축소) */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg">
-        <h3 className="text-base font-bold text-slate-900 mb-3 flex items-center gap-2"><FileText className="text-blue-400" size={18} /> 수간호사 인수인계</h3>
+      <div className="bg-white border border-[#D6E2EF] rounded-2xl p-6 shadow-sm">
+        <h3 className="text-base font-bold text-slate-900 mb-3 flex items-center gap-2"><FileText className="text-blue-600" size={18} /> 수간호사 인수인계</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="p-4 bg-red-900/10 border border-red-900/30 rounded-xl">
-            <p className="text-xs text-slate-400 mb-1">오늘 08:00 작성</p>
-            <p className="text-sm text-red-200 font-medium leading-relaxed">🚨 환경 악화 공간 ThinQ 환기 자동가동 중. 오전 회진 시 확인 요망.</p>
+          <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+            <p className="text-xs text-slate-500 mb-1">오늘 08:00 작성</p>
+            <p className="text-sm text-red-700 font-medium leading-relaxed">🚨 환경 악화 공간 ThinQ 환기 자동가동 중. 오전 회진 시 확인 요망.</p>
           </div>
-          <div className="p-4 bg-slate-100/50 border border-slate-200/50 rounded-xl">
-            <p className="text-xs text-slate-400 mb-1">오늘 07:30 작성</p>
+          <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+            <p className="text-xs text-slate-500 mb-1">오늘 07:30 작성</p>
             <p className="text-sm text-slate-700 leading-relaxed">공용식당 식사시간 밀집 모니터링 — 환기 강화 권고.</p>
           </div>
         </div>
@@ -386,18 +430,18 @@ function NurseView() {
               const devs = autoResponse(tier);
               const isCrit = tierRank(tier) >= 3;
               return (
-                <div key={s.space_id} className={`p-5 border rounded-xl ${isCrit ? "border-[#A50034]/50 bg-red-900/10" : "border-orange-900/50 bg-orange-900/10"}`}>
+                <div key={s.space_id} className={`p-5 border rounded-xl ${isCrit ? "border-[#A50034]/40 bg-red-50" : "border-orange-200 bg-orange-50"}`}>
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className={`text-xl font-bold ${isCrit ? "text-red-400" : "text-orange-400"}`}>{s.space_name} <span className="text-sm font-normal">({tier})</span></h4>
+                      <h4 className={`text-xl font-bold ${isCrit ? "text-[#A50034]" : "text-orange-600"}`}>{s.space_name} <span className="text-sm font-normal">({tier})</span></h4>
                       <p className="text-sm text-slate-600 mt-1">CO₂ {s.snapshot.co2 ?? "—"}ppm · 습도 {s.snapshot.rh != null ? s.snapshot.rh.toFixed(0) : "—"}% · 감염확률 {s.snapshot.poi != null ? (s.snapshot.poi * 100).toFixed(1) : "—"}%</p>
                     </div>
-                    <span className={`px-3 py-1.5 text-slate-900 text-xs font-bold rounded-full shadow-lg ${isCrit ? "bg-[#A50034]" : "bg-orange-600"}`}>{isCrit ? "즉각 조치" : "주의 관찰"}</span>
+                    <span className={`px-3 py-1.5 text-white text-xs font-bold rounded-full shadow-sm ${isCrit ? "bg-[#A50034]" : "bg-orange-600"}`}>{isCrit ? "즉각 조치" : "주의 관찰"}</span>
                   </div>
                   {devs.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-slate-200/50">
-                      <span className="text-[11px] text-emerald-400 font-bold flex items-center gap-1"><Zap size={12} /> ThinQ 자동가동:</span>
-                      {devs.map((d, i) => (<span key={i} className="text-[11px] bg-emerald-900/30 text-emerald-300 px-2 py-0.5 rounded">{d.name} · {d.mode}</span>))}
+                    <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-slate-200">
+                      <span className="text-[11px] text-emerald-700 font-bold flex items-center gap-1"><Zap size={12} /> ThinQ 자동가동:</span>
+                      {devs.map((d, i) => (<span key={i} className="text-[11px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded">{d.name} · {d.mode}</span>))}
                     </div>
                   )}
                 </div>
@@ -418,13 +462,13 @@ function FMView() {
 
   // 💡 가상 데이터 124건 맥락에 맞추기 위해 로그 리스트 확장
   const LOGS = [
-    { time: "10:45:12", event: "가전 제어", detail: "[302호] 환기기 터보 모드 자동 가동", status: "성공", badge: "bg-blue-900/30 text-blue-400" },
+    { time: "10:45:12", event: "가전 제어", detail: "[302호] 환기기 터보 모드 자동 가동", status: "성공", badge: "bg-blue-900/30 text-blue-600" },
     { time: "10:30:00", event: "위험 감지", detail: "[202호] CO2 농도 1450ppm 초과 감지", status: "경고", badge: "bg-red-900/30 text-red-400" },
-    { time: "09:20:15", event: "가전 제어", detail: "[202호] 에어컨 냉방 22도 하향 제어", status: "성공", badge: "bg-blue-900/30 text-blue-400" },
+    { time: "09:20:15", event: "가전 제어", detail: "[202호] 에어컨 냉방 22도 하향 제어", status: "성공", badge: "bg-blue-900/30 text-blue-600" },
     { time: "09:15:30", event: "시스템", detail: "ThinQ AI 감염 예측 모델 정기 업데이트", status: "성공", badge: "bg-slate-100 text-slate-600" },
-    { time: "08:10:05", event: "가전 제어", detail: "[101호] 공기청정기 스마트 모드 전환", status: "성공", badge: "bg-blue-900/30 text-blue-400" },
+    { time: "08:10:05", event: "가전 제어", detail: "[101호] 공기청정기 스마트 모드 전환", status: "성공", badge: "bg-blue-900/30 text-blue-600" },
     { time: "08:00:10", event: "시스템", detail: "전체 병동 아침 기상 루틴 가동", status: "성공", badge: "bg-slate-100 text-slate-600" },
-    { time: "07:45:22", event: "가전 제어", detail: "[104호] 시스템에어컨 제습 모드 가동", status: "성공", badge: "bg-blue-900/30 text-blue-400" },
+    { time: "07:45:22", event: "가전 제어", detail: "[104호] 시스템에어컨 제습 모드 가동", status: "성공", badge: "bg-blue-900/30 text-blue-600" },
   ];
 
   const fmDeviceRiskData = [
@@ -442,7 +486,7 @@ function FMView() {
           <p className="text-3xl font-black text-slate-900 pl-1">48<span className="text-sm font-normal ml-1 text-slate-500">대 정상</span></p>
         </div>
         <div onClick={() => setFmModal("AUTO")} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg flex flex-col justify-center cursor-pointer hover:bg-slate-100 transition group">
-          <div className="flex items-center gap-4 mb-2"><div className="p-3 bg-blue-900/20 rounded-xl text-blue-400 group-hover:scale-110 transition"><BatteryCharging size={20}/></div><p className="text-sm text-slate-400 font-medium group-hover:text-blue-400 transition">금일 자동 제어</p></div>
+          <div className="flex items-center gap-4 mb-2"><div className="p-3 bg-blue-900/20 rounded-xl text-blue-600 group-hover:scale-110 transition"><BatteryCharging size={20}/></div><p className="text-sm text-slate-400 font-medium group-hover:text-blue-600 transition">금일 자동 제어</p></div>
           <p className="text-3xl font-black text-slate-900 pl-1">124<span className="text-sm font-normal ml-1 text-slate-500">건</span></p>
         </div>
         {/* 💡 필터 교체 요망 데이터 일치 */}
@@ -459,7 +503,7 @@ function FMView() {
 
       <div className="grid grid-cols-2 gap-6">
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg flex flex-col h-[400px]">
-          <h3 className="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2"><TrendingUp size={20} className="text-blue-400"/> 일별 자동 제어 건수 및 평균 감염 위험도</h3>
+          <h3 className="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2"><TrendingUp size={20} className="text-blue-600"/> 일별 자동 제어 건수 및 평균 감염 위험도</h3>
           <p className="text-sm text-slate-400 mb-6">ThinQ AI 시스템 개입에 따른 위험도 하락 상관관계</p>
           <div className="flex-1 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -525,15 +569,15 @@ function FMView() {
         <Modal title="⚙️ 금일 AI 가전 자동 제어 내역 (총 124건)" onClose={() => setFmModal(null)}>
            <ul className="space-y-3 text-base text-slate-700">
              <li className="p-4 bg-blue-900/10 border border-blue-900/30 rounded-xl flex gap-4 items-start">
-                <span className="text-blue-400 font-mono font-bold mt-0.5">10:45</span>
+                <span className="text-blue-600 font-mono font-bold mt-0.5">10:45</span>
                 <div><p className="font-bold text-slate-900 mb-1">[302호] 실내 CO2 상승 감지</p><p className="text-sm text-slate-400">환기기 터보 가동 (20분간 유지 후 모니터링)</p></div>
              </li>
              <li className="p-4 bg-blue-900/10 border border-blue-900/30 rounded-xl flex gap-4 items-start">
-                <span className="text-blue-400 font-mono font-bold mt-0.5">09:20</span>
+                <span className="text-blue-600 font-mono font-bold mt-0.5">09:20</span>
                 <div><p className="font-bold text-slate-900 mb-1">[202호] 환자 고열 감지 연동</p><p className="text-sm text-slate-400">시스템 에어컨 냉방 22도 목표로 하향 조절 완료</p></div>
              </li>
              <li className="p-4 bg-blue-900/10 border border-blue-900/30 rounded-xl flex gap-4 items-start">
-                <span className="text-blue-400 font-mono font-bold mt-0.5">08:10</span>
+                <span className="text-blue-600 font-mono font-bold mt-0.5">08:10</span>
                 <div><p className="font-bold text-slate-900 mb-1">[101호] 미세먼지 유입 감지</p><p className="text-sm text-slate-400">공기청정기 스마트 모드 전환 및 풍량 증가</p></div>
              </li>
              <li className="p-4 bg-slate-100/50 border border-slate-200/50 rounded-xl flex gap-4 items-start">
@@ -569,27 +613,44 @@ function FMView() {
 // 💼 3. 병원장(DIRECTOR) 대시보드
 // ============================================================================
 function DirectorView() {
-  const [isGenerating, setIsGenerating] = useState(false);
+  const report = useReport(30);            // 최근 30일 실측 집계 (없으면 null → 로딩/시뮬)
+  const isReal = report?.source === "실측";
 
-  const costData = [
-    { name: '1주차', 수동방역비용: 120, ThinQ자동제어: 45 }, { name: '2주차', 수동방역비용: 130, ThinQ자동제어: 48 },
-    { name: '3주차', 수동방역비용: 110, ThinQ자동제어: 42 }, { name: '4주차', 수동방역비용: 140, ThinQ자동제어: 50 },
-  ];
+  const fmtKRW = (won: number) =>
+    won >= 10000 ? `${(won / 10000).toFixed(won % 10000 ? 1 : 0)}` : `${(won / 1000).toFixed(0)}`;
+  const fmtDate = (iso?: string | null) =>
+    iso ? new Date(iso).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit" }) : "—";
 
-  const handleGenerateESGReport = () => {
-    setIsGenerating(true);
-    setTimeout(() => {
-      setIsGenerating(false);
-      alert("✅ ThinQ Space Sentinel 경영 성과 보고서 생성 완료.\n(서버 연동 시 실제 PDF가 다운로드 됩니다.)");
-    }, 1500);
-  };
+  // 비용 비교 차트: 주차별 '실측' 자동대응 → ThinQ 추정비용 vs 수동 방역비용(추정 기준선)
+  const MANUAL_WEEKLY_KRW = 1_300_000;      // 추정 기준선: 주당 수동 방역 인건/에너지
+  const costData = (report?.weekly?.length
+    ? report.weekly
+    : [{ week: "1주차", actions: 0, est_saved_krw: 0 }]
+  ).map((w) => ({
+    name: w.week,
+    수동방역비용: Math.round(MANUAL_WEEKLY_KRW / 10000),
+    ThinQ자동제어: Math.round(Math.max(MANUAL_WEEKLY_KRW - w.est_saved_krw, 0) / 10000),
+  }));
 
-  // 병원장(구매 결정자) 핵심 KPI — 감염 안전·비용 절감·컴플라이언스
+  // 실제 인쇄/저장 가능한 리포트 (브라우저 인쇄 → PDF 저장). 가짜 alert 제거.
+  const handlePrintReport = () => window.print();
+
+  // 병원장(구매 결정자) 핵심 KPI — 전부 백엔드 실측 집계 연동.
+  // 효능 단정·과장 회피: 유휴(MONITOR)에도 강건한 '활동·기록·최고위험' 지표만 노출.
   const KPIS = [
-    { Icon: HeartPulse, iconCls: "text-blue-600", noteCls: "text-blue-700 bg-blue-50", label: "원내 감염 발생", value: "0", unit: "건", note: "공기질 자동관리로 호흡기 감염 차단" },
-    { Icon: TrendingDown, iconCls: "text-emerald-600", noteCls: "text-emerald-700 bg-emerald-50", label: "월 방역비용 절감", value: "124", unit: "만원", note: "방역 인건비 + 에너지 비용" },
-    { Icon: Zap, iconCls: "text-amber-600", noteCls: "text-amber-700 bg-amber-50", label: "ThinQ 자동대응", value: "124", unit: "건", note: "금일 무인 선제 방역 횟수" },
-    { Icon: ShieldAlert, iconCls: "text-purple-600", noteCls: "text-purple-700 bg-purple-50", label: "법정 컴플라이언스", value: "100", unit: "%", note: "감염관리 의무기록 자동 충족" },
+    { Icon: Zap, iconCls: "text-amber-600", noteCls: "text-amber-700 bg-amber-50",
+      label: "자동 선제대응", value: report ? report.auto_actions.toLocaleString() : "—", unit: "건",
+      note: `최근 ${report?.period.days ?? 30}일 · tier ALERT↑ 무인 대응` },
+    { Icon: ActivitySquare, iconCls: "text-blue-600", noteCls: "text-blue-700 bg-blue-50",
+      label: "연속 모니터링 기록", value: report ? report.readings.toLocaleString() : "—", unit: "건",
+      note: `감염관리 증빙 자동 로깅 · ${report?.spaces_monitored ?? 0}개 공간` },
+    { Icon: TrendingDown, iconCls: "text-emerald-600", noteCls: "text-emerald-700 bg-emerald-50",
+      label: "방역비용 절감(추정)", value: report ? fmtKRW(report.est_cost_saved_krw) : "—",
+      unit: report && report.est_cost_saved_krw >= 10000 ? "만원" : "천원",
+      note: "추정 — 자동대응 1건당 인건·에너지 절감" },
+    { Icon: ShieldAlert, iconCls: "text-purple-600", noteCls: "text-purple-700 bg-purple-50",
+      label: "기간 최고 감염위험", value: report ? (report.peak_poi * 100).toFixed(1) : "—", unit: "%",
+      note: `Wells-Riley PoI 최고치 · CRITICAL 도달 ${report?.alert_events ?? 0}건` },
   ];
 
   return (
@@ -597,19 +658,26 @@ function DirectorView() {
       <div className="flex justify-between items-end border-b border-slate-200 pb-4">
         <div>
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">경영 성과 리포트</h2>
-          <p className="text-sm text-slate-500 mt-1">ThinQ 자동 방역 도입에 따른 감염 안전 · 비용 절감 · 컴플라이언스</p>
+          <p className="text-sm text-slate-500 mt-1">
+            ThinQ 자동 방역 도입에 따른 감염관리 활동 · 위험 저감 · 증빙
+            <span className="ml-2 text-xs font-bold">
+              {report
+                ? <span className={isReal ? "text-emerald-600" : "text-amber-600"}>
+                    ● {isReal ? "실측" : "시뮬"} · {fmtDate(report.period.start)}~{fmtDate(report.period.end)}
+                  </span>
+                : <span className="text-slate-400">● 집계 불러오는 중…</span>}
+            </span>
+          </p>
         </div>
         <button
-          onClick={handleGenerateESGReport}
-          disabled={isGenerating}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all shadow-sm border ${isGenerating ? 'bg-slate-200 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-[#A50034] hover:bg-red-700 text-white border-[#A50034]'}`}
+          onClick={handlePrintReport}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all shadow-sm border bg-[#A50034] hover:bg-red-700 text-white border-[#A50034] print:hidden"
         >
-          {isGenerating ? <Activity className="animate-spin" size={18} /> : <DownloadCloud size={18} />}
-          {isGenerating ? "보고서 PDF 생성 중..." : "성과 리포트 PDF"}
+          <DownloadCloud size={18} /> 성과 리포트 인쇄·PDF
         </button>
       </div>
 
-      {/* 핵심 KPI 4 */}
+      {/* 핵심 KPI 4 (실측 연동) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         {KPIS.map((k, i) => (
           <div key={i} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col gap-3">
@@ -620,10 +688,10 @@ function DirectorView() {
         ))}
       </div>
 
-      {/* 비용 비교 차트 (라이트) */}
+      {/* 비용 비교 차트 — 주차별 실측 자동대응 기반(ThinQ 절감 추정) */}
       <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm flex flex-col h-[420px]">
         <h3 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2"><TrendingDown size={20} className="text-emerald-600" /> 수동 방역 vs ThinQ 자동제어 유지비용</h3>
-        <p className="text-sm text-slate-500 mb-6">방역 인건비·에너지 운영 효율화 (단위: 만원/주)</p>
+        <p className="text-sm text-slate-500 mb-6">주차별 자동대응 실측 기반 절감 추정 (단위: 만원/주)</p>
         <div className="flex-1 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={costData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -632,7 +700,7 @@ function DirectorView() {
               <YAxis stroke="#94A3B8" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E5E7EB', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} />
               <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }} />
-              <Line type="monotone" dataKey="수동방역비용" name="기존 수동 방역·인력" stroke="#F59E0B" strokeWidth={3} dot={{ r: 4 }} />
+              <Line type="monotone" dataKey="수동방역비용" name="기존 수동 방역·인력(추정)" stroke="#F59E0B" strokeWidth={3} dot={{ r: 4 }} />
               <Line type="monotone" dataKey="ThinQ자동제어" name="ThinQ 자동제어 도입" stroke="#A50034" strokeWidth={3} dot={{ r: 4 }} />
             </LineChart>
           </ResponsiveContainer>

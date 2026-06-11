@@ -69,9 +69,10 @@ def _read_loop(ser):
         # CO2: 유효(>=0)할 때만 전송. 없거나 -1(워밍업/오류)이면 생략→백엔드 코웨이 폴백 유지
         if co2 is not None and int(co2) >= 0:
             payload["co2_ppm"] = float(co2)
-        # 재실: 0(빈 병실)이면 occupancy=0→PoI 0. 1(재실)/미측정이면 생략→백엔드 DEMO_OCCUPANCY 폴백
-        if presence == "0":
-            payload["occupancy"] = 0
+        # 재실 인원: 라파이는 환경센서 전용 → occupancy 미전송(역할분리).
+        #   인원수는 노트북 카메라(camera/counter.py, device_id=cam-laptop)가 주력 제공하고,
+        #   백엔드가 직전 카메라 인원수를 이 환경 POST에도 재사용한다(_last_occupancy).
+        #   LD2410C 재실 유무(presence)는 로그/디버그용으로만 남긴다.
         try:
             hdr = {"X-API-Key": API_KEY} if API_KEY else {}
             r = requests.post(API, json=payload, headers=hdr, timeout=4)

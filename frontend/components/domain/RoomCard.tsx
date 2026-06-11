@@ -4,12 +4,14 @@ import { Users, Wind, Thermometer, Droplets, Activity } from "lucide-react";
 
 type TierType = "MONITOR" | "CAUTION" | "ALERT" | "HIGH_RISK" | "CRITICAL";
 
-const THEME_MAP: Record<TierType, { border: string; bg: string; text: string; label: string }> = {
-  MONITOR: { border: "border-green-500/30", bg: "bg-green-50 dark:bg-green-500/10", text: "text-green-600 dark:text-green-400", label: "Monitor" },
-  CAUTION: { border: "border-yellow-500/40", bg: "bg-yellow-50 dark:bg-yellow-500/10", text: "text-yellow-600 dark:text-yellow-400", label: "Caution" },
-  ALERT: { border: "border-orange-500/50", bg: "bg-orange-50 dark:bg-orange-500/15", text: "text-orange-600 dark:text-orange-400", label: "Alert" },
-  HIGH_RISK: { border: "border-red-300 dark:border-[#A50034]/60", bg: "bg-red-50 dark:bg-[#A50034]/20", text: "text-[#A50034]", label: "High Risk" },
-  CRITICAL: { border: "border-red-500 dark:border-red-600/70", bg: "bg-red-100 dark:bg-red-600/30", text: "text-red-700 dark:text-red-500", label: "Critical" }
+// 라이트 관제맵: 흰 카드 + 명확한 보더 + tier 색 왼쪽 액센트(border-l-4).
+// 위험 단계(HIGH_RISK/CRITICAL)는 배경 틴트로 한눈에 띄게.
+const THEME_MAP: Record<TierType, { accent: string; cardBg: string; dot: string; badge: string; label: string }> = {
+  MONITOR:   { accent: "border-l-emerald-400", cardBg: "bg-white",    dot: "bg-emerald-500", badge: "bg-emerald-50 text-emerald-700", label: "Monitor" },
+  CAUTION:   { accent: "border-l-amber-400",   cardBg: "bg-white",    dot: "bg-amber-500",   badge: "bg-amber-50 text-amber-700",   label: "Caution" },
+  ALERT:     { accent: "border-l-orange-500",  cardBg: "bg-orange-50/60", dot: "bg-orange-500", badge: "bg-orange-100 text-orange-700", label: "Alert" },
+  HIGH_RISK: { accent: "border-l-[#A50034]",   cardBg: "bg-red-50",   dot: "bg-[#A50034]",   badge: "bg-red-100 text-[#A50034]",    label: "High Risk" },
+  CRITICAL:  { accent: "border-l-red-600",     cardBg: "bg-red-100/70", dot: "bg-red-600",   badge: "bg-red-600 text-white",        label: "Critical" },
 };
 
 export function RoomCard({ roomCode, capacity, occ, snapshot, onClick }: any) {
@@ -23,18 +25,18 @@ export function RoomCard({ roomCode, capacity, occ, snapshot, onClick }: any) {
   const pm25 = snapshot?.pm25 || "—";
 
   return (
-    <div onClick={onClick} className={`cursor-pointer rounded-2xl p-5 border ${theme.border} ${theme.bg} backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between min-h-[160px]`}>
+    <div onClick={onClick} className={`cursor-pointer rounded-2xl p-5 border border-[#D6E2EF] border-l-4 ${theme.accent} ${theme.cardBg} shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between min-h-[160px]`}>
       <div className="flex justify-between items-start mb-4">
         <div>
-          <h4 className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">{roomCode}호</h4>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
+          <h4 className="text-xl font-bold text-slate-900 tracking-tight">{roomCode}</h4>
+          <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-1">
             <Users size={12}/> 재실 {occ ?? "—"}/{capacity}명
           </p>
         </div>
-        <div className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase ${theme.text} bg-white/60 dark:bg-[#0B1120]/80 shadow-sm dark:shadow-inner flex items-center gap-1.5 border border-slate-200 dark:border-slate-700/50`}>
+        <div className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase ${theme.badge} shadow-sm flex items-center gap-1.5`}>
           <span className="relative flex h-1.5 w-1.5">
-            {tier !== "MONITOR" && <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${theme.text} opacity-50`}></span>}
-            <span className={`relative inline-flex rounded-full h-1.5 w-1.5 currentColor`}></span>
+            {tier !== "MONITOR" && <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${theme.dot} opacity-60`}></span>}
+            <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${theme.dot}`}></span>
           </span>
           {theme.label}
         </div>
@@ -42,20 +44,20 @@ export function RoomCard({ roomCode, capacity, occ, snapshot, onClick }: any) {
 
       <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-xs mt-2">
         <div className="flex justify-between items-center">
-          <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1"><Wind size={12}/> CO₂</span>
-          <span className="font-bold text-slate-700 dark:text-slate-200">{co2}</span>
+          <span className="text-slate-500 flex items-center gap-1"><Wind size={12}/> CO₂</span>
+          <span className="font-bold text-slate-800">{co2}</span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1"><Activity size={12}/> PM2.5</span>
-          <span className="font-bold text-slate-700 dark:text-slate-200">{pm25}</span>
+          <span className="text-slate-500 flex items-center gap-1"><Activity size={12}/> PM2.5</span>
+          <span className="font-bold text-slate-800">{pm25}</span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1"><Thermometer size={12}/> 온도</span>
-          <span className="font-bold text-slate-700 dark:text-slate-200">{temp}</span>
+          <span className="text-slate-500 flex items-center gap-1"><Thermometer size={12}/> 온도</span>
+          <span className="font-bold text-slate-800">{temp}</span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1"><Droplets size={12}/> 습도</span>
-          <span className="font-bold text-slate-700 dark:text-slate-200">{rh}%</span>
+          <span className="text-slate-500 flex items-center gap-1"><Droplets size={12}/> 습도</span>
+          <span className="font-bold text-slate-800">{rh}%</span>
         </div>
       </div>
     </div>

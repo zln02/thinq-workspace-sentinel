@@ -35,6 +35,7 @@ _APPROVAL_TIERS = {"CRITICAL"}                 # 관리자 승인 필요 (위급
 _ACTIVE_TIERS = {"ALERT", "HIGH_RISK", "CRITICAL"}
 _last_tier: dict[str, str] = {}
 _pending_approval: dict[str, dict] = {}
+# 역할분리: 카메라(노트북 YOLO)가 실측 재실 '인원수'를 주력 제공, 라파이/아두이노는 환경센서 전용.
 _space_uuid_cache: dict[str, object] = {}
 _coway_cache: dict[str, object] = {"t": 0.0, "data": None}
 
@@ -278,7 +279,8 @@ async def ingest_reading(r: SensorReading):
     occ_eff = _carry_forward(r.space_id, "occupancy", r.occupancy, now)
 
     # 2) Rudnick-Milton 재호흡률 → PoI → tier
-    #    재실 실측: None(재실/미측정)→시연 가정 인원, 0(빈 병실)→PoI 0. DB/SSE엔 적용된 n 기록.
+    #    재실 인원: 카메라가 occupancy 명시 → 채택+보존, 환경 POST(생략) → 직전값 carry(위 1.5),
+    #    한 번도 안 붙었으면 DEMO_OCCUPANCY 폴백. 0=빈 공간→PoI 0. (carry_forward가 co2/pm25도 함께 보충)
     n_eff = DEMO_OCCUPANCY if occ_eff is None else occ_eff
     tier, poi, f = compute_tier(co2, r.gas_raw, r.temp_c, r.humidity, occupancy=occ_eff)
     # 외부신호 선제 boost — 선택 지역 감염병 확산이 심하면 센서 정상이어도 tier 상향(사전예방)
@@ -611,4 +613,92 @@ async def performance_kpi():
         }
     except Exception as e:  # noqa: BLE001
         logger.warning("KPI 집계 실패(폴백): %s", e)
+        return fallback
+
+
+# 추정 단가: 자동 선제대응 1건당 절감액(수동 방역 인건+에너지). 발표 시 심평원/현장수치로 교체.
+EST_SAVING_PER_ACTION_KRW = 8000
+
+
+@router.get("/report")
+async def director_report(days: int = 30):
+    """병원장(시설장) 경영 리포트 — 최근 N일 '실측' 집계.
+
+    포지셔닝: 감염 '예방 효능'을 단정하지 않고, **측정 가능한 감염관리 활동**(자동
+    선제대응·모니터링 커버리지·위험 저감율)만 보고한다. → 적정성평가 증빙 직결.
+    비용 절감은 추정(EST_SAVING_PER_ACTION_KRW)이며 UI에서 '추정'으로 명시한다.
+    DB 미연결/데이터 부족 시 시뮬 폴백(정직 표기).
+    """
+    from backend.api.main import state
+
+    pool = state.get("db")
+    fallback = {
+        "period": {"start": None, "end": None, "days": days},
+        "auto_actions": 84, "alert_events": 0, "avg_poi": 0.02, "peak_poi": 0.05,
+        "poi_reduction_pct": 83, "spaces_monitored": 8, "readings": 0,
+        "est_cost_saved_krw": 84 * EST_SAVING_PER_ACTION_KRW, "compliance_pct": 100,
+        "weekly": [{"week": "1주차", "actions": 84,
+                    "est_saved_krw": 84 * EST_SAVING_PER_ACTION_KRW}],
+        "source": "시뮬",
+    }
+    if not pool:
+        return fallback
+    try:
+        interval = f"{int(days)} days"
+        async with pool.acquire() as con:
+            agg = await con.fetchrow(
+                "SELECT COUNT(*) FILTER (WHERE risk_tier>=3) acts, "
+                "COUNT(*) FILTER (WHERE risk_tier>=5) crit, "
+                "AVG(poi) avg_poi, MAX(poi) max_poi, COUNT(DISTINCT space_id) spaces, "
+                "MIN(calculated_at) t0, MAX(calculated_at) t1 "
+                "FROM sentinel.rehva_results "
+                f"WHERE calculated_at > NOW() - INTERVAL '{interval}'"
+            )
+            readings = await con.fetchval(
+                "SELECT COUNT(*) FROM sentinel.sensor_readings "
+                f"WHERE time > NOW() - INTERVAL '{interval}'"
+            )
+            total_spaces = await con.fetchval("SELECT COUNT(*) FROM sentinel.spaces")
+            weekly_rows = await con.fetch(
+                "SELECT date_trunc('week', calculated_at)::date wk, "
+                "COUNT(*) FILTER (WHERE risk_tier>=3) acts "
+                "FROM sentinel.rehva_results "
+                f"WHERE calculated_at > NOW() - INTERVAL '{interval}' "
+                "GROUP BY 1 ORDER BY 1"
+            )
+        if not agg or agg["acts"] is None or agg["avg_poi"] is None:
+            return fallback
+        acts = int(agg["acts"] or 0)
+        avg_poi = float(agg["avg_poi"] or 0)
+        max_poi = float(agg["max_poi"] or 0)
+        reduction = round((1 - avg_poi / max_poi) * 100) if max_poi > 0 else 0
+        spaces = int(agg["spaces"] or 0)
+        total = int(total_spaces or spaces or 0)
+        compliance = round(100 * spaces / total) if total else 0  # 모니터링 커버리지
+        weekly = [
+            {"week": f"{i + 1}주차", "date": str(r["wk"]),
+             "actions": int(r["acts"] or 0),
+             "est_saved_krw": int(r["acts"] or 0) * EST_SAVING_PER_ACTION_KRW}
+            for i, r in enumerate(weekly_rows)
+        ]
+        return {
+            "period": {
+                "start": agg["t0"].isoformat() if agg["t0"] else None,
+                "end": agg["t1"].isoformat() if agg["t1"] else None,
+                "days": days,
+            },
+            "auto_actions": acts,
+            "alert_events": int(agg["crit"] or 0),
+            "avg_poi": round(avg_poi, 4),
+            "peak_poi": round(max_poi, 4),
+            "poi_reduction_pct": reduction,
+            "spaces_monitored": total,
+            "readings": int(readings or 0),
+            "est_cost_saved_krw": acts * EST_SAVING_PER_ACTION_KRW,
+            "compliance_pct": compliance,
+            "weekly": weekly,
+            "source": "실측",
+        }
+    except Exception as e:  # noqa: BLE001
+        logger.warning("리포트 집계 실패(폴백): %s", e)
         return fallback

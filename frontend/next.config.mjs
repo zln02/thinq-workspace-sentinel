@@ -6,6 +6,8 @@ const basePath = process.env.NEXT_BASE_PATH || "";
 const nextConfig = {
   reactStrictMode: true,
   ...(basePath ? { basePath } : {}),
+  // 클라이언트가 basePath를 알아 fetch 경로에 붙이도록 노출
+  env: { NEXT_PUBLIC_BASE_PATH: basePath },
   async rewrites() {
     return [
       {
