@@ -126,12 +126,6 @@ async def dashboard():
     return _serve_html("dashboard.html")
 
 
-@app.get("/m")
-async def mobile_pwa():
-    """PWA 모바일 대시보드 (홈화면 설치 · 경보 알림)."""
-    return _serve_html("m.html")
-
-
 @app.get("/wardmap")
 async def wardmap():
     """병동 3D(아이소메트릭) 위험 맵 — 공간별 감염위험 입체 시각화."""
@@ -145,15 +139,6 @@ async def service_worker():
 
     return FileResponse(str(_STATIC_DIR / "sw.js"), media_type="application/javascript",
                         headers={"Cache-Control": "no-cache"})
-
-
-@app.get("/split")
-async def split_view():
-    """시연용 분할 화면 — 좌: 간호사 관제 대시보드 / 우: 보호자 폰앱(목업)."""
-    from fastapi.responses import FileResponse
-
-    return FileResponse(str(_STATIC_DIR / "split.html"), media_type="text/html",
-                        headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
 
 @app.get("/health")
 async def health():

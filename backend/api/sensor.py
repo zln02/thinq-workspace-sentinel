@@ -498,20 +498,27 @@ _SEASON_DEFAULT_PATHOGEN = {"winter": "INFLUENZA", "spring": "RSV", "summer": "N
 
 
 @router.get("/control-plan")
-async def control_plan(space_id: str = "ward_a", pathogen: str | None = None, season: str | None = None):
-    """관리자 대시보드 흐름 viz(⑤): 현재 tier + 병원체 + 계절 → 가전 8종이 '어느 환경에
-    어떤 세팅으로 왜' 움직이는지 설명 반환. tier는 해당 공간 라이브값(_last_tier, 외부신호 boost 반영).
+async def control_plan(space_id: str = "ward_a", pathogen: str | None = None,
+                       season: str | None = None, tier: str | None = None):
+    """관리자 대시보드 흐름 viz(⑤): tier + 병원체 + 계절 → 가전 8종이 '어느 환경에
+    어떤 세팅으로 왜' 움직이는지 설명 반환.
 
-    pathogen/season 미지정 시 KST 계절로 추론. 관리자가 위협 병원체를 골라 시뮬레이션도 가능.
+    tier 미지정 시 해당 공간 라이브값(_last_tier, 외부신호 boost 반영) 사용.
+    tier 지정 시 그 값으로 시뮬레이션 — 키오스크 데모 자동재생/관리자 what-if 용.
+    pathogen/season 미지정 시 KST 계절로 추론.
     """
     from backend.services.smart_protocol import explain_plan
 
-    tier = _last_tier.get(space_id, "MONITOR")
+    if tier:
+        tier_source = "override"
+    else:
+        tier = _last_tier.get(space_id, "MONITOR")
+        tier_source = "live" if space_id in _last_tier else "default"
     season = season or _season_now_kst()
     pathogen = pathogen or _SEASON_DEFAULT_PATHOGEN.get(season, "COVID-19")
     plan = explain_plan(pathogen, tier, season)
     plan["space_id"] = space_id
-    plan["tier_source"] = "live" if space_id in _last_tier else "default"
+    plan["tier_source"] = tier_source
     return plan
 
 
