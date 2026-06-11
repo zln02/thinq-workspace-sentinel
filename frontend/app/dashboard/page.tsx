@@ -15,6 +15,7 @@ import {
 import { FloorPlan, type SpaceCard } from "@/components/domain/FloorPlan";
 import { useLiveWard, useSpacesOverview, useReport, useExternalSignal } from "@/lib/useSentinel";
 import FlowPanel from "@/components/domain/FlowPanel";
+import { getSession, canAccess, clearSession } from "@/lib/auth";
 import { tierRank, autoResponse } from "@/lib/wardData";
 
 // ============================================================================
@@ -212,12 +213,13 @@ export default function DashboardPage() {
   const { data: live, connected: liveConnected } = useLiveWard("ward_a");
 
   useEffect(() => {
-    const savedRole = localStorage.getItem("role");
-    const savedName = localStorage.getItem("userName");
-    // 기본 진입은 간호사(ICN) 뷰 — 시연·영상에서 /dashboard 직접 접근 시 바로 운영 화면이 뜨도록
-    setRole(savedRole || "NURSE");
-    setUserName(savedName || "수간호사");
-    
+    // 권한 가드 — 미로그인/타권한 접근 시 로그인으로. SUPER 는 전체 허용.
+    const s = getSession();
+    if (!canAccess(s, ["NURSE", "FM", "DIRECTOR"])) { router.replace("/"); return; }
+    const viewRole = ["NURSE", "FM", "DIRECTOR"].includes(s!.role) ? s!.role : "NURSE";
+    setRole(viewRole);
+    setUserName(s!.name || "수간호사");
+
     const timer = setInterval(() => {
       const now = new Date();
       setTime(now.toLocaleString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', hour: '2-digit', minute: '2-digit', second: '2-digit' }));
@@ -225,7 +227,7 @@ export default function DashboardPage() {
     return () => clearInterval(timer);
   }, [router]);
 
-  const handleLogout = () => { localStorage.removeItem("role"); localStorage.removeItem("userName"); router.push("/"); };
+  const handleLogout = () => { clearSession(); router.push("/"); };
 
   if (!role) return null;
 
@@ -286,8 +288,12 @@ const LV_STYLE: Record<string, { dot: string; text: string; bg: string; label: s
 
 function ExternalForecastBanner() {
   const regions = useExternalSignal(60000);
+  const [myRegion, setMyRegion] = useState<string>("");
+  useEffect(() => { setMyRegion(getSession()?.region ?? ""); }, []);
   if (!regions.length) return null;
-  const top = [...regions].sort((a, b) => (b.live_score ?? 0) - (a.live_score ?? 0))[0];
+  // 로그인 병원의 지역 신호만 표시(지역 고정). 못 찾으면 전국 최고위험으로 폴백.
+  const top = regions.find((r) => r.region === myRegion)
+    ?? [...regions].sort((a, b) => (b.live_score ?? 0) - (a.live_score ?? 0))[0];
   const st = LV_STYLE[top.live_level] ?? LV_STYLE.GREEN;
   const disease = DISEASE_KR[top.disease] ?? top.disease;
   const peak = top.conf_peak_date ? `${Number(top.conf_peak_date.slice(5, 7))}월 ${Number(top.conf_peak_date.slice(8, 10))}일` : "-";
