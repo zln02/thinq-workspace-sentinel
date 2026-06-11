@@ -14,6 +14,7 @@
 """
 from __future__ import annotations
 
+import datetime
 import logging
 import time
 from typing import Optional
@@ -478,6 +479,40 @@ def _sim_reading(space_name: str, space_type: str) -> dict:
     co2 = max(420, base_co2 + wave * 140)
     return {"gas_raw": round(gas, 0), "temp_c": round(temp, 1),
             "humidity": round(hum, 1), "co2_ppm": round(co2, 0), "pm25": round(15 + (seed % 25), 0)}
+
+
+def _season_now_kst() -> str:
+    """KST 현재 월 → 계절 (가전 정책 게이팅용)."""
+    m = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9))).month
+    if m in (12, 1, 2):
+        return "winter"
+    if m in (3, 4, 5):
+        return "spring"
+    if m in (6, 7, 8):
+        return "summer"
+    return "autumn"
+
+
+# 계절 기본 위협 병원체 (관리자가 pathogen 미지정 시 추론) — 데모/조회 기본값일 뿐, 실제 위협은 선택 가능
+_SEASON_DEFAULT_PATHOGEN = {"winter": "INFLUENZA", "spring": "RSV", "summer": "NOROVIRUS", "autumn": "COVID-19"}
+
+
+@router.get("/control-plan")
+async def control_plan(space_id: str = "ward_a", pathogen: str | None = None, season: str | None = None):
+    """관리자 대시보드 흐름 viz(⑤): 현재 tier + 병원체 + 계절 → 가전 8종이 '어느 환경에
+    어떤 세팅으로 왜' 움직이는지 설명 반환. tier는 해당 공간 라이브값(_last_tier, 외부신호 boost 반영).
+
+    pathogen/season 미지정 시 KST 계절로 추론. 관리자가 위협 병원체를 골라 시뮬레이션도 가능.
+    """
+    from backend.services.smart_protocol import explain_plan
+
+    tier = _last_tier.get(space_id, "MONITOR")
+    season = season or _season_now_kst()
+    pathogen = pathogen or _SEASON_DEFAULT_PATHOGEN.get(season, "COVID-19")
+    plan = explain_plan(pathogen, tier, season)
+    plan["space_id"] = space_id
+    plan["tier_source"] = "live" if space_id in _last_tier else "default"
+    return plan
 
 
 @router.get("/spaces/overview")
