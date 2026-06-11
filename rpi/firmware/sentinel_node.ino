@@ -14,7 +14,7 @@
  * ※ MQ2 가스센서는 제거(CO2 실측이 들어오므로 폴백 불필요 + 전류 절감).
  *
  * 배선표 (Arduino Uno/Nano)
- *   DHT11/22 (온습도)  DATA → D2,  VCC → 5V,  GND → GND
+ *   DHT11 (온습도)     DATA → D2,  VCC → 5V,  GND → GND
  *   MH-Z19B (CO2)      TX → D10(아두이노 RX),  RX → D11(아두이노 TX),  Vin → 5V,  GND → GND
  *   HLK-LD2410C (재실) OUT → D8,  VCC → 5V,  GND → GND
  *   LED 게이지 5개 (각 애노드 → 220Ω → 핀, 캐소드 → GND):
@@ -25,31 +25,42 @@
  */
 #include <SoftwareSerial.h>
 #include <DHT.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
 
 // ── 핀 정의 ───────────────────────────────────────────────
 #define DHT_PIN    2
-#define DHT_TYPE   DHT22      // 흰색 격자 AM2302 = DHT22 (파란 소형이면 DHT11로)
-#define MHZ_RX     10         // 아두이노 RX ← MH-Z19B TX
-#define MHZ_TX     11         // 아두이노 TX → MH-Z19B RX
-#define PRESENCE_PIN 8        // LD2410C OUT
+#define DHT_TYPE   DHT11      // DHT22 고장으로 DHT11 사용
+#define MHZ_RX     10
+#define MHZ_TX     11
+#define PRESENCE_PIN 8
 
 // LED 게이지: index 0=MONITOR .. 4=CRITICAL (누적 점등)
 const int LED_PINS[5] = {3, 4, 5, 6, 7};
 
 DHT dht(DHT_PIN, DHT_TYPE);
 SoftwareSerial mhz(MHZ_RX, MHZ_TX);
+// [추가] LCD I2C 0x27 주소, 16컬럼 2행
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 // MH-Z19B 표준 read 명령 (0x86)
 const byte MHZ_READ[9] = {0xFF, 0x01, 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x79};
 
 void setup() {
-  Serial.begin(9600);        // 라파이 bridge 와 양방향 (BAUD=9600)
+  Serial.begin(9600);
   mhz.begin(9600);
   dht.begin();
   pinMode(PRESENCE_PIN, INPUT);
   for (int i = 0; i < 5; i++) { pinMode(LED_PINS[i], OUTPUT); digitalWrite(LED_PINS[i], LOW); }
-  digitalWrite(LED_PINS[0], HIGH);   // 초기: MONITOR(초록)만
-  delay(2500);                        // 센서 안정화
+  digitalWrite(LED_PINS[0], HIGH);
+
+  // [추가] LCD 초기화 + 부팅 메시지
+  lcd.init();
+  lcd.backlight();
+  lcd.setCursor(0, 0);
+  lcd.print("ThinQ Sentinel");
+  delay(2500);
+  lcd.clear();
 }
 
 // MH-Z19B CO2 ppm. 실패(워밍업/체크섬오류) 시 -1.
@@ -59,7 +70,7 @@ int readCO2() {
   byte resp[9];
   unsigned long t0 = millis();
   int idx = 0;
-  while (idx < 9 && millis() - t0 < 400) {   // 센서 미연결 시 400ms만 대기(출력 끊김 방지)
+  while (idx < 9 && millis() - t0 < 400) {
     if (mhz.available()) resp[idx++] = mhz.read();
   }
   if (idx < 9 || resp[0] != 0xFF || resp[1] != 0x86) return -1;
@@ -102,7 +113,7 @@ void loop() {
   if (isnan(temp)) temp = 0.0;
   if (isnan(hum))  hum  = 0.0;
 
-  int co2 = readCO2();
+  int co2      = readCO2();
   int presence = digitalRead(PRESENCE_PIN) == HIGH ? 1 : 0;
 
   // 출력 — bridge.py 정규식과 1:1 정합
@@ -111,6 +122,22 @@ void loop() {
   Serial.print(" CO2:");  Serial.print(co2);
   Serial.print(" 재실:"); Serial.print(presence);
   Serial.println();
+
+  // [추가] LCD 1행: 온도 + 습도 실시간 표시
+  lcd.setCursor(0, 0);
+  lcd.print("T:");
+  lcd.print(temp, 1);
+  lcd.print("C H:");
+  lcd.print(hum, 0);
+  lcd.print("%  ");
+
+  // [추가] LCD 2행: CO2 ppm + 재실 여부 표시
+  // CO2 센서 미연결 시 --- 표시, 재실 1=IN / 0=OUT
+  lcd.setCursor(0, 1);
+  lcd.print("CO2:");
+  if (co2 == -1) lcd.print("--- ");
+  else { lcd.print(co2); lcd.print("p "); }
+  lcd.print(presence == 1 ? "IN " : "OUT");
 
   // 라파이 tier 회신 폴링(약 1초 동안 LED 반영)
   unsigned long t0 = millis();
