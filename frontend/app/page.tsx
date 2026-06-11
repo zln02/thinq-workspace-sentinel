@@ -1,4 +1,4 @@
-// frontend/app/page.tsx — 통합 로그인 (프레임 카드 · 좌 브랜드 그래픽 / 우 폼)
+// frontend/app/page.tsx — 통합 로그인 (프레임 카드 · 좌 감염차단 그래픽 / 우 폼)
 "use client";
 
 import { useState } from "react";
@@ -14,6 +14,22 @@ const FEATURES = [
   { Icon: BrainCircuit, label: "AI 5-Tier 감염위험 예측" },
   { Icon: Wind, label: "ThinQ 가전 자동 방역" },
 ];
+
+// 코로나형 바이러스 입자 (원 + 방사 스파이크 + 끝 점)
+function Virus({ x, y, r, o }: { x: number; y: number; r: number; o: number }) {
+  const spikes = Array.from({ length: 10 }, (_, i) => (i * Math.PI * 2) / 10);
+  return (
+    <g opacity={o} transform={`translate(${x} ${y})`}>
+      {spikes.map((a, i) => {
+        const x1 = Math.cos(a) * r, y1 = Math.sin(a) * r;
+        const x2 = Math.cos(a) * (r + 4), y2 = Math.sin(a) * (r + 4);
+        return <g key={i}><line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#fff" strokeWidth="1.2" /><circle cx={x2} cy={y2} r="1.4" fill="#fff" /></g>;
+      })}
+      <circle r={r} fill="none" stroke="#fff" strokeWidth="1.4" />
+      <circle r={r * 0.45} fill="#fff" opacity="0.5" />
+    </g>
+  );
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -42,17 +58,34 @@ export default function LoginPage() {
     <main className="min-h-screen flex items-center justify-center bg-slate-100 p-4 sm:p-6 font-sans">
       <div className="w-full max-w-4xl grid md:grid-cols-2 bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-500">
 
-        {/* ───────── 좌: 브랜드 그래픽 패널 ───────── */}
-        <div className="relative hidden md:flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#A50034] via-[#8a002b] to-[#4d0018] text-white p-9 min-h-[560px]">
-          {/* 그리드 + 글로우 */}
-          <div className="pointer-events-none absolute inset-0 opacity-[0.08]"
+        {/* ───────── 좌: 감염 차단 그래픽 패널 ───────── */}
+        <div className="relative hidden md:flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#A50034] via-[#8a002b] to-[#4d0018] text-white p-9 min-h-[580px]">
+          <div className="pointer-events-none absolute inset-0 opacity-[0.07]"
             style={{ backgroundImage: "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
           <div className="pointer-events-none absolute -top-24 -right-24 w-80 h-80 rounded-full bg-white/10 blur-[90px]" />
-          <div className="pointer-events-none absolute -bottom-28 -left-16 w-72 h-72 rounded-full bg-black/25 blur-[90px]" />
-          {/* 모니터링 웨이브 */}
-          <svg className="pointer-events-none absolute left-0 right-0 bottom-24 w-full opacity-25" viewBox="0 0 400 80" preserveAspectRatio="none" fill="none">
-            <path d="M0 60 Q40 20 80 45 T160 40 T240 30 T320 48 T400 25" stroke="#fff" strokeWidth="2" fill="none" />
-            <path d="M0 70 Q50 50 100 60 T200 55 T300 62 T400 50" stroke="#fff" strokeWidth="1" opacity="0.5" fill="none" />
+
+          {/* ── 감염 차단 씬: 바이러스 입자를 보호 돔(쉴드)이 막고, 청정 기류가 흐른다 ── */}
+          <svg className="pointer-events-none absolute inset-0 w-full h-full" viewBox="0 0 360 580" preserveAspectRatio="xMidYMid slice" fill="none">
+            {/* 보호 돔(반투명 방어막) — 하단 병동을 덮는 아치 */}
+            <defs>
+              <radialGradient id="dome" cx="50%" cy="100%" r="80%">
+                <stop offset="0%" stopColor="#fff" stopOpacity="0.18" />
+                <stop offset="70%" stopColor="#fff" stopOpacity="0.05" />
+                <stop offset="100%" stopColor="#fff" stopOpacity="0" />
+              </radialGradient>
+            </defs>
+            <path d="M30 360 A150 150 0 0 1 330 360" fill="url(#dome)" />
+            <path d="M30 360 A150 150 0 0 1 330 360" stroke="#fff" strokeOpacity="0.5" strokeWidth="2" strokeDasharray="2 7" />
+            {/* 방어막 위에서 차단되는 바이러스 입자들 */}
+            <Virus x={70} y={120} r={10} o={0.5} />
+            <Virus x={250} y={90} r={13} o={0.65} />
+            <Virus x={300} y={185} r={8} o={0.4} />
+            <Virus x={130} y={70} r={7} o={0.38} />
+            <Virus x={190} y={150} r={11} o={0.55} />
+            {/* 청정 기류 (돔 안쪽으로 흐르는 곡선) */}
+            <path d="M70 470 Q150 430 130 380" stroke="#fff" strokeOpacity="0.3" strokeWidth="1.5" />
+            <path d="M180 490 Q200 440 200 390" stroke="#fff" strokeOpacity="0.3" strokeWidth="1.5" />
+            <path d="M290 470 Q230 430 250 385" stroke="#fff" strokeOpacity="0.3" strokeWidth="1.5" />
           </svg>
 
           {/* 브랜드 마크 */}
@@ -61,9 +94,8 @@ export default function LoginPage() {
             <span className="font-bold tracking-tight">ThinQ Sentinel</span>
           </div>
 
-          {/* 카피 + tier 칩 */}
+          {/* 카피 + tier 칩 + 기능 */}
           <div className="relative">
-            {/* tier 게이지 칩 */}
             <div className="flex items-center gap-1.5 mb-5">
               {["#16a34a", "#eab308", "#f97316", "#dc2626", "#7f1d1d"].map((c, i) => (
                 <span key={i} className="h-1.5 rounded-full" style={{ width: i === 2 ? 34 : 18, background: c, opacity: i === 2 ? 1 : 0.5 }} />
@@ -71,8 +103,11 @@ export default function LoginPage() {
               <span className="ml-2 text-[11px] font-bold text-white/85">5-Tier 감염위험</span>
             </div>
             <h2 className="text-[1.7rem] leading-snug font-black tracking-tight">
-              못 막던 감염을,<br />가전이 <span className="underline decoration-white/40 underline-offset-4">3주 전에</span> 막습니다
+              감염 확산 전,<br />가전이 <span className="underline decoration-white/40 underline-offset-4">선제 차단</span>합니다
             </h2>
+            <p className="text-white/75 text-[13px] mt-3 leading-relaxed">
+              RSV·인플루엔자·노로를 3주 전에 예측해 자동 방역
+            </p>
             <div className="mt-6 space-y-2.5">
               {FEATURES.map((f) => (
                 <div key={f.label} className="flex items-center gap-2.5 text-[13.5px] text-white/85">
@@ -82,7 +117,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* 신뢰 배지 */}
           <div className="relative flex items-center gap-2 text-[11px] text-white/55">
             <span>LG ThinQ</span><span className="w-1 h-1 rounded-full bg-white/40" />
             <span>질병청 UIS 연동</span><span className="w-1 h-1 rounded-full bg-white/40" />
