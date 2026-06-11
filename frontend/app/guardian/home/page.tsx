@@ -1,7 +1,7 @@
 "use client";
 // 안심 홈 — 상태 라벨 우선 + "지금 병원이 하는 일" + 실시간/끊김 처리(P0)
 import { useEffect, useState } from "react";
-import { Wind, Fan, Eye, Droplets } from "lucide-react";
+import { Wind, Fan, ShieldCheck, Droplets } from "lucide-react";
 import { useLiveWard } from "@/lib/useSentinel";
 import { getSession, tierState, TIER_RANK } from "@/lib/guardian";
 import { PageHeader, Card, SectionTitle, ConnectionBanner, Skeleton } from "@/components/guardian/ui";
@@ -27,7 +27,7 @@ export default function HomePage() {
   const acts = [
     { icon: Wind, n: "공기청정기", on: rank >= 2 ? "급속 가동" : rank >= 1 ? "자동 가동" : "대기", active: rank >= 1 },
     { icon: Fan, n: "환기 시스템", on: rank >= 2 ? "강화 환기" : rank >= 1 ? "환기 중" : "기본", active: rank >= 1 },
-    { icon: Eye, n: "24시간 감시", on: "가동 중", active: true },
+    { icon: ShieldCheck, n: "24시간 안심 케어", on: "보호 중", active: true },
     { icon: Droplets, n: "습도 관리", on: rank >= 1 ? "보정 중" : "유지", active: rank >= 1 },
   ];
 

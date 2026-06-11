@@ -4,6 +4,10 @@
 //   /api/sentinel/stream/... → http://127.0.0.1:8003/api/v1/stream/...
 import { useEffect, useState } from "react";
 
+// 배포(basePath=/sentinel) 시 fetch/SSE가 /sentinel/api/... 로 나가야 nginx(/sentinel→:3001)를 거쳐 rewrite됨.
+// dev(basePath="")면 빈 문자열이라 기존 /api/... 그대로.
+const API_BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 export type LiveSensor = {
   space_id: string;
   tier: string;
@@ -27,8 +31,32 @@ export function useLiveWard(spaceId = "ward_a") {
   const [data, setData] = useState<LiveSensor | null>(null);
   const [connected, setConnected] = useState(false);
   const [lastTs, setLastTs] = useState<number | null>(null);
+
+  // 초기 1회 REST 폴백 — SSE 첫 이벤트 전(또는 SSE 차단 환경)에도 첫 화면이 뜨도록.
+  // overview에서 실센서 공간 스냅샷을 LiveSensor로 매핑해 채운다. SSE sensor가 오면 그쪽이 우선.
   useEffect(() => {
-    const es = new EventSource(`/api/sentinel/stream/live/${spaceId}`);
+    let alive = true;
+    fetch(`${API_BASE}/api/sentinel/sensor/spaces/overview`)
+      .then((r) => r.json())
+      .then((j) => {
+        if (!alive || !j?.spaces?.length) return;
+        const sp = j.spaces.find((s: SpaceOverview) => s.source === "실센서") ?? j.spaces[0];
+        if (!sp) return;
+        setData((prev) =>
+          prev ?? {
+            space_id: sp.space_id, tier: sp.tier, poi: sp.poi,
+            co2_ppm: sp.co2_ppm, pm25: sp.pm25, temp_c: sp.temp_c, humidity: sp.humidity,
+            gas_raw: sp.gas_raw, occupancy: null, governance: "none", approval_required: false,
+          }
+        );
+        setLastTs((prev) => prev ?? Date.now());
+      })
+      .catch(() => { /* ignore */ });
+    return () => { alive = false; };
+  }, [spaceId]);
+
+  useEffect(() => {
+    const es = new EventSource(`${API_BASE}/api/sentinel/stream/live/${spaceId}`);
     es.addEventListener("live_init", () => setConnected(true));
     es.addEventListener("sensor", (e) => {
       try {
@@ -69,7 +97,7 @@ export function useSpacesOverview(intervalMs = 5000) {
     let alive = true;
     const load = async () => {
       try {
-        const r = await fetch("/api/sentinel/sensor/spaces/overview");
+        const r = await fetch(`${API_BASE}/api/sentinel/sensor/spaces/overview`);
         const j = await r.json();
         if (alive && j.spaces) setSpaces(j.spaces);
       } catch {
@@ -93,7 +121,7 @@ export function useCowayStatus(intervalMs = 8000) {
     let alive = true;
     const load = async () => {
       try {
-        const r = await fetch("/api/sentinel/sensor/coway-status");
+        const r = await fetch(`${API_BASE}/api/sentinel/sensor/coway-status`);
         const j = await r.json();
         if (alive) setStatus(j);
       } catch {
@@ -117,7 +145,7 @@ export function useAcStatus(intervalMs = 10000) {
     let alive = true;
     const load = async () => {
       try {
-        const r = await fetch("/api/sentinel/sensor/ac-status");
+        const r = await fetch(`${API_BASE}/api/sentinel/sensor/ac-status`);
         const j = await r.json();
         if (alive) setStatus(j);
       } catch {
@@ -149,7 +177,7 @@ export function useKpi(intervalMs = 30000) {
     let alive = true;
     const load = async () => {
       try {
-        const r = await fetch("/api/sentinel/sensor/kpi");
+        const r = await fetch(`${API_BASE}/api/sentinel/sensor/kpi`);
         const j = await r.json();
         if (alive) setKpi(j);
       } catch {
@@ -188,7 +216,7 @@ export function useReport(days = 30, intervalMs = 30000) {
     let alive = true;
     const load = async () => {
       try {
-        const r = await fetch(`/api/sentinel/sensor/report?days=${days}`);
+        const r = await fetch(`${API_BASE}/api/sentinel/sensor/report?days=${days}`);
         const j = await r.json();
         if (alive) setReport(j);
       } catch {
@@ -208,7 +236,7 @@ export function useReport(days = 30, intervalMs = 30000) {
 /** 제어 명령 (코웨이/에어컨 ON·OFF·급속 등). */
 export async function sendControl(action: string, spaceId = "ward_a") {
   try {
-    await fetch("/api/sentinel/sensor/control", {
+    await fetch(`${API_BASE}/api/sentinel/sensor/control`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ space_id: spaceId, action }),
@@ -216,4 +244,40 @@ export async function sendControl(action: string, spaceId = "ward_a") {
   } catch {
     /* ignore */
   }
+}
+
+export type RegionSignal = {
+  region: string;
+  disease: string;
+  level: string;
+  live_score: number | null;
+  live_level: string;
+  peak_level: string;
+  conf_peak_date: string | null;
+  lead_days: number | null;
+  per_100k: number | null;
+};
+
+/** 외부 감염병 조기경보(질병청·UIS 연동) 전국 지역 신호 폴링 — 선제 예방 차별점. */
+export function useExternalSignal(intervalMs = 60000) {
+  const [regions, setRegions] = useState<RegionSignal[]>([]);
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const r = await fetch(`${API_BASE}/api/sentinel/external/regions`);
+        const j = await r.json();
+        if (alive && j.regions) setRegions(j.regions);
+      } catch {
+        /* ignore */
+      }
+    };
+    load();
+    const t = setInterval(load, intervalMs);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, [intervalMs]);
+  return regions;
 }
