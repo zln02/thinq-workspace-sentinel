@@ -26,7 +26,7 @@ export function RoomCard({ roomCode, capacity, occ, snapshot, onClick }: any) {
     <div onClick={onClick} className={`cursor-pointer rounded-2xl p-5 border ${theme.border} ${theme.bg} backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg flex flex-col justify-between min-h-[160px]`}>
       <div className="flex justify-between items-start mb-4">
         <div>
-          <h4 className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">{roomCode}호</h4>
+          <h4 className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">{roomCode}</h4>
           <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
             <Users size={12}/> 재실 {occ ?? "—"}/{capacity}명
           </p>

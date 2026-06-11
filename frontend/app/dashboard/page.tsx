@@ -134,7 +134,7 @@ function FMFloorPlan() {
                 return (
                   <div key={idx} className="flex items-center justify-between text-xs bg-slate-50/50 px-2 py-1.5 rounded-lg border border-slate-200/50">
                     <div className="flex items-center gap-1.5">
-                      <span className={isOn ? (room.isHeavyLoad ? 'text-red-400' : 'text-blue-400') : 'text-slate-600'}>{d.icon}</span>
+                      <span className={isOn ? (room.isHeavyLoad ? 'text-red-400' : 'text-blue-600') : 'text-slate-600'}>{d.icon}</span>
                       <span className={isOn ? 'text-slate-600 font-medium' : 'text-slate-500'}>{getDeviceLabel(d.type)}</span>
                     </div>
                     <span className={`font-bold ${isOn ? (room.isHeavyLoad ? 'text-red-300' : 'text-slate-900') : 'text-slate-600'}`}>{isOn ? d.mode : 'OFF'}</span>
@@ -168,7 +168,7 @@ function FMFloorPlan() {
               return (
                 <div key={idx} className={`border p-5 rounded-xl flex items-center justify-between transition ${isOn ? 'bg-slate-100/50 border-slate-200' : 'bg-slate-100 border-slate-200 opacity-60'}`}>
                   <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-xl ${!isOn ? 'bg-slate-100 text-slate-600' : (device.mode.includes("터보") || device.mode.includes("부스터") || device.mode.includes("급속") ? 'bg-red-900/30 text-red-400' : 'bg-blue-900/20 text-blue-400')}`}>
+                    <div className={`p-3 rounded-xl ${!isOn ? 'bg-slate-100 text-slate-600' : (device.mode.includes("터보") || device.mode.includes("부스터") || device.mode.includes("급속") ? 'bg-red-900/30 text-red-400' : 'bg-blue-900/20 text-blue-600')}`}>
                       {isOn ? device.icon : <Power size={16}/>}
                     </div>
                     <div>
@@ -366,7 +366,7 @@ function NurseView() {
       {/* 메인: 병동 환경 관제맵 + ThinQ 자동대응 라이브 */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         <div className="xl:col-span-3 space-y-3">
-          <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2"><Wind className="text-blue-400" size={20} /> 병동 환경 관제맵 <span className="text-xs font-normal text-slate-500">· 백엔드 라이브 · CO₂ → AI 5-Tier</span></h3>
+          <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2"><Wind className="text-blue-600" size={20} /> 병동 환경 관제맵 <span className="text-xs font-normal text-slate-500">· 백엔드 라이브 · CO₂ → AI 5-Tier</span></h3>
           <FloorPlan spaces={spaces} />
         </div>
 
@@ -458,13 +458,13 @@ function FMView() {
 
   // 💡 가상 데이터 124건 맥락에 맞추기 위해 로그 리스트 확장
   const LOGS = [
-    { time: "10:45:12", event: "가전 제어", detail: "[302호] 환기기 터보 모드 자동 가동", status: "성공", badge: "bg-blue-900/30 text-blue-400" },
+    { time: "10:45:12", event: "가전 제어", detail: "[302호] 환기기 터보 모드 자동 가동", status: "성공", badge: "bg-blue-900/30 text-blue-600" },
     { time: "10:30:00", event: "위험 감지", detail: "[202호] CO2 농도 1450ppm 초과 감지", status: "경고", badge: "bg-red-900/30 text-red-400" },
-    { time: "09:20:15", event: "가전 제어", detail: "[202호] 에어컨 냉방 22도 하향 제어", status: "성공", badge: "bg-blue-900/30 text-blue-400" },
+    { time: "09:20:15", event: "가전 제어", detail: "[202호] 에어컨 냉방 22도 하향 제어", status: "성공", badge: "bg-blue-900/30 text-blue-600" },
     { time: "09:15:30", event: "시스템", detail: "ThinQ AI 감염 예측 모델 정기 업데이트", status: "성공", badge: "bg-slate-100 text-slate-600" },
-    { time: "08:10:05", event: "가전 제어", detail: "[101호] 공기청정기 스마트 모드 전환", status: "성공", badge: "bg-blue-900/30 text-blue-400" },
+    { time: "08:10:05", event: "가전 제어", detail: "[101호] 공기청정기 스마트 모드 전환", status: "성공", badge: "bg-blue-900/30 text-blue-600" },
     { time: "08:00:10", event: "시스템", detail: "전체 병동 아침 기상 루틴 가동", status: "성공", badge: "bg-slate-100 text-slate-600" },
-    { time: "07:45:22", event: "가전 제어", detail: "[104호] 시스템에어컨 제습 모드 가동", status: "성공", badge: "bg-blue-900/30 text-blue-400" },
+    { time: "07:45:22", event: "가전 제어", detail: "[104호] 시스템에어컨 제습 모드 가동", status: "성공", badge: "bg-blue-900/30 text-blue-600" },
   ];
 
   const fmDeviceRiskData = [
@@ -482,7 +482,7 @@ function FMView() {
           <p className="text-3xl font-black text-slate-900 pl-1">48<span className="text-sm font-normal ml-1 text-slate-500">대 정상</span></p>
         </div>
         <div onClick={() => setFmModal("AUTO")} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg flex flex-col justify-center cursor-pointer hover:bg-slate-100 transition group">
-          <div className="flex items-center gap-4 mb-2"><div className="p-3 bg-blue-900/20 rounded-xl text-blue-400 group-hover:scale-110 transition"><BatteryCharging size={20}/></div><p className="text-sm text-slate-400 font-medium group-hover:text-blue-400 transition">금일 자동 제어</p></div>
+          <div className="flex items-center gap-4 mb-2"><div className="p-3 bg-blue-900/20 rounded-xl text-blue-600 group-hover:scale-110 transition"><BatteryCharging size={20}/></div><p className="text-sm text-slate-400 font-medium group-hover:text-blue-600 transition">금일 자동 제어</p></div>
           <p className="text-3xl font-black text-slate-900 pl-1">124<span className="text-sm font-normal ml-1 text-slate-500">건</span></p>
         </div>
         {/* 💡 필터 교체 요망 데이터 일치 */}
@@ -499,7 +499,7 @@ function FMView() {
 
       <div className="grid grid-cols-2 gap-6">
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg flex flex-col h-[400px]">
-          <h3 className="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2"><TrendingUp size={20} className="text-blue-400"/> 일별 자동 제어 건수 및 평균 감염 위험도</h3>
+          <h3 className="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2"><TrendingUp size={20} className="text-blue-600"/> 일별 자동 제어 건수 및 평균 감염 위험도</h3>
           <p className="text-sm text-slate-400 mb-6">ThinQ AI 시스템 개입에 따른 위험도 하락 상관관계</p>
           <div className="flex-1 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -565,15 +565,15 @@ function FMView() {
         <Modal title="⚙️ 금일 AI 가전 자동 제어 내역 (총 124건)" onClose={() => setFmModal(null)}>
            <ul className="space-y-3 text-base text-slate-700">
              <li className="p-4 bg-blue-900/10 border border-blue-900/30 rounded-xl flex gap-4 items-start">
-                <span className="text-blue-400 font-mono font-bold mt-0.5">10:45</span>
+                <span className="text-blue-600 font-mono font-bold mt-0.5">10:45</span>
                 <div><p className="font-bold text-slate-900 mb-1">[302호] 실내 CO2 상승 감지</p><p className="text-sm text-slate-400">환기기 터보 가동 (20분간 유지 후 모니터링)</p></div>
              </li>
              <li className="p-4 bg-blue-900/10 border border-blue-900/30 rounded-xl flex gap-4 items-start">
-                <span className="text-blue-400 font-mono font-bold mt-0.5">09:20</span>
+                <span className="text-blue-600 font-mono font-bold mt-0.5">09:20</span>
                 <div><p className="font-bold text-slate-900 mb-1">[202호] 환자 고열 감지 연동</p><p className="text-sm text-slate-400">시스템 에어컨 냉방 22도 목표로 하향 조절 완료</p></div>
              </li>
              <li className="p-4 bg-blue-900/10 border border-blue-900/30 rounded-xl flex gap-4 items-start">
-                <span className="text-blue-400 font-mono font-bold mt-0.5">08:10</span>
+                <span className="text-blue-600 font-mono font-bold mt-0.5">08:10</span>
                 <div><p className="font-bold text-slate-900 mb-1">[101호] 미세먼지 유입 감지</p><p className="text-sm text-slate-400">공기청정기 스마트 모드 전환 및 풍량 증가</p></div>
              </li>
              <li className="p-4 bg-slate-100/50 border border-slate-200/50 rounded-xl flex gap-4 items-start">
