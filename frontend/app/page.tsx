@@ -31,45 +31,25 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-100 p-4 sm:p-6 font-sans">
-      <div className="w-full max-w-4xl grid md:grid-cols-2 bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-500">
+      <div className="w-full max-w-5xl grid md:grid-cols-2 bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-500">
 
-        {/* ───────── 좌: Spline 3D 파티클 패널 ───────── */}
-        <div className="relative hidden md:block min-h-[580px] bg-[#160007]">
-          {/* 외부 임베드(데모용). 오프라인/차단 시 하단 그라데이션+카피만 보임 — 폼은 정상 */}
+        {/* ───────── 좌: Spline 3D 파티클 패널 (텍스트 최소화) ───────── */}
+        <div className="relative hidden md:block min-h-[640px] bg-[#0a0b14]">
+          {/* 외부 임베드(데모용). 오프라인/차단 시 다크 배경 — 폼은 정상 */}
           <iframe
             src="https://my.spline.design/particlenebula-9bJdvFnWOh4OCliIF6lbKqxs/"
             title="ThinQ Sentinel" loading="lazy"
             className="absolute inset-0 w-full h-full pointer-events-none"
             style={{ border: 0 }}
           />
-          {/* 하단 그라데이션 (카피 가독성 + 워터마크 가림) */}
-          <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-[#160007] via-[#160007]/80 to-transparent" />
+          {/* 하단 그라데이션 (참여처 라인 가독성 + 워터마크 가림) */}
+          <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#0a0b14] via-[#0a0b14]/70 to-transparent" />
 
-          {/* 상단 브랜드 마크 */}
-          <div className="absolute top-6 left-6 flex items-center gap-2.5 text-white">
-            <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center"><ShieldCheck size={20} /></div>
-            <span className="font-bold text-sm tracking-tight">ThinQ Sentinel</span>
-          </div>
-
-          {/* 하단 카피 + tier 게이지 */}
-          <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
-            <div className="flex items-center gap-1.5 mb-4">
-              {["#16a34a", "#eab308", "#f97316", "#dc2626", "#7f1d1d"].map((c, i) => (
-                <span key={i} className="h-1.5 rounded-full" style={{ width: i === 2 ? 30 : 16, background: c, opacity: i === 2 ? 1 : 0.55 }} />
-              ))}
-              <span className="ml-1.5 text-[11px] font-bold text-white/90">5-Tier 감염위험 등급</span>
-            </div>
-            <h2 className="text-[1.7rem] leading-snug font-black tracking-tight">
-              감염 확산 전,<br />가전이 <span className="underline decoration-white/40 underline-offset-4">선제 차단</span>합니다
-            </h2>
-            <p className="text-white/80 text-[13px] mt-3 leading-relaxed">
-              RSV·인플루엔자·노로를 3주 전에 예측 · IoT 감시 + ThinQ 자동 방역
-            </p>
-            <div className="mt-5 flex items-center gap-2 text-[11px] text-white/65">
-              <span>LG ThinQ</span><span className="w-1 h-1 rounded-full bg-white/40" />
-              <span>질병청 UIS 연동</span><span className="w-1 h-1 rounded-full bg-white/40" />
-              <span>ISMS-P 대응</span>
-            </div>
+          {/* 참여처 라인만 유지 */}
+          <div className="absolute bottom-0 left-0 right-0 p-7 flex items-center gap-2 text-[11px] text-white/70">
+            <span>LG ThinQ</span><span className="w-1 h-1 rounded-full bg-white/40" />
+            <span>질병청 UIS 연동</span><span className="w-1 h-1 rounded-full bg-white/40" />
+            <span>ISMS-P 대응</span>
           </div>
         </div>
 
