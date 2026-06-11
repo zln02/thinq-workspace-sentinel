@@ -1,35 +1,12 @@
-// frontend/app/page.tsx — 통합 로그인 (프레임 카드 · 좌 감염차단 그래픽 / 우 폼)
+// frontend/app/page.tsx — 통합 로그인 (프레임 카드 · 좌 병동 사진 / 우 폼)
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ShieldCheck, ArrowRight, User, Lock, Building2, ChevronDown,
-  Activity, Wind, BrainCircuit,
-} from "lucide-react";
+import { ShieldCheck, ArrowRight, User, Lock, Building2, ChevronDown } from "lucide-react";
 import { HOSPITALS, ROLE_HOME, authenticate, setSession, bindRegion } from "@/lib/auth";
 
-const FEATURES = [
-  { Icon: Activity, label: "실시간 IoT 환경 감시" },
-  { Icon: BrainCircuit, label: "AI 5-Tier 감염위험 예측" },
-  { Icon: Wind, label: "ThinQ 가전 자동 방역" },
-];
-
-// 코로나형 바이러스 입자 (원 + 방사 스파이크 + 끝 점)
-function Virus({ x, y, r, o }: { x: number; y: number; r: number; o: number }) {
-  const spikes = Array.from({ length: 10 }, (_, i) => (i * Math.PI * 2) / 10);
-  return (
-    <g opacity={o} transform={`translate(${x} ${y})`}>
-      {spikes.map((a, i) => {
-        const x1 = Math.cos(a) * r, y1 = Math.sin(a) * r;
-        const x2 = Math.cos(a) * (r + 4), y2 = Math.sin(a) * (r + 4);
-        return <g key={i}><line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#fff" strokeWidth="1.2" /><circle cx={x2} cy={y2} r="1.4" fill="#fff" /></g>;
-      })}
-      <circle r={r} fill="none" stroke="#fff" strokeWidth="1.4" />
-      <circle r={r * 0.45} fill="#fff" opacity="0.5" />
-    </g>
-  );
-}
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -58,69 +35,38 @@ export default function LoginPage() {
     <main className="min-h-screen flex items-center justify-center bg-slate-100 p-4 sm:p-6 font-sans">
       <div className="w-full max-w-4xl grid md:grid-cols-2 bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-500">
 
-        {/* ───────── 좌: 감염 차단 그래픽 패널 ───────── */}
-        <div className="relative hidden md:flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#A50034] via-[#8a002b] to-[#4d0018] text-white p-9 min-h-[580px]">
-          <div className="pointer-events-none absolute inset-0 opacity-[0.07]"
-            style={{ backgroundImage: "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
-          <div className="pointer-events-none absolute -top-24 -right-24 w-80 h-80 rounded-full bg-white/10 blur-[90px]" />
+        {/* ───────── 좌: 병동 사진 패널 ───────── */}
+        <div className="relative hidden md:block min-h-[580px]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`${BASE}/login-hero.jpg`} alt="요양병원 병동" className="absolute inset-0 w-full h-full object-cover" />
+          {/* 브랜드 그라데이션 오버레이 (사진 위 가독성 + 정체성) */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#4d0018]/92 via-[#8a002b]/55 to-[#A50034]/25" />
 
-          {/* ── 감염 차단 씬: 바이러스 입자를 보호 돔(쉴드)이 막고, 청정 기류가 흐른다 ── */}
-          <svg className="pointer-events-none absolute inset-0 w-full h-full" viewBox="0 0 360 580" preserveAspectRatio="xMidYMid slice" fill="none">
-            {/* 보호 돔(반투명 방어막) — 하단 병동을 덮는 아치 */}
-            <defs>
-              <radialGradient id="dome" cx="50%" cy="100%" r="80%">
-                <stop offset="0%" stopColor="#fff" stopOpacity="0.18" />
-                <stop offset="70%" stopColor="#fff" stopOpacity="0.05" />
-                <stop offset="100%" stopColor="#fff" stopOpacity="0" />
-              </radialGradient>
-            </defs>
-            <path d="M30 360 A150 150 0 0 1 330 360" fill="url(#dome)" />
-            <path d="M30 360 A150 150 0 0 1 330 360" stroke="#fff" strokeOpacity="0.5" strokeWidth="2" strokeDasharray="2 7" />
-            {/* 방어막 위에서 차단되는 바이러스 입자들 */}
-            <Virus x={70} y={120} r={10} o={0.5} />
-            <Virus x={250} y={90} r={13} o={0.65} />
-            <Virus x={300} y={185} r={8} o={0.4} />
-            <Virus x={130} y={70} r={7} o={0.38} />
-            <Virus x={190} y={150} r={11} o={0.55} />
-            {/* 청정 기류 (돔 안쪽으로 흐르는 곡선) */}
-            <path d="M70 470 Q150 430 130 380" stroke="#fff" strokeOpacity="0.3" strokeWidth="1.5" />
-            <path d="M180 490 Q200 440 200 390" stroke="#fff" strokeOpacity="0.3" strokeWidth="1.5" />
-            <path d="M290 470 Q230 430 250 385" stroke="#fff" strokeOpacity="0.3" strokeWidth="1.5" />
-          </svg>
-
-          {/* 브랜드 마크 */}
-          <div className="relative flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center"><ShieldCheck size={22} /></div>
-            <span className="font-bold tracking-tight">ThinQ Sentinel</span>
+          {/* 상단 브랜드 마크 */}
+          <div className="absolute top-6 left-6 flex items-center gap-2.5 text-white">
+            <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center"><ShieldCheck size={20} /></div>
+            <span className="font-bold text-sm tracking-tight">ThinQ Sentinel</span>
           </div>
 
-          {/* 카피 + tier 칩 + 기능 */}
-          <div className="relative">
-            <div className="flex items-center gap-1.5 mb-5">
+          {/* 하단 카피 + tier 게이지 */}
+          <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
+            <div className="flex items-center gap-1.5 mb-4">
               {["#16a34a", "#eab308", "#f97316", "#dc2626", "#7f1d1d"].map((c, i) => (
-                <span key={i} className="h-1.5 rounded-full" style={{ width: i === 2 ? 34 : 18, background: c, opacity: i === 2 ? 1 : 0.5 }} />
+                <span key={i} className="h-1.5 rounded-full" style={{ width: i === 2 ? 30 : 16, background: c, opacity: i === 2 ? 1 : 0.55 }} />
               ))}
-              <span className="ml-2 text-[11px] font-bold text-white/85">5-Tier 감염위험</span>
+              <span className="ml-1.5 text-[11px] font-bold text-white/90">5-Tier 감염위험 등급</span>
             </div>
             <h2 className="text-[1.7rem] leading-snug font-black tracking-tight">
               감염 확산 전,<br />가전이 <span className="underline decoration-white/40 underline-offset-4">선제 차단</span>합니다
             </h2>
-            <p className="text-white/75 text-[13px] mt-3 leading-relaxed">
-              RSV·인플루엔자·노로를 3주 전에 예측해 자동 방역
+            <p className="text-white/80 text-[13px] mt-3 leading-relaxed">
+              RSV·인플루엔자·노로를 3주 전에 예측 · IoT 감시 + ThinQ 자동 방역
             </p>
-            <div className="mt-6 space-y-2.5">
-              {FEATURES.map((f) => (
-                <div key={f.label} className="flex items-center gap-2.5 text-[13.5px] text-white/85">
-                  <f.Icon size={16} className="text-white/70 shrink-0" /> {f.label}
-                </div>
-              ))}
+            <div className="mt-5 flex items-center gap-2 text-[11px] text-white/65">
+              <span>LG ThinQ</span><span className="w-1 h-1 rounded-full bg-white/40" />
+              <span>질병청 UIS 연동</span><span className="w-1 h-1 rounded-full bg-white/40" />
+              <span>ISMS-P 대응</span>
             </div>
-          </div>
-
-          <div className="relative flex items-center gap-2 text-[11px] text-white/55">
-            <span>LG ThinQ</span><span className="w-1 h-1 rounded-full bg-white/40" />
-            <span>질병청 UIS 연동</span><span className="w-1 h-1 rounded-full bg-white/40" />
-            <span>ISMS-P 대응</span>
           </div>
         </div>
 
