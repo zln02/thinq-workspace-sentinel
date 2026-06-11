@@ -1,12 +1,19 @@
-// frontend/app/page.tsx — 통합 로그인 (프레임 카드 · 좌 이미지 / 우 폼)
+// frontend/app/page.tsx — 통합 로그인 (프레임 카드 · 좌 브랜드 그래픽 / 우 폼)
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, ArrowRight, User, Lock, Building2, ChevronDown } from "lucide-react";
+import {
+  ShieldCheck, ArrowRight, User, Lock, Building2, ChevronDown,
+  Activity, Wind, BrainCircuit,
+} from "lucide-react";
 import { HOSPITALS, ROLE_HOME, authenticate, setSession, bindRegion } from "@/lib/auth";
 
-const BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
+const FEATURES = [
+  { Icon: Activity, label: "실시간 IoT 환경 감시" },
+  { Icon: BrainCircuit, label: "AI 5-Tier 감염위험 예측" },
+  { Icon: Wind, label: "ThinQ 가전 자동 방역" },
+];
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,24 +42,51 @@ export default function LoginPage() {
     <main className="min-h-screen flex items-center justify-center bg-slate-100 p-4 sm:p-6 font-sans">
       <div className="w-full max-w-4xl grid md:grid-cols-2 bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-500">
 
-        {/* ───────── 좌: 이미지 패널 ───────── */}
-        <div className="relative hidden md:block min-h-[560px]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`${BASE}/login-hero.jpg`} alt="요양병원 감염관리" className="absolute inset-0 w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#5e001d]/85 via-[#A50034]/30 to-[#A50034]/10" />
+        {/* ───────── 좌: 브랜드 그래픽 패널 ───────── */}
+        <div className="relative hidden md:flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#A50034] via-[#8a002b] to-[#4d0018] text-white p-9 min-h-[560px]">
+          {/* 그리드 + 글로우 */}
+          <div className="pointer-events-none absolute inset-0 opacity-[0.08]"
+            style={{ backgroundImage: "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
+          <div className="pointer-events-none absolute -top-24 -right-24 w-80 h-80 rounded-full bg-white/10 blur-[90px]" />
+          <div className="pointer-events-none absolute -bottom-28 -left-16 w-72 h-72 rounded-full bg-black/25 blur-[90px]" />
+          {/* 모니터링 웨이브 */}
+          <svg className="pointer-events-none absolute left-0 right-0 bottom-24 w-full opacity-25" viewBox="0 0 400 80" preserveAspectRatio="none" fill="none">
+            <path d="M0 60 Q40 20 80 45 T160 40 T240 30 T320 48 T400 25" stroke="#fff" strokeWidth="2" fill="none" />
+            <path d="M0 70 Q50 50 100 60 T200 55 T300 62 T400 50" stroke="#fff" strokeWidth="1" opacity="0.5" fill="none" />
+          </svg>
 
-          <div className="absolute top-6 left-6 flex items-center gap-2 text-white">
-            <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center"><ShieldCheck size={20} /></div>
-            <span className="font-bold text-sm tracking-tight">ThinQ Sentinel</span>
+          {/* 브랜드 마크 */}
+          <div className="relative flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center"><ShieldCheck size={22} /></div>
+            <span className="font-bold tracking-tight">ThinQ Sentinel</span>
           </div>
 
-          <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
-            <h2 className="text-2xl font-black leading-snug tracking-tight">
+          {/* 카피 + tier 칩 */}
+          <div className="relative">
+            {/* tier 게이지 칩 */}
+            <div className="flex items-center gap-1.5 mb-5">
+              {["#16a34a", "#eab308", "#f97316", "#dc2626", "#7f1d1d"].map((c, i) => (
+                <span key={i} className="h-1.5 rounded-full" style={{ width: i === 2 ? 34 : 18, background: c, opacity: i === 2 ? 1 : 0.5 }} />
+              ))}
+              <span className="ml-2 text-[11px] font-bold text-white/85">5-Tier 감염위험</span>
+            </div>
+            <h2 className="text-[1.7rem] leading-snug font-black tracking-tight">
               못 막던 감염을,<br />가전이 <span className="underline decoration-white/40 underline-offset-4">3주 전에</span> 막습니다
             </h2>
-            <p className="text-white/80 text-sm mt-3 leading-relaxed">
-              IoT 센서 · AI 5-Tier 예측 · ThinQ 가전 자동 방역으로<br />공간 감염 위험을 사전에 차단합니다.
-            </p>
+            <div className="mt-6 space-y-2.5">
+              {FEATURES.map((f) => (
+                <div key={f.label} className="flex items-center gap-2.5 text-[13.5px] text-white/85">
+                  <f.Icon size={16} className="text-white/70 shrink-0" /> {f.label}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 신뢰 배지 */}
+          <div className="relative flex items-center gap-2 text-[11px] text-white/55">
+            <span>LG ThinQ</span><span className="w-1 h-1 rounded-full bg-white/40" />
+            <span>질병청 UIS 연동</span><span className="w-1 h-1 rounded-full bg-white/40" />
+            <span>ISMS-P 대응</span>
           </div>
         </div>
 
