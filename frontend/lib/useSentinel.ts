@@ -86,6 +86,52 @@ export function useSpacesOverview(intervalMs = 5000) {
   return spaces;
 }
 
+/** 외부 감염 신호 선제 boost tier (선택지역 risk_score 기반). overview의 boost 필드. */
+export function useExternalBoost(intervalMs = 8000) {
+  const [boost, setBoost] = useState<string>("MONITOR");
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      fetch("/api/sentinel/sensor/spaces/overview")
+        .then((r) => r.json())
+        .then((j) => { if (alive && j.boost) setBoost(j.boost); })
+        .catch(() => {});
+    load();
+    const t = setInterval(load, intervalMs);
+    return () => { alive = false; clearInterval(t); };
+  }, [intervalMs]);
+  return boost;
+}
+
+export type ControlPlanDevice = { device: string; name_kr: string; setting?: string; reason: string };
+export type ControlPlan = {
+  space_id: string;
+  pathogen: string;
+  tier: string;
+  season: string;
+  intensity: number;
+  rationale: string;
+  tier_source: string;
+  applied: ControlPlanDevice[];
+  skipped: ControlPlanDevice[];
+};
+
+/** 가전 제어계획 — 현재 tier(+병원체·계절) → 가전 8종 타깃 세팅+사유. tier 변할 때 재조회. */
+export function useControlPlan(spaceId = "ward_a", tier?: string | null) {
+  const [plan, setPlan] = useState<ControlPlan | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const q = new URLSearchParams({ space_id: spaceId });
+    if (tier) q.set("tier", tier);
+    fetch(`/api/sentinel/sensor/control-plan?${q.toString()}`)
+      .then((r) => r.json())
+      .then((j) => { if (alive && Array.isArray(j.applied)) setPlan(j); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [spaceId, tier]);
+  return plan;
+}
+
 /** 코웨이 공기청정기 실시간 상태 폴링. */
 export function useCowayStatus(intervalMs = 8000) {
   const [status, setStatus] = useState<Record<string, unknown> | null>(null);
