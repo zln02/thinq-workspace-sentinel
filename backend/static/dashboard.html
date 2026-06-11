@@ -289,10 +289,21 @@ function setTier(t){const i=TIER[t]||TIER.MONITOR;
   document.getElementById('tierKo').textContent=i.ko;document.getElementById('tierDesc').textContent=i.d;
   const g=document.getElementById('gauge');g.style.setProperty('--gc',i.c);g.style.setProperty('--p',i.p);
   document.getElementById('achTarget').textContent='목표 ACH '+i.ach;renderScale(t||'MONITOR');renderOrch(t);}
-function renderOrch(t){document.getElementById('orchList').innerHTML=APPLIANCES.map(a=>{
+// 가전 오케스트레이션 — 백엔드 /control-plan(병원체+계절+tier 정책)이 단일 진실.
+// tier 오버라이드로 라이브/데모 모두 동일 로직. 네트워크 실패 시 로컬 폴백(renderOrchLocal).
+const ORCH_IC={AIR_PURIFIER:IC.purifier,AIR_CONDITIONER:IC.ac,VENTILATOR:IC.vent,HUMIDIFIER:IC.humid,DEHUMIDIFIER:IC.humid,BOILER:IC.boiler,ROBOT_CLEANER:IC.robot,STYLER:IC.styler};
+function renderOrchLocal(t){document.getElementById('orchList').innerHTML=APPLIANCES.map(a=>{
   const act=a.act(t);const isOn=!['대기','유지','정기','계절 연동'].includes(act);
   const cls=a.live?'live':(isOn?'on':'std');
   return `<div class="arow"><span class="ic">${a.ic}</span><span class="an"><b>${a.n}</b><small>${a.lever}</small></span><span class="ast ${cls}">${a.live?'● '+act:act}</span></div>`;}).join('');}
+let _orchSeq=0;
+async function renderOrch(t){const seq=++_orchSeq;
+  try{const r=await fetch(`/api/v1/sensor/control-plan?space_id=${SPACE}&tier=${encodeURIComponent(t||'MONITOR')}`);
+    const p=await r.json();if(seq!==_orchSeq)return; // 더 최신 요청이 있으면 폐기
+    if(!Array.isArray(p.applied))throw 0;
+    const row=(d,on)=>`<div class="arow"><span class="ic">${ORCH_IC[d.device]||'⚙'}</span><span class="an"><b>${d.name_kr}</b><small>${d.reason}</small></span><span class="ast ${on?'on':'std'}">${on?d.setting:'대기'}</span></div>`;
+    document.getElementById('orchList').innerHTML=p.applied.map(d=>row(d,true)).concat((p.skipped||[]).map(d=>row(d,false))).join('');
+  }catch(e){renderOrchLocal(t);} }
 function tickUpdated(){const u=document.getElementById('updated');if(_lastTs==null)return;
   const s=Math.round((Date.now()-_lastTs)/1000);u.textContent=(s<2?'방금':s+'초 전')+' 수신';u.style.color=s>10?'#c2410c':'#94a3b8';}
 setInterval(tickUpdated,1000);

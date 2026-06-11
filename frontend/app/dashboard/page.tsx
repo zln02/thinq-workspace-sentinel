@@ -14,6 +14,7 @@ import {
 } from 'recharts';
 import { FloorPlan, type SpaceCard } from "@/components/domain/FloorPlan";
 import { useLiveWard, useSpacesOverview, useReport, useExternalSignal } from "@/lib/useSentinel";
+import FlowPanel from "@/components/domain/FlowPanel";
 import { tierRank, autoResponse } from "@/lib/wardData";
 
 // ============================================================================
@@ -362,6 +363,9 @@ function NurseView() {
           <div><p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">ThinQ 자동대응</p><div className="text-2xl font-black text-slate-900">{responding.length}<span className="text-xs text-slate-400 ml-1 font-normal">개소 가동</span></div></div>
         </div>
       </div>
+
+      {/* 자동 방역 의사결정 흐름 — 외부신호→센서→계산→결정→가전 */}
+      <FlowPanel spaceId="ward_a" />
 
       {/* 메인: 병동 환경 관제맵 + ThinQ 자동대응 라이브 */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
