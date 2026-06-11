@@ -6,8 +6,6 @@ import { useRouter } from "next/navigation";
 import { ShieldCheck, ArrowRight, User, Lock, Building2, ChevronDown } from "lucide-react";
 import { HOSPITALS, ROLE_HOME, authenticate, setSession, bindRegion } from "@/lib/auth";
 
-const BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
-
 export default function LoginPage() {
   const router = useRouter();
   const [hospitalId, setHospitalId] = useState(HOSPITALS[0].id);
@@ -35,12 +33,17 @@ export default function LoginPage() {
     <main className="min-h-screen flex items-center justify-center bg-slate-100 p-4 sm:p-6 font-sans">
       <div className="w-full max-w-4xl grid md:grid-cols-2 bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-500">
 
-        {/* ───────── 좌: 병동 사진 패널 ───────── */}
-        <div className="relative hidden md:block min-h-[580px]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`${BASE}/login-hero.jpg`} alt="요양병원 병동" className="absolute inset-0 w-full h-full object-cover" />
-          {/* 브랜드 그라데이션 오버레이 (사진 위 가독성 + 정체성) */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#4d0018]/92 via-[#8a002b]/55 to-[#A50034]/25" />
+        {/* ───────── 좌: Spline 3D 파티클 패널 ───────── */}
+        <div className="relative hidden md:block min-h-[580px] bg-[#160007]">
+          {/* 외부 임베드(데모용). 오프라인/차단 시 하단 그라데이션+카피만 보임 — 폼은 정상 */}
+          <iframe
+            src="https://my.spline.design/particlenebula-9bJdvFnWOh4OCliIF6lbKqxs/"
+            title="ThinQ Sentinel" loading="lazy"
+            className="absolute inset-0 w-full h-full pointer-events-none"
+            style={{ border: 0 }}
+          />
+          {/* 하단 그라데이션 (카피 가독성 + 워터마크 가림) */}
+          <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-[#160007] via-[#160007]/80 to-transparent" />
 
           {/* 상단 브랜드 마크 */}
           <div className="absolute top-6 left-6 flex items-center gap-2.5 text-white">
