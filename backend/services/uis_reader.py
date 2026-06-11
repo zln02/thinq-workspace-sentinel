@@ -18,9 +18,10 @@ from typing import Optional
 import asyncpg
 
 # UIS DB는 sentinel DB와 별개 — 전용 DSN (urban_immune)
+# 자격증명은 소스에 두지 않음 — UIS_DATABASE_URL 을 .env 로 주입 (미설정 시 비번 없는 기본)
 UIS_DSN = os.getenv(
     "UIS_DATABASE_URL",
-    "postgresql://uis_user:uis_dev_placeholder_20260414@localhost:5432/urban_immune",
+    "postgresql://uis_user@localhost:5432/urban_immune",
 )
 
 # UIS 병원체명 → sentinel 병원체 코드
@@ -74,6 +75,8 @@ async def fetch_latest_signals(pool: asyncpg.Pool, limit: int = 20,
     external_signal.normalize_signals()가 기대하는 dict 키 형식으로 반환:
     {source, pathogen_code, region_code, signal_value(0~1), signal_date}
     """
+    if pool is None:  # UIS DB 미연결 → 빈 결과로 단락 (예외 폭주 방지)
+        return []
     where = "WHERE layer = ANY($2)"
     params: list = [limit, list(LAYER_TO_SOURCE.keys())]
     if region:
@@ -107,6 +110,8 @@ async def fetch_latest_signals(pool: asyncpg.Pool, limit: int = 20,
 
 async def fetch_regional_risk(pool: asyncpg.Pool, region: str) -> Optional[dict]:
     """risk_scores에서 특정 지역 최신 종합 위험도 + alert_level → sentinel tier."""
+    if pool is None:  # UIS DB 미연결 → None 반환 (예외 폭주 방지)
+        return None
     region_name = resolve_region(region)
     query = """
         SELECT time, region, composite_score, l1_score, l2_score, l3_score, alert_level

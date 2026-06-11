@@ -28,7 +28,7 @@ export function RoomCard({ roomCode, capacity, occ, snapshot, onClick }: any) {
         <div>
           <h4 className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">{roomCode}호</h4>
           <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
-            <Users size={12}/> 재실 {occ}/{capacity}명
+            <Users size={12}/> 재실 {occ ?? "—"}/{capacity}명
           </p>
         </div>
         <div className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase ${theme.text} bg-white/60 dark:bg-[#0B1120]/80 shadow-sm dark:shadow-inner flex items-center gap-1.5 border border-slate-200 dark:border-slate-700/50`}>

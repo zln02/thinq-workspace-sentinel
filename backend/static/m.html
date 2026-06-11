@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko" translate="no">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<meta name="google" content="notranslate" />
+<meta name="theme-color" content="#a50034" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<link rel="manifest" href="/static/manifest.json" />
+<link rel="apple-touch-icon" href="/static/icon-192.png" />
+<title>LG ThinQ 케어 · 가족 안심 서비스</title>
+<style>
+  :root{--bg:#f4f1f2;--panel:#fff;--line:#ece6e8;--txt:#1d1418;--muted:#6b5f63;--dim:#9b8e92;
+    --brand:#a50034;--brand2:#c4174c;--brandbg:#fbeef2;
+    --ok:#1a7a45;--okbg:#eaf7ef;--okbd:#c2e6cf;--caution:#b45309;--cautionbg:#fdf6e8;
+    --alert:#c2410c;--alertbg:#fdefe6;--high:#cc1133;--highbg:#fdecef;--sh:0 2px 12px rgba(70,20,40,.07)}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{background:var(--bg);color:var(--txt);font-family:'Pretendard','NanumGothic','Noto Sans KR',system-ui,sans-serif;
+    font-size:15px;padding-bottom:30px;-webkit-font-smoothing:antialiased}
+  header{position:sticky;top:0;z-index:10;background:var(--panel);border-bottom:1px solid var(--line);padding:13px 16px;display:flex;align-items:center;gap:11px}
+  .logo{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#c4174c,#a50034);display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 2px 8px rgba(165,0,52,.28)}
+  .logo svg{width:23px;height:23px}
+  header b{font-size:16px;font-weight:800;color:#1d1418;display:block;line-height:1.15;letter-spacing:-.3px}
+  header b .q{color:var(--brand)}
+  header small{font-size:11px;color:var(--muted)}
+  .wrap{padding:15px 15px 0;display:flex;flex-direction:column;gap:14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--sh);overflow:hidden}
+  /* 메인 안심 카드 */
+  .hero{padding:24px 20px;text-align:center;transition:.5s;border:2px solid var(--hbd,var(--okbd));background:var(--hbg,var(--okbg))}
+  .hero .who{font-size:13px;color:var(--muted);font-weight:600}
+  .hero .emoji{font-size:54px;margin:8px 0 4px;line-height:1}
+  .hero .st{font-size:26px;font-weight:900;color:var(--hc,var(--ok));letter-spacing:-.5px}
+  .hero .msg{font-size:14px;color:#475569;margin-top:7px;line-height:1.5}
+  .hero .upd{font-size:11px;color:var(--dim);margin-top:11px}
+  /* 병원 조치 */
+  .sec-t{font-size:13px;font-weight:700;color:#334155;padding:14px 16px 2px}
+  .act{display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid #f1f5f9}
+  .act:first-of-type{border-top:none}
+  .act .ai{width:40px;height:40px;border-radius:11px;background:var(--brandbg);color:var(--brand);display:flex;align-items:center;justify-content:center;flex:none}
+  .act .ai svg{width:22px;height:22px}
+  .act .at{flex:1}.act .at b{font-size:14px;font-weight:700}.act .at small{display:block;font-size:11.5px;color:var(--muted);margin-top:1px}
+  .act .as{font-size:12px;font-weight:800;padding:4px 11px;border-radius:20px;white-space:nowrap}
+  .as.on{background:var(--okbg);color:var(--ok)}.as.off{background:#f1f5f9;color:var(--dim)}
+  /* 공기 상태 막대 */
+  .air{padding:15px 16px}
+  .airrow{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
+  .airrow:last-child{margin-bottom:0}.airrow .al{font-size:13px;color:#475569;font-weight:600}
+  .airrow .av{display:flex;align-items:center;gap:8px}.airrow .grade{font-size:13px;font-weight:800;padding:3px 11px;border-radius:20px}
+  /* 지역 소식 */
+  .region{padding:15px 16px;font-size:13.5px;line-height:1.6;color:#334155}
+  .region b{color:#0f172a}
+  .region .lvl{display:inline-block;font-size:11px;font-weight:800;padding:2px 9px;border-radius:20px;margin-left:4px}
+  /* 안내 */
+  .guide{padding:14px 16px;font-size:13px;color:#475569;line-height:1.7}
+  .guide li{margin-left:18px;margin-top:3px}
+  .notifrow{display:flex;align-items:center;gap:12px;padding:15px 16px}
+  .notifrow .ai{width:38px;height:38px;border-radius:10px;background:var(--brandbg);display:flex;align-items:center;justify-content:center;font-size:19px;flex:none}
+  .notifrow .at{flex:1}.notifrow .at b{font-size:14px}.notifrow .at small{display:block;font-size:11.5px;color:var(--muted)}
+  .nbtn{background:var(--brand);color:#fff;border:none;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:700;font-family:inherit}
+  .foot{text-align:center;font-size:11px;color:var(--dim);padding:14px 16px 4px;line-height:1.6}
+  .conn{font-size:10.5px;color:var(--dim);display:inline-flex;align-items:center;gap:4px}
+  .conn .d{width:6px;height:6px;border-radius:50%;background:var(--dim)}.conn.ok .d{background:var(--ok)}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg></div>
+  <div><b>LG Thin<span class="q">Q</span> 케어</b><small>가족 안심 서비스 · LG 디지털요양병원</small></div>
+</header>
+<div class="wrap">
+  <!-- 메인 안심 카드 -->
+  <div class="card hero" id="hero">
+    <div class="who" id="who">김복순 어르신 · 201호 다인실</div>
+    <div class="emoji" id="emoji">🌿</div>
+    <div class="st" id="st">안전</div>
+    <div class="msg" id="msg">병동 환경이 쾌적하게 관리되고 있습니다</div>
+    <div class="upd"><span class="conn off" id="conn"><span class="d"></span><span id="connText">연결 중</span></span> · <span id="upd">수신 대기</span></div>
+  </div>
+
+  <!-- 지금 병원이 하는 일 -->
+  <div class="card">
+    <div class="sec-t">지금 병원이 하는 일</div>
+    <div class="act"><div class="ai" id="ic-purifier"></div><div class="at"><b>공기청정기</b><small>병동 공기를 정화합니다</small></div><div class="as off" id="a-purifier">대기</div></div>
+    <div class="act"><div class="ai" id="ic-vent"></div><div class="at"><b>환기 시스템</b><small>신선한 공기로 교체합니다</small></div><div class="as off" id="a-vent">기본</div></div>
+    <div class="act"><div class="ai" id="ic-eye"></div><div class="at"><b>24시간 자동 감시</b><small>감염 위험을 실시간 확인합니다</small></div><div class="as on">가동 중</div></div>
+  </div>
+
+  <!-- 공기 상태 -->
+  <div class="card air">
+    <div class="sec-t" style="padding:0 0 12px">💨 병동 공기 상태</div>
+    <div class="airrow"><span class="al">미세먼지</span><span class="av"><span class="grade" id="g-dust" style="background:var(--okbg);color:var(--ok)">좋음</span></span></div>
+    <div class="airrow"><span class="al">온도</span><span class="av"><b id="g-temp">—</b><span style="color:var(--muted)">℃</span></span></div>
+    <div class="airrow"><span class="al">습도</span><span class="av"><b id="g-hum">—</b><span style="color:var(--muted)">%</span></span></div>
+  </div>
+
+  <!-- 우리 지역 감염병 소식 -->
+  <div class="card">
+    <div class="sec-t">🗺️ 우리 지역 감염병 소식</div>
+    <div class="region" id="region">지역 정보를 불러오는 중…</div>
+  </div>
+
+  <!-- 알림 -->
+  <div class="card notifrow"><div class="ai">🔔</div><div class="at"><b>안심 알림 받기</b><small>병동 상태가 바뀌면 알려드려요</small></div>
+    <button class="nbtn" id="notifBtn" onclick="enableNotif()">켜기</button></div>
+
+  <!-- 감염 예방 안내 -->
+  <div class="card">
+    <div class="sec-t">📋 면회 · 예방 안내</div>
+    <div class="guide"><ul>
+      <li>면회 전 손 소독과 마스크 착용을 부탁드립니다</li>
+      <li>발열·기침 등 증상이 있으면 면회를 자제해 주세요</li>
+      <li>병동 위험 단계가 높을 때는 면회가 제한될 수 있습니다</li>
+    </ul></div>
+  </div>
+
+  <div class="foot">이 서비스는 병동 감염 위험을 자동 감시하고,<br>위험 시 병원이 즉시 조치합니다. 안심하세요.<br><br>LG ThinQ 케어 · 감염관리 시스템</div>
+</div>
+
+<script>
+// 보호자/병실 정보는 URL 파라미터로 주입(?space=&name=&room=). 미지정 시 시연 예시 폴백.
+const _q=new URLSearchParams(location.search);
+const SPACE=_q.get('space')||'ward_a';
+const NAME=_q.get('name'), ROOMQ=_q.get('room');
+const ROOM=ROOMQ||'201호 다인실';
+const _demoTag=(!NAME&&!ROOMQ)?' · 시연 예시':'';
+document.getElementById('who').textContent=(NAME||'김복순 어르신')+' · '+ROOM+_demoTag;
+// 보호자 관점: tier → 안심 메시지 (기술용어 숨김)
+const STATE={
+  MONITOR:{emoji:"🌿",st:"안전",c:"#15803d",bg:"#eafaf0",bd:"#bfe8cd",msg:"병동 환경이 쾌적하게 관리되고 있습니다"},
+  CAUTION:{emoji:"🌤️",st:"관리 중",c:"#b45309",bg:"#fdf6e8",bd:"#f0dcae",msg:"공기 환기를 권고하고 모니터링을 강화했습니다"},
+  ALERT:{emoji:"🛟",st:"자동 조치 중",c:"#c2410c",bg:"#fdefe6",bd:"#f3cbab",msg:"공기청정기를 자동 가동했습니다. 병원이 관리 중이니 안심하세요"},
+  HIGH_RISK:{emoji:"🏥",st:"집중 관리",c:"#dc2626",bg:"#fdeced",bd:"#f3c0c2",msg:"의료진이 집중 관리하고 있습니다"},
+  CRITICAL:{emoji:"🚨",st:"긴급 대응",c:"#9f1239",bg:"#fbe9ee",bd:"#f0bccd",msg:"긴급 방역 절차를 진행 중입니다. 병원이 신속히 대응합니다"},
+};
+const RANK={MONITOR:0,CAUTION:1,ALERT:2,HIGH_RISK:3,CRITICAL:4};
+let _lastTs=null,_notif=false,_prevTier=null;
+
+function tickU(){const u=document.getElementById('upd');if(_lastTs==null)return;const s=Math.round((Date.now()-_lastTs)/1000);u.textContent=(s<2?'방금':s+'초 전')+' 업데이트';}
+setInterval(tickU,1000);
+
+function setState(tier){const s=STATE[tier]||STATE.MONITOR;
+  document.getElementById('emoji').textContent=s.emoji;document.getElementById('st').textContent=s.st;document.getElementById('st').style.color=s.c;
+  document.getElementById('msg').textContent=s.msg;
+  const h=document.getElementById('hero');h.style.setProperty('--hc',s.c);h.style.setProperty('--hbg',s.bg);h.style.setProperty('--hbd',s.bd);
+  // 병원 조치 상태 (안심 톤)
+  const r=RANK[tier]||0;
+  setAct('a-purifier',r>=2?'급속 가동':(r>=1?'자동 가동':'대기'),r>=1);
+  setAct('a-vent',r>=2?'강화 환기':(r>=1?'환기 중':'기본'),r>=1);}
+function setAct(id,txt,on){const el=document.getElementById(id);el.textContent=txt;el.className='as '+(on?'on':'off');}
+
+function notify(tier){if(!_notif)return;const s=STATE[tier];
+  const title=`${s.emoji} ${ROOM} — ${s.st}`,body=s.msg;
+  try{if(navigator.serviceWorker&&navigator.serviceWorker.ready)navigator.serviceWorker.ready.then(r=>r.showNotification(title,{body,icon:'/static/icon-192.png',vibrate:[200,100,200],tag:'fam'}));
+    else new Notification(title,{body,icon:'/static/icon-192.png'});}catch(e){}}
+async function enableNotif(){try{const p=await Notification.requestPermission();_notif=(p==='granted');
+  const b=document.getElementById('notifBtn');b.textContent=_notif?'켜짐 ✓':'거부됨';if(_notif)b.style.background='#15803d';}catch(e){}}
+
+function gradeColor(g){return g<=1?['좋음','var(--okbg)','var(--ok)']:g===2?['보통','#f1eef0','#6b5f63']:g===3?['나쁨','#fdf6e8','#b45309']:['매우나쁨','#fdeced','#dc2626'];}
+
+const es=new EventSource('/api/v1/stream/live/'+SPACE);
+es.addEventListener('live_init',()=>{const c=document.getElementById('conn');c.className='conn ok';document.getElementById('connText').textContent='실시간 연결';});
+es.addEventListener('sensor',(e)=>{const d=JSON.parse(e.data);_lastTs=Date.now();tickU();setState(d.tier);
+  if(d.tier!==_prevTier){if(RANK[d.tier]>=2&&RANK[d.tier]>(RANK[_prevTier]||0))notify(d.tier);_prevTier=d.tier;}
+  if(d.temp_c!=null)document.getElementById('g-temp').textContent=Math.round(d.temp_c*10)/10;
+  if(d.humidity!=null)document.getElementById('g-hum').textContent=Math.round(d.humidity);});
+es.onerror=()=>{const c=document.getElementById('conn');c.className='conn off';document.getElementById('connText').textContent='재연결 중';};
+
+// 공기 등급(코웨이) — 쉬운 말
+async function loadCoway(){try{const r=await fetch('/api/v1/sensor/coway-status');const j=await r.json();
+  if(j.available&&j.aq_grade!=null){const[txt,bg,c]=gradeColor(j.aq_grade);const el=document.getElementById('g-dust');
+    el.textContent=txt;el.style.background=bg;el.style.color=c;}}catch(e){}}
+
+// 우리 지역 감염병 — 선택 지역 우선, 없으면 전국 최고 위험
+async function loadRegion(){try{
+  const sel=await (await fetch('/api/v1/external/selected')).json();
+  let info=sel&&sel.info?sel.info:null,region=sel?sel.region:null;
+  if(!info){const j=await (await fetch('/api/v1/external/regions')).json();
+    if(j.available&&j.regions&&j.regions.length){const top=j.regions[0];info=top;region=top.region;}}
+  if(!info){document.getElementById('region').textContent='현재 우리 지역은 특이사항이 없습니다.';return;}
+  const lv=info.peak_level||info.basis_level||'GREEN';
+  const m={RED:['높음','#fdeced','#dc2626'],ORANGE:['주의','#fdefe6','#c2410c'],YELLOW:['관심','#fdf6e8','#b45309'],GREEN:['낮음','#eafaf0','#15803d']}[lv]||['낮음','#eafaf0','#15803d'];
+  const ld=info.lead_days!=null&&info.lead_days>0?`이 지역은 과거 유행 시 확진 정점보다 <b>${info.lead_days}일 먼저</b> 위험을 포착한 이력이 있습니다.`:'';
+  document.getElementById('region').innerHTML=
+    `<b>${region||'우리 지역'}</b> 인플루엔자 확산 위험 <span class="lvl" style="background:${m[1]};color:${m[2]}">${m[0]}</span><br>
+     <span style="color:#64748b">${lv==='GREEN'?'현재는 안정적입니다. 병원이 예방 관리를 지속합니다.':'외부 확산이 감지되어 병동 감시를 선제적으로 강화했습니다.'}</span>
+     ${ld?`<br><span style="font-size:11.5px;color:#94a3b8">${ld}</span>`:''}`;
+  }catch(e){document.getElementById('region').textContent='지역 정보를 불러오지 못했습니다.';}}
+
+// 가전 아이콘 (Lucide MIT)
+const _svg=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+document.getElementById('ic-purifier').innerHTML=_svg('<path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/>');
+document.getElementById('ic-vent').innerHTML=_svg('<circle cx="12" cy="12" r="9"/><path d="M12 12 8 8M12 12l5 1M12 12l-2 5"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/>');
+document.getElementById('ic-eye').innerHTML=_svg('<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>');
+if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
+if('Notification' in window&&Notification.permission==='granted'){_notif=true;document.getElementById('notifBtn').textContent='켜짐 ✓';document.getElementById('notifBtn').style.background='#15803d';}
+setState('MONITOR');loadCoway();setInterval(loadCoway,8000);loadRegion();setInterval(loadRegion,15000);
+</script>
+</body>
+</html>

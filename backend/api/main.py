@@ -12,14 +12,18 @@
 from __future__ import annotations
 
 import os
+import pathlib as _pl
 from contextlib import asynccontextmanager
 
 import asyncpg
 import redis.asyncio as redis
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
 
+from backend.api.external_live import router as external_router
+from backend.api.sensor import router as sensor_router
 from backend.api.sse import router as sse_router
 from backend.services.external_signal import (
     compute_external_risk_boost,
@@ -32,8 +36,8 @@ from backend.services.uis_reader import (
 )
 from pipeline.simulator.runner import SCENARIO_SEASON, run
 
-DB_DSN = os.getenv("DATABASE_URL",
-                   "postgresql://uis_user:uis_dev_placeholder_20260414@localhost:5433/urban_immune")
+# 자격증명은 소스에 두지 않음 — DATABASE_URL 을 .env/compose 로 주입 (미설정 시 비번 없는 로컬 기본)
+DB_DSN = os.getenv("DATABASE_URL", "postgresql://sentinel@localhost:55432/sentinel_dev")
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6380/0")
 
 state: dict = {}
@@ -41,8 +45,24 @@ state: dict = {}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    state["db"] = await asyncpg.create_pool(DB_DSN, min_size=1, max_size=4)
+    state["db"] = await asyncpg.create_pool(DB_DSN, min_size=4, max_size=12)
     state["redis"] = redis.from_url(REDIS_URL, decode_responses=True)
+    # 코웨이 실기기 어댑터 (COWAY_USERNAME 설정 시에만 활성, 미설정/미설치면 None)
+    try:
+        from backend.services.coway_adapter import CowayAdapter
+
+        state["coway"] = CowayAdapter() if os.getenv("COWAY_USERNAME") else None
+    except Exception as e:  # noqa: BLE001
+        print(f"[main] Coway 어댑터 비활성: {str(e)[:100]}")
+        state["coway"] = None
+    # 삼성 SmartThings 에어컨 어댑터 (SMARTTHINGS_TOKEN 설정 시에만 활성)
+    try:
+        from backend.services.smartthings_adapter import SmartThingsAdapter
+
+        state["ac"] = SmartThingsAdapter() if os.getenv("SMARTTHINGS_TOKEN") else None
+    except Exception as e:  # noqa: BLE001
+        print(f"[main] SmartThings 어댑터 비활성: {str(e)[:100]}")
+        state["ac"] = None
     # UIS DB(urban_immune)는 sentinel DB와 별개 — read-only 외부신호 소비용 별도 풀
     try:
         state["uis_db"] = await asyncpg.create_pool(UIS_DSN, min_size=1, max_size=2)
@@ -53,20 +73,87 @@ async def lifespan(app: FastAPI):
     await state["db"].close()
     if state.get("uis_db"):
         await state["uis_db"].close()
+    if state.get("ac"):
+        await state["ac"].close()
     await state["redis"].aclose()
 
 
 app = FastAPI(title="ThinQ Workspace Sentinel", version="0.3.0", lifespan=lifespan)
 
+# 배포·발표장 도메인은 CORS_ORIGINS 환경변수(콤마분리)로 추가. 미설정 시 로컬 기본값만.
+_cors_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
+_cors_origins += [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 app.include_router(sse_router)
+app.include_router(sensor_router)
+app.include_router(external_router)
+
+# 음성 안내 mp3 등 정적 파일 (대시보드가 /static/voice_*.mp3 재생 → 띄운 기기 스피커)
+app.mount(
+    "/static",
+    StaticFiles(directory=str(_pl.Path(__file__).parent.parent / "static")),
+    name="static",
+)
+
+
+_STATIC_DIR = _pl.Path(__file__).parent.parent / "static"
+_NOCACHE = {"Cache-Control": "no-cache, no-store, must-revalidate"}
+
+
+def _serve_html(filename: str):
+    """HTML 서빙 — 변경 API 인증키(SENTINEL_API_KEY)를 placeholder 에 주입.
+
+    데모(키 미설정)면 빈 문자열 → 인증 비활성과 정합. 운영(키 설정)이면
+    브라우저 제어 fetch 가 동일 키를 X-API-Key 로 전송(same-origin)."""
+    from fastapi.responses import HTMLResponse
+
+    html = (_STATIC_DIR / filename).read_text(encoding="utf-8")
+    html = html.replace("__SENTINEL_API_KEY__", os.getenv("SENTINEL_API_KEY", ""))
+    return HTMLResponse(html, headers=_NOCACHE)
+
+
+@app.get("/dashboard")
+async def dashboard():
+    """라파이 크로미움 키오스크용 실시간 대시보드(단일 HTML, same-origin SSE)."""
+    return _serve_html("dashboard.html")
+
+
+@app.get("/m")
+async def mobile_pwa():
+    """PWA 모바일 대시보드 (홈화면 설치 · 경보 알림)."""
+    return _serve_html("m.html")
+
+
+@app.get("/wardmap")
+async def wardmap():
+    """병동 3D(아이소메트릭) 위험 맵 — 공간별 감염위험 입체 시각화."""
+    return _serve_html("wardmap.html")
+
+
+@app.get("/sw.js")
+async def service_worker():
+    """서비스워커는 루트 스코프(/)에서 서빙해야 PWA 전체 제어 가능."""
+    from fastapi.responses import FileResponse
+
+    return FileResponse(str(_STATIC_DIR / "sw.js"), media_type="application/javascript",
+                        headers={"Cache-Control": "no-cache"})
+
+
+@app.get("/split")
+async def split_view():
+    """시연용 분할 화면 — 좌: 간호사 관제 대시보드 / 우: 보호자 폰앱(목업)."""
+    from fastapi.responses import FileResponse
+
+    return FileResponse(str(_STATIC_DIR / "split.html"), media_type="text/html",
+                        headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
 
 @app.get("/health")
 async def health():
@@ -159,8 +246,9 @@ def list_scenarios():
 
 class SimRequest(BaseModel):
     scenario: str
-    minutes: int = 120
-    dt: float = 1.0
+    # 입력 상한/하한으로 시뮬 루프 폭주(CPU DoS) 차단. steps = minutes/dt.
+    minutes: int = Field(120, ge=1, le=1440)  # 최대 24시간
+    dt: float = Field(1.0, ge=0.5, le=60.0)   # step 0.5~60분
 
 
 @app.post("/api/v1/simulate")

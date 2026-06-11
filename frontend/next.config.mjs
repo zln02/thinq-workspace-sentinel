@@ -1,11 +1,11 @@
 /** @type {import('next').NextConfig} */
-// NEXT_BASE_PATH 설정 시에만 서브패스 적용 (외부 노출용 빌드).
-// 로컬 개발(localhost:3000)은 env 미설정 → basePath '' 유지.
+// 배포(nginx /sentinel → :3001)는 basePath 필요 — NEXT_BASE_PATH 를 빌드시 주입.
+// 미설정(로컬 dev)이면 basePath 없음. systemd: Environment=NEXT_BASE_PATH=/sentinel
 const basePath = process.env.NEXT_BASE_PATH || "";
 
 const nextConfig = {
   reactStrictMode: true,
-  basePath,
+  ...(basePath ? { basePath } : {}),
   async rewrites() {
     return [
       {

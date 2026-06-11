@@ -31,6 +31,7 @@ services:
       - ../migrations/001_init_sentinel.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
       - ../migrations/002_nursing_home_pivot.sql:/docker-entrypoint-initdb.d/02_pivot.sql:ro
       - ../migrations/003_real_nursing_seed.sql:/docker-entrypoint-initdb.d/03_real_seed.sql:ro
+      - ../migrations/004_add_gas_raw.sql:/docker-entrypoint-initdb.d/04_gas_raw.sql:ro
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "sentinel", "-d", "sentinel_dev"]
       interval: 5s
@@ -54,12 +55,22 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:8003:8003"
+      # 라파이(Tailscale)에서 대시보드/ingest 접근용 — GCP Tailscale IP 바인딩
+      - "100.96.227.23:8003:8003"
     environment:
       DATABASE_URL: postgresql://sentinel:dev_local_password@sentinel-db-dev:5432/sentinel_dev
       REDIS_URL: redis://sentinel-redis-dev:6379/0
       ENV: development
       # UIS 실데이터 연동 (read-only 외부신호). 미설정 시 풀 None → 외부신호 graceful 비활성
       UIS_DATABASE_URL: ${UIS_DATABASE_URL:-}
+      # 코웨이 실기기 어댑터 계정 (.env 에서 주입, 미설정 시 어댑터 graceful 비활성)
+      COWAY_USERNAME: ${COWAY_USERNAME:-}
+      COWAY_PASSWORD: ${COWAY_PASSWORD:-}
+      # 삼성 SmartThings 에어컨 (PAT 토큰, 미설정 시 graceful 비활성)
+      SMARTTHINGS_TOKEN: ${SMARTTHINGS_TOKEN:-}
+      SMARTTHINGS_AC_DEVICE_ID: ${SMARTTHINGS_AC_DEVICE_ID:-}
+      # 제어 API 인증키 (미설정 시 무인증 데모, 운영 배포 시 필수)
+      SENTINEL_API_KEY: ${SENTINEL_API_KEY:-}
     depends_on:
       sentinel-db-dev:
         condition: service_healthy

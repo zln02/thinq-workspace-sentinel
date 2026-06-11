@@ -1,0 +1,21 @@
+[Unit]
+Description=ThinQ Sentinel 센서 브릿지 (아두이노 시리얼 → GCP 백엔드)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=wlsdud5035
+WorkingDirectory=/home/wlsdud5035/sentinel-bridge
+# 환경: SENTINEL_API / SERIAL_PORT / BAUD / SPACE_ID (EnvironmentFile 로 .env 주입 가능)
+EnvironmentFile=-/home/wlsdud5035/sentinel-bridge/bridge.env
+ExecStart=/usr/bin/python3 /home/wlsdud5035/sentinel-bridge/bridge.py
+Restart=always
+RestartSec=3
+# 아두이노 리셋/재연결 시 끊겨도 자동 복구 (시연장 안정성)
+StartLimitIntervalSec=0
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

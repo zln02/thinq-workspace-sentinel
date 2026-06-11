@@ -3,202 +3,108 @@
 
 import { useState } from "react";
 import { RoomCard } from "./RoomCard";
-import { X, HeartPulse, UserCircle, AlertCircle, CheckCircle2 } from "lucide-react";
+import { X, UserCircle, AlertCircle, CheckCircle2, Wind, Radio, Activity } from "lucide-react";
+import { RoomFloorPlan } from "./RoomFloorPlan";
+import type { Tier } from "@/lib/appliances";
+import { patientsForSpace } from "@/lib/wardData";
 
-const ROOM_DATA = [
-  { 
-    roomCode: "101", capacity: 4, occ: 4, snapshot: { tier: "MONITOR", poi: 0.12, co2: 605, temp_c: 23.5, rh: 45, pm25: 10 },
-    patients: [
-      { name: "김철수", age: 78, status: "안정", vitals: { bt: 36.5, hr: 72, bp: "120/80" } },
-      { name: "이영희", age: 82, status: "안정", vitals: { bt: 36.6, hr: 68, bp: "115/75" } },
-      { name: "최민수", age: 75, status: "안정", vitals: { bt: 36.4, hr: 70, bp: "125/82" } },
-      { name: "박정자", age: 80, status: "안정", vitals: { bt: 36.7, hr: 74, bp: "118/78" } }
-    ]
-  },
-  { 
-    roomCode: "102", capacity: 4, occ: 3, snapshot: { tier: "CAUTION", poi: 0.35, co2: 850, temp_c: 24.1, rh: 48, pm25: 15 },
-    patients: [
-      { name: "박성호", age: 75, status: "미열", vitals: { bt: 37.4, hr: 85, bp: "130/85" } },
-      { name: "최은자", age: 88, status: "안정", vitals: { bt: 36.8, hr: 74, bp: "125/80" } },
-      { name: "정동석", age: 81, status: "안정", vitals: { bt: 36.5, hr: 70, bp: "118/75" } }
-    ]
-  },
-  { 
-    roomCode: "103", capacity: 4, occ: 4, snapshot: { tier: "MONITOR", poi: 0.15, co2: 620, temp_c: 23.2, rh: 44, pm25: 12 },
-    patients: [
-      { name: "강현우", age: 79, status: "안정", vitals: { bt: 36.5, hr: 71, bp: "120/80" } },
-      { name: "오지연", age: 83, status: "안정", vitals: { bt: 36.7, hr: 73, bp: "122/81" } },
-      { name: "류승호", age: 76, status: "안정", vitals: { bt: 36.4, hr: 69, bp: "118/76" } },
-      { name: "신미경", age: 85, status: "안정", vitals: { bt: 36.6, hr: 75, bp: "130/85" } }
-    ]
-  },
-  { 
-    roomCode: "104", capacity: 2, occ: 2, snapshot: { tier: "ALERT", poi: 0.68, co2: 1200, temp_c: 25.2, rh: 55, pm25: 25 },
-    patients: [
-      { name: "최동수", age: 89, status: "고열", vitals: { bt: 38.1, hr: 102, bp: "145/95" } },
-      { name: "배영호", age: 82, status: "주의", vitals: { bt: 37.6, hr: 95, bp: "138/88" } }
-    ]
-  },
-  { 
-    roomCode: "201", capacity: 4, occ: 4, snapshot: { tier: "MONITOR", poi: 0.18, co2: 650, temp_c: 23.6, rh: 46, pm25: 11 },
-    patients: [
-      { name: "유재석", age: 77, status: "안정", vitals: { bt: 36.4, hr: 75, bp: "122/82" } },
-      { name: "김태호", age: 81, status: "안정", vitals: { bt: 36.6, hr: 70, bp: "120/80" } },
-      { name: "정준하", age: 79, status: "안정", vitals: { bt: 36.5, hr: 72, bp: "125/85" } },
-      { name: "노홍철", age: 74, status: "안정", vitals: { bt: 36.7, hr: 76, bp: "115/75" } }
-    ]
-  },
-  { 
-    roomCode: "202", capacity: 4, occ: 4, snapshot: { tier: "HIGH_RISK", poi: 0.85, co2: 1450, temp_c: 26.1, rh: 60, pm25: 38 },
-    patients: [
-      { name: "박점순", age: 85, status: "고열", vitals: { bt: 38.5, hr: 115, bp: "155/100" } },
-      { name: "이만구", age: 91, status: "혈압이상", vitals: { bt: 37.1, hr: 98, bp: "165/110" } },
-      { name: "조향숙", age: 79, status: "발열", vitals: { bt: 38.0, hr: 102, bp: "145/95" } },
-      { name: "강철중", age: 83, status: "미열", vitals: { bt: 37.5, hr: 88, bp: "135/88" } }
-    ]
-  },
-  { 
-    roomCode: "203", capacity: 4, occ: 1, snapshot: { tier: "MONITOR", poi: 0.05, co2: 450, temp_c: 22.5, rh: 40, pm25: 8 },
-    patients: [
-      { name: "윤지은", age: 84, status: "안정", vitals: { bt: 36.7, hr: 70, bp: "118/78" } }
-    ]
-  },
-  { 
-    roomCode: "204", capacity: 2, occ: 2, snapshot: { tier: "CAUTION", poi: 0.42, co2: 920, temp_c: 24.5, rh: 50, pm25: 18 },
-    patients: [
-      { name: "한수연", age: 78, status: "미열", vitals: { bt: 37.5, hr: 92, bp: "140/90" } },
-      { name: "김종민", age: 81, status: "안정", vitals: { bt: 36.8, hr: 78, bp: "128/82" } }
-    ]
-  },
-  { 
-    roomCode: "301", capacity: 4, occ: 4, snapshot: { tier: "MONITOR", poi: 0.22, co2: 700, temp_c: 23.8, rh: 47, pm25: 14 },
-    patients: [
-      { name: "오상식", age: 76, status: "안정", vitals: { bt: 36.8, hr: 74, bp: "125/80" } },
-      { name: "장그래", age: 80, status: "안정", vitals: { bt: 36.5, hr: 70, bp: "120/75" } },
-      { name: "안영이", age: 75, status: "안정", vitals: { bt: 36.6, hr: 72, bp: "118/78" } },
-      { name: "장백기", age: 78, status: "안정", vitals: { bt: 36.7, hr: 75, bp: "122/82" } }
-    ]
-  },
-  { 
-    roomCode: "302", capacity: 4, occ: 4, snapshot: { tier: "CRITICAL", poi: 0.95, co2: 1800, temp_c: 27.5, rh: 65, pm25: 55 },
-    patients: [
-      { name: "조병규", age: 86, status: "응급", vitals: { bt: 39.2, hr: 125, bp: "160/105" } },
-      { name: "한소희", age: 80, status: "고열", vitals: { bt: 38.8, hr: 110, bp: "150/95" } },
-      { name: "이도현", age: 82, status: "고열", vitals: { bt: 38.5, hr: 105, bp: "148/92" } },
-      { name: "송혜교", age: 79, status: "발열", vitals: { bt: 37.9, hr: 98, bp: "140/90" } }
-    ]
-  },
-  { 
-    roomCode: "303", capacity: 4, occ: 3, snapshot: { tier: "ALERT", poi: 0.72, co2: 1300, temp_c: 25.5, rh: 58, pm25: 28 },
-    patients: [
-      { name: "백승기", age: 84, status: "발열", vitals: { bt: 38.0, hr: 98, bp: "150/95" } },
-      { name: "김지원", age: 81, status: "미열", vitals: { bt: 37.6, hr: 90, bp: "135/85" } },
-      { name: "박보검", age: 78, status: "주의", vitals: { bt: 37.4, hr: 85, bp: "142/90" } }
-    ]
-  },
-  { 
-    roomCode: "304", capacity: 2, occ: 2, snapshot: { tier: "MONITOR", poi: 0.14, co2: 610, temp_c: 23.4, rh: 45, pm25: 10 },
-    patients: [
-      { name: "송중기", age: 76, status: "안정", vitals: { bt: 36.5, hr: 66, bp: "110/70" } },
-      { name: "전여빈", age: 75, status: "안정", vitals: { bt: 36.6, hr: 68, bp: "115/75" } }
-    ]
-  }
-];
+// NurseView가 백엔드 overview(+201호 SSE)를 병합해 내려주는 공간 카드
+export type SpaceCard = {
+  space_id: string;
+  space_name: string;
+  space_type: string;
+  max_occupancy: number;
+  isLive: boolean;          // 실센서 공간(201호)
+  occ: number | null;       // 재실 인원(실센서만 정확, 그 외 null)
+  snapshot: { tier: string; poi: number | null; co2: number | null; temp_c: number | null; rh: number | null; pm25: number | null };
+};
 
-export function FloorPlan() {
-  const [selectedRoom, setSelectedRoom] = useState<any | null>(null);
+export function FloorPlan({ spaces }: { spaces: SpaceCard[] }) {
+  const [selected, setSelected] = useState<SpaceCard | null>(null);
+  const patients = selected ? patientsForSpace(selected.space_name) : [];
+  const snap = selected?.snapshot;
 
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 relative">
-        {ROOM_DATA.map((room, idx) => (
-          <RoomCard 
-            key={idx} 
-            roomCode={room.roomCode} 
-            capacity={room.capacity} 
-            occ={room.occ}
-            snapshot={room.snapshot}
-            onClick={() => setSelectedRoom(room)}
-          />
+        {spaces.map((sp) => (
+          <div key={sp.space_id} className="relative">
+            <span className={`absolute -top-1.5 right-2 z-10 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${sp.isLive ? "bg-emerald-500 text-white" : "bg-slate-700 text-slate-300 border border-slate-600"}`}>
+              {sp.isLive ? <><Radio size={10} /> 실센서 LIVE</> : "백엔드 라이브"}
+            </span>
+            <RoomCard
+              roomCode={sp.space_name}
+              capacity={sp.max_occupancy}
+              occ={sp.occ}
+              snapshot={sp.snapshot}
+              onClick={() => setSelected(sp)}
+            />
+          </div>
         ))}
       </div>
 
-      {selectedRoom && (
+      {selected && snap && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl relative max-h-[85vh] flex flex-col">
-            <button 
-              onClick={() => setSelectedRoom(null)} 
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors z-10"
-            >
-              <X size={24} />
-            </button>
-            
+            <button onClick={() => setSelected(null)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors z-10"><X size={24} /></button>
+
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 shrink-0">
               <h2 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                {selectedRoom.roomCode}호 병실 상세
+                {selected.space_name}
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${selected.isLive ? "bg-emerald-500 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}>{selected.isLive ? "실센서" : "백엔드 라이브"}</span>
               </h2>
-              <p className="text-sm text-slate-500 mt-1">현재 재실: {selectedRoom.occ}명 / 총 {selectedRoom.capacity}베드</p>
+              <p className="text-sm text-slate-500 mt-1">{selected.space_type} · 정원 {selected.max_occupancy}명{selected.occ != null ? ` · 현재 재실 ${selected.occ}명` : ""}</p>
             </div>
 
             <div className="p-6 overflow-y-auto space-y-4">
-              <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1.5">
-                <UserCircle size={18} /> 재실 환자 생체 지표 (Vitals)
-              </h3>
-              
-              {selectedRoom.patients.length === 0 ? (
-                <div className="text-center py-8 text-slate-400 text-sm bg-slate-50 dark:bg-slate-800/20 rounded-xl">
-                  현재 재실 중인 환자가 없습니다.
-                </div>
-              ) : (
-                selectedRoom.patients.map((patient: any, i: number) => {
-                  const isWarning = patient.vitals.bt >= 37.5 || patient.vitals.hr > 100;
-                  return (
-                    <div key={i} className={`p-4 rounded-xl border ${isWarning ? 'bg-red-50 dark:bg-[#A50034]/10 border-red-200 dark:border-[#A50034]/30' : 'bg-white dark:bg-slate-800/40 border-slate-200 dark:border-slate-700'} flex flex-col gap-3`}>
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                          <span className={`font-bold text-lg ${isWarning ? 'text-red-700 dark:text-red-400' : 'text-slate-800 dark:text-slate-200'}`}>
-                            {patient.name} <span className="text-sm font-normal text-slate-500">({patient.age}세)</span>
-                          </span>
+              {/* 환경 실측 지표 */}
+              <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1.5"><Activity size={18} /> 실시간 환경 지표</h3>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { k: "CO₂", v: snap.co2 != null ? `${snap.co2}` : "—", u: "ppm" },
+                  { k: "감염확률", v: snap.poi != null ? `${(snap.poi * 100).toFixed(1)}` : "—", u: "%" },
+                  { k: "온도", v: snap.temp_c != null ? `${snap.temp_c.toFixed(1)}` : "—", u: "°C" },
+                  { k: "습도", v: snap.rh != null ? `${snap.rh.toFixed(0)}` : "—", u: "%" },
+                  { k: "PM2.5", v: snap.pm25 != null ? `${snap.pm25}` : "—", u: "㎍" },
+                  { k: "등급", v: snap.tier, u: "" },
+                ].map((m, i) => (
+                  <div key={i} className="bg-slate-50 dark:bg-[#0B1120]/60 rounded-xl p-3 text-center border border-slate-100 dark:border-slate-800">
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">{m.k}</p>
+                    <p className="text-base font-black text-slate-800 dark:text-white">{m.v}<span className="text-[10px] font-normal text-slate-400 ml-0.5">{m.u}</span></p>
+                  </div>
+                ))}
+              </div>
+
+              {/* 평면도 + 가전 자동제어 */}
+              <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-1 mt-5 flex items-center gap-1.5"><Wind size={18} /> 평면도 · ThinQ 가전 가동현황</h3>
+              <RoomFloorPlan tier={snap.tier as Tier} spaceType={selected.space_type} occupancy={selected.max_occupancy} />
+
+              {/* 재실 환자(병실만) */}
+              {patients.length > 0 && (
+                <>
+                  <h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-2 mt-5 flex items-center gap-1.5"><UserCircle size={18} /> 재실 환자 생체 지표 <span className="text-[10px] font-normal text-slate-400">(웨어러블 연동 예정 · 데모)</span></h3>
+                  {patients.map((patient, i) => {
+                    const isWarning = patient.vitals.bt >= 37.5 || patient.vitals.hr > 100;
+                    return (
+                      <div key={i} className={`p-4 rounded-xl border ${isWarning ? "bg-red-50 dark:bg-[#A50034]/10 border-red-200 dark:border-[#A50034]/30" : "bg-white dark:bg-slate-800/40 border-slate-200 dark:border-slate-700"} flex flex-col gap-3`}>
+                        <div className="flex justify-between items-center">
+                          <span className={`font-bold text-lg ${isWarning ? "text-red-700 dark:text-red-400" : "text-slate-800 dark:text-slate-200"}`}>{patient.name} <span className="text-sm font-normal text-slate-500">({patient.age}세)</span></span>
+                          <div className={`flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full ${isWarning ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400" : "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400"}`}>{isWarning ? <AlertCircle size={12} /> : <CheckCircle2 size={12} />}{patient.status}</div>
                         </div>
-                        <div className={`flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full ${isWarning ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400' : 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'}`}>
-                          {isWarning ? <AlertCircle size={12}/> : <CheckCircle2 size={12}/>}
-                          {patient.status}
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-700/50 text-center bg-white/50 dark:bg-[#0B1120]/50 py-2 rounded-lg">
-                        <div>
-                          <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">체온</p>
-                          <p className={`text-base font-black ${patient.vitals.bt >= 37.5 ? 'text-red-600 dark:text-red-400' : 'text-slate-700 dark:text-slate-300'}`}>
-                            {patient.vitals.bt}<span className="text-[10px] font-normal ml-0.5">°C</span>
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">혈압</p>
-                          <p className="text-base font-black text-slate-700 dark:text-slate-300">
-                            {patient.vitals.bp}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">심박수</p>
-                          <p className={`text-base font-black ${patient.vitals.hr > 100 ? 'text-red-600 dark:text-red-400' : 'text-slate-700 dark:text-slate-300'}`}>
-                            {patient.vitals.hr}<span className="text-[10px] font-normal ml-0.5">bpm</span>
-                          </p>
+                        <div className="grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-700/50 text-center bg-white/50 dark:bg-[#0B1120]/50 py-2 rounded-lg">
+                          <div><p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">체온</p><p className={`text-base font-black ${patient.vitals.bt >= 37.5 ? "text-red-600 dark:text-red-400" : "text-slate-700 dark:text-slate-300"}`}>{patient.vitals.bt}<span className="text-[10px] font-normal ml-0.5">°C</span></p></div>
+                          <div><p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">혈압</p><p className="text-base font-black text-slate-700 dark:text-slate-300">{patient.vitals.bp}</p></div>
+                          <div><p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">심박수</p><p className={`text-base font-black ${patient.vitals.hr > 100 ? "text-red-600 dark:text-red-400" : "text-slate-700 dark:text-slate-300"}`}>{patient.vitals.hr}<span className="text-[10px] font-normal ml-0.5">bpm</span></p></div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })
+                    );
+                  })}
+                </>
               )}
             </div>
-            
+
             <div className="p-4 border-t border-slate-100 dark:border-slate-800 shrink-0">
-              <button 
-                onClick={() => setSelectedRoom(null)} 
-                className="w-full py-3 bg-[#A50034] text-white rounded-xl text-sm font-bold hover:bg-red-700 transition"
-              >
-                닫기
-              </button>
+              <button onClick={() => setSelected(null)} className="w-full py-3 bg-[#A50034] text-white rounded-xl text-sm font-bold hover:bg-red-700 transition">닫기</button>
             </div>
           </div>
         </div>

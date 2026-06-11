@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko" translate="no">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="google" content="notranslate" />
+<title>ThinQ Sentinel · 병동 3D 위험 맵</title>
+<style>
+  :root{--bg:#eef1f6;--panel:#fff;--line:#dde3ee;--txt:#1e293b;--muted:#64748b;--dim:#94a3b8;--brand:#a50034}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:radial-gradient(900px 500px at 50% -10%,#e8edf6,transparent),var(--bg);color:var(--txt);
+    font-family:'Pretendard','NanumGothic','Noto Sans KR',system-ui,sans-serif;height:100vh;overflow:hidden}
+  header{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:var(--panel);border-bottom:1px solid var(--line)}
+  header h1{font-size:18px;font-weight:800;letter-spacing:-.4px}
+  header h1 small{font-size:12px;color:var(--muted);font-weight:500;margin-left:6px}
+  .right{display:flex;align-items:center;gap:16px;font-size:12.5px;color:var(--muted)}
+  .clock{font-variant-numeric:tabular-nums;font-weight:700;color:#334155;font-size:14px}
+  main{display:flex;flex-direction:column;align-items:center;height:calc(100vh - 53px)}
+  .stage{flex:1;width:100%;display:flex;align-items:center;justify-content:center;min-height:0}
+  svg{max-width:96%;max-height:96%}
+  /* 색맹안전 5단계 범례 (색+아이콘+텍스트) */
+  .legend{display:flex;gap:10px;padding:12px 0 18px;flex-wrap:wrap;justify-content:center}
+  .lg{display:flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--line);
+    border-radius:10px;padding:6px 12px;font-size:12.5px;font-weight:700;box-shadow:0 1px 3px rgba(16,24,40,.06)}
+  .lg .sw{width:15px;height:15px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff}
+  .upd{font-size:11px;color:var(--dim);text-align:center;padding-bottom:8px}
+  .upd b{color:#334155}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>🏥 병동 3D 위험 맵 <small>LG 디지털요양병원 · 공간별 감염위험</small></h1></div>
+  <div class="right"><span id="src">데이터 로딩…</span><span class="clock" id="clock">--:--:--</span></div>
+</header>
+<main>
+  <div class="stage"><svg id="map" viewBox="0 0 900 560"></svg></div>
+  <div class="legend" id="legend"></div>
+  <div class="upd" id="upd">—</div>
+</main>
+<script>
+// 색맹안전 상태색(Wong) + 아이콘 + 텍스트 (색만으로 구분 금지)
+const TIER={
+  MONITOR:{ko:"정상",c:"#1a7a45",ic:"✓",h:0.18},
+  CAUTION:{ko:"주의",c:"#E69F00",ic:"!",h:0.42},
+  ALERT:{ko:"경보",c:"#D55E00",ic:"▲",h:0.66},
+  HIGH_RISK:{ko:"고위험",c:"#CC2E6A",ic:"‼",h:0.86},
+  CRITICAL:{ko:"위급",c:"#0072B2",ic:"✕",h:1.0},
+};
+const ORDER=["MONITOR","CAUTION","ALERT","HIGH_RISK","CRITICAL"];
+let _lastTs=null;
+function shade(hex,f){const n=parseInt(hex.slice(1),16);let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+  r=Math.round(r*f);g=Math.round(g*f);b=Math.round(b*f);return `rgb(${r},${g},${b})`;}
+
+document.getElementById('legend').innerHTML=ORDER.map(k=>{const i=TIER[k];
+  return `<span class="lg"><span class="sw" style="background:${i.c}">${i.ic}</span>${i.ko}</span>`;}).join('');
+setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('ko-KR',{hour12:false});},1000);
+setInterval(()=>{if(_lastTs){const s=Math.round((Date.now()-_lastTs)/1000);
+  document.getElementById('upd').innerHTML=`마지막 갱신 <b>${s<2?'방금':s+'초 전'}</b> · 5초 주기`;}},1000);
+
+// 아이소메트릭 큐보이드 렌더 (top 마름모 + 좌/우 측면)
+const TW=104, TH=52, COLS=4, OX=450, OY=120, MAXH=150;
+function cuboid(col,row,hRatio,tier,name,src){
+  const i=TIER[tier]||TIER.MONITOR;
+  const h=20+hRatio*MAXH;
+  const cx=OX+(col-row)*TW/2;
+  const cy=OY+(col+row)*TH/2;
+  // top face 4점 (z=h 위로)
+  const tp=[[cx,cy-h],[cx+TW/2,cy+TH/2-h],[cx,cy+TH-h],[cx-TW/2,cy+TH/2-h]];
+  const bl=[cx-TW/2,cy+TH/2-h], bb=[cx,cy+TH-h];     // 좌하/중하 (top)
+  const groundL=[cx-TW/2,cy+TH/2], groundB=[cx,cy+TH], groundR=[cx+TW/2,cy+TH/2];
+  const top=tp.map(p=>p.join(',')).join(' ');
+  const left=`${bl[0]},${bl[1]} ${bb[0]},${bb[1]} ${groundB[0]},${groundB[1]} ${groundL[0]},${groundL[1]}`;
+  const right=`${bb[0]},${bb[1]} ${tp[1][0]},${tp[1][1]} ${groundR[0]},${groundR[1]} ${groundB[0]},${groundB[1]}`;
+  const lbl=name.replace(' 다인실','').replace('1층 ','').replace('음압격리실','격리실').replace('공용식당','식당');
+  return `<g>
+    <polygon points="${left}" fill="${shade(i.c,.62)}"/>
+    <polygon points="${right}" fill="${shade(i.c,.78)}"/>
+    <polygon points="${top}" fill="${i.c}" stroke="#fff" stroke-width="1.5"/>
+    <text x="${cx}" y="${cy+TH/2-h-3}" text-anchor="middle" font-size="14" font-weight="800" fill="#fff">${i.ic} ${lbl}</text>
+    <text x="${cx}" y="${cy+TH/2-h+13}" text-anchor="middle" font-size="10" font-weight="700" fill="#fff" opacity=".92">${i.ko}${src==='실센서'?' ●':''}</text>
+  </g>`;
+}
+async function load(){
+  try{const r=await fetch('/api/v1/sensor/spaces/overview');const j=await r.json();
+    if(!j.spaces)return;_lastTs=Date.now();
+    const live=j.spaces.filter(s=>s.source==='실센서').length;
+    document.getElementById('src').textContent=`질병청 외부신호 boost: ${j.boost} · 실센서 ${live}/${j.spaces.length}공간`;
+    // 위험 높은 순으로 정렬 후 그리드 배치(뒤→앞 페인터)
+    const rank={MONITOR:0,CAUTION:1,ALERT:2,HIGH_RISK:3,CRITICAL:4};
+    const sp=[...j.spaces];
+    let svg='';
+    sp.forEach((s,idx)=>{const col=idx%COLS, row=Math.floor(idx/COLS);
+      svg+=cuboid(col,row,(TIER[s.tier]||TIER.MONITOR).h,s.tier,s.space_name,s.source);});
+    document.getElementById('map').innerHTML=svg;
+  }catch(e){document.getElementById('src').textContent='데이터 오류';}
+}
+load();setInterval(load,5000);
+</script>
+</body>
+</html>

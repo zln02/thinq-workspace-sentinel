@@ -23,7 +23,19 @@ const config: Config = {
           bg: "#0B1120",       // 대시보드 전체 배경 (Deep Navy)
           panel: "#111827",    // 카드, 네비게이션 바 등 패널 배경
           border: "#1F2937",   // 패널 테두리
-        }
+        },
+        // 보호자 앱(LG ThinQ 케어) — globals.css :root 토큰 참조
+        care: {
+          red: "var(--care-red)",
+          "red-press": "var(--care-red-press)",
+          "red-soft": "var(--care-red-soft)",
+          bg: "var(--care-bg)",
+          card: "var(--care-card)",
+          ink: "var(--care-ink)",
+          "ink-2": "var(--care-ink-2)",
+          "ink-3": "var(--care-ink-3)",
+          line: "var(--care-line)",
+        },
       },
     },
   },

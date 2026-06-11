@@ -7,7 +7,8 @@ RUN pip install --no-cache-dir \
     "uvicorn[standard]==0.30.0" \
     asyncpg==0.29.0 \
     "redis>=5.0" \
-    pydantic==2.7.0
+    pydantic==2.7.0 \
+    cowayaio==0.2.4
 
 COPY backend /app/backend
 COPY pipeline /app/pipeline
