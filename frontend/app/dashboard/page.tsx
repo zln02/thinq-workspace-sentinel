@@ -618,8 +618,25 @@ function FMView() {
 // ============================================================================
 // 💼 3. 병원장(DIRECTOR) 대시보드
 // ============================================================================
+// 병원장 뷰 tier 색/라벨 (배지용)
+const DIR_TIER: Record<string, { ko: string; cls: string }> = {
+  MONITOR: { ko: "정상", cls: "bg-emerald-100 text-emerald-700" },
+  CAUTION: { ko: "주의", cls: "bg-amber-100 text-amber-700" },
+  ALERT: { ko: "경계", cls: "bg-orange-100 text-orange-700" },
+  HIGH_RISK: { ko: "고위험", cls: "bg-red-100 text-red-700" },
+  CRITICAL: { ko: "위급", cls: "bg-red-200 text-red-900" },
+};
+// 법규 준수 자동 증빙 (요양병원 감염관리 의무 ↔ Sentinel 자동 생성 증빙)
+const COMPLIANCE = [
+  { law: "의료법 제36조", duty: "감염관리위원회 정기 보고", evidence: "제어 이력·알림 자동 PDF", org: "보건복지부" },
+  { law: "감염병예방법 제16조", duty: "감염병 발생 시 신고·관리", evidence: "tier 변화 → 보건소 자동 알림", org: "질병관리청" },
+  { law: "실내공기질관리법 제5조", duty: "CO₂·PM·HCHO 측정 의무", evidence: "센서 연속 측정 자동 보고", org: "환경부" },
+  { law: "요양병원 적정성평가", duty: "감염관리 영역 연 1회 평가", evidence: "자동 증빙 리포트 (수가 가산)", org: "심평원" },
+];
+
 function DirectorView() {
   const report = useReport(30);            // 최근 30일 실측 집계 (없으면 null → 로딩/시뮬)
+  const spaces = useSpacesOverview();      // 공간별 라이브 위험도
   const isReal = report?.source === "실측";
 
   const fmtKRW = (won: number) =>
@@ -710,6 +727,50 @@ function DirectorView() {
               <Line type="monotone" dataKey="ThinQ자동제어" name="ThinQ 자동제어 도입" stroke="#A50034" strokeWidth={3} dot={{ r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* 공간별 감염위험 현황 (라이브) + 법규 준수 자동 증빙 */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* 공간별 현황 */}
+        <div className="lg:col-span-3 bg-white border border-slate-200 rounded-2xl p-7 shadow-sm">
+          <h3 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2"><ActivitySquare size={20} className="text-blue-600" /> 공간별 감염위험 현황</h3>
+          <p className="text-sm text-slate-500 mb-5">전 병동 실시간 위험 등급 · Wells-Riley PoI</p>
+          <div className="grid grid-cols-2 gap-2.5">
+            {(spaces.length ? spaces : []).slice(0, 8).map((s) => {
+              const t = DIR_TIER[s.tier] ?? DIR_TIER.MONITOR;
+              return (
+                <div key={s.space_id} className="flex items-center justify-between border border-slate-100 rounded-xl px-4 py-3 bg-slate-50/60">
+                  <div className="min-w-0">
+                    <p className="font-bold text-slate-800 text-sm truncate">{s.space_name}</p>
+                    <p className="text-[11px] text-slate-400">PoI {s.poi != null ? (s.poi * 100).toFixed(1) + "%" : "—"} · CO₂ {s.co2_ppm ?? "—"}</p>
+                  </div>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold shrink-0 ${t.cls}`}>{t.ko}</span>
+                </div>
+              );
+            })}
+            {!spaces.length && <p className="col-span-2 text-sm text-slate-400 py-8 text-center">현황 불러오는 중…</p>}
+          </div>
+        </div>
+
+        {/* 법규 준수 자동 증빙 */}
+        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-7 shadow-sm">
+          <h3 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2"><CheckCircle2 size={20} className="text-emerald-600" /> 법규 준수 자동 증빙</h3>
+          <p className="text-sm text-slate-500 mb-5">
+            감염관리 의무 → Sentinel 자동 증빙 · 누적 {report ? report.readings.toLocaleString() : "—"}건 기록
+          </p>
+          <div className="space-y-2.5">
+            {COMPLIANCE.map((c) => (
+              <div key={c.law} className="flex items-start gap-3 border border-slate-100 rounded-xl px-4 py-2.5">
+                <CheckCircle2 size={16} className="text-emerald-500 mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-bold text-slate-800 text-[13px]">{c.law} <span className="font-normal text-slate-400">· {c.org}</span></p>
+                  <p className="text-[11px] text-slate-500">{c.duty}</p>
+                  <p className="text-[11px] text-emerald-700 font-semibold mt-0.5">→ {c.evidence}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
