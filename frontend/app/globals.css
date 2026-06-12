@@ -102,3 +102,25 @@ body {
   border-radius: 12px;
   animation: care-pulse 1.4s ease-in-out infinite;
 }
+
+/* ── Sentinel 관제 대시보드 공용 디자인 토큰 (Stitch v2 언어) ──────────────
+   선별 폴리시: 카드 상단 3px LG레드 액센트 + 소프트 섀도우 + hover 리프트.
+   primary = #7a0024 (LG Heritage Red). 라이트 톤 업무 대시보드 전용. */
+@layer components {
+  .sentinel-card {
+    @apply bg-white rounded-2xl border border-slate-200 shadow-[0_4px_12px_rgba(0,0,0,0.05)];
+  }
+  .sentinel-card-accent {
+    @apply sentinel-card border-t-[3px] border-t-[#7a0024];
+  }
+  .sentinel-card-hover {
+    @apply transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(0,0,0,0.09)];
+  }
+  /* KPI 라벨: 소문자 대문자 트래킹 (label-caps) */
+  .kpi-label {
+    @apply text-[11px] font-semibold uppercase tracking-wider text-slate-500;
+  }
+  .kpi-value {
+    @apply text-3xl font-black text-slate-900;
+  }
+}
