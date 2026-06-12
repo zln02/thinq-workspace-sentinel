@@ -110,11 +110,75 @@ function FMFloorPlan({ spaces }: { spaces: SpaceOverview[] }) {
 }
 
 // ============================================================================
-// 🚀 메인 대시보드 컴포넌트 
+// 🧭 좌측 사이드바 네비 (Stitch v2 · Material Symbols) — SUPER 는 뷰 전환
+// ============================================================================
+const ROLE_META: Record<string, { label: string; icon: string }> = {
+  NURSE: { label: "간호사 관제", icon: "monitor_heart" },
+  FM: { label: "시설·가전 제어", icon: "account_tree" },
+  DIRECTOR: { label: "경영 리포트", icon: "analytics" },
+};
+const NAV: { role: string; label: string; desc: string; icon: string; href?: string }[] = [
+  { role: "NURSE", label: "간호사 관제", desc: "실시간 병동 감시", icon: "monitor_heart" },
+  { role: "FM", label: "시설·가전 제어", desc: "ThinQ 자동 방역", icon: "account_tree" },
+  { role: "DIRECTOR", label: "경영 리포트", desc: "ESG·ROI 증빙", icon: "analytics" },
+  { role: "GUARDIAN", label: "보호자 앱", desc: "가족 안심", icon: "family_home", href: "/guardian" },
+];
+
+function DashSidebar({ role, account, userName, onSelect, onLogout }: {
+  role: string; account: string | null; userName: string | null;
+  onSelect: (r: string, href?: string) => void; onLogout: () => void;
+}) {
+  const isSuper = account === "SUPER";
+  const items = isSuper ? NAV : NAV.filter((n) => n.role === role);
+  return (
+    <nav className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-64 bg-white border-r border-slate-200 z-40">
+      <div className="px-6 py-5 border-b border-slate-200 flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-[#7a0024] text-white flex items-center justify-center shadow-sm"><span className="material-symbols-outlined fill">coronavirus</span></div>
+        <div>
+          <h1 className="text-base font-black text-[#7a0024] leading-tight">ThinQ Sentinel</h1>
+          <p className="text-[11px] text-slate-400">감염관리 통합 관제</p>
+        </div>
+      </div>
+      <div className="flex-1 p-3 space-y-1 overflow-y-auto">
+        {isSuper && <p className="px-3 pt-2 pb-1 text-[10px] font-bold tracking-wider text-slate-400 uppercase">대시보드</p>}
+        {items.map((n) => {
+          const active = role === n.role && !n.href;
+          return (
+            <button key={n.role} onClick={() => onSelect(n.role, n.href)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all ${active ? "bg-[#fff0f0] text-[#7a0024] font-bold" : "text-slate-500 hover:bg-slate-50 hover:translate-x-0.5"}`}>
+              <span className={`material-symbols-outlined ${active ? "fill" : ""}`}>{n.icon}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm leading-tight">{n.label}</p>
+                <p className="text-[11px] text-slate-400 font-normal truncate">{n.desc}</p>
+              </div>
+              {active && <span className="w-1.5 h-1.5 rounded-full bg-[#7a0024]" />}
+            </button>
+          );
+        })}
+      </div>
+      <div className="p-3 border-t border-slate-200">
+        <div className="flex items-center gap-3 px-3 py-2 mb-1">
+          <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500"><span className="material-symbols-outlined text-[20px]">person</span></div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-slate-800 truncate">{userName}</p>
+            <p className="text-[11px] text-slate-400">{isSuper ? "통합관리자 · 전체 열람" : ROLE_META[role]?.label}</p>
+          </div>
+        </div>
+        <button onClick={onLogout} className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm text-slate-500 hover:bg-red-50 hover:text-[#7a0024] transition-colors">
+          <span className="material-symbols-outlined text-[18px]">logout</span> 로그아웃
+        </button>
+      </div>
+    </nav>
+  );
+}
+
+// ============================================================================
+// 🚀 메인 대시보드 컴포넌트
 // ============================================================================
 export default function DashboardPage() {
   const router = useRouter();
   const [role, setRole] = useState<string | null>(null);
+  const [account, setAccount] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [time, setTime] = useState<string>("");
   // 201호 실센서 SSE — 헤더 전역 LIVE 인디케이터용(영상에서 실데이터 가동 상시 노출)
@@ -126,6 +190,7 @@ export default function DashboardPage() {
     if (!canAccess(s, ["NURSE", "FM", "DIRECTOR"])) { router.replace("/"); return; }
     const viewRole = ["NURSE", "FM", "DIRECTOR"].includes(s!.role) ? s!.role : "NURSE";
     setRole(viewRole);
+    setAccount(s!.account);
     setUserName(s!.name || "수간호사");
 
     const timer = setInterval(() => {
@@ -136,48 +201,51 @@ export default function DashboardPage() {
   }, [router]);
 
   const handleLogout = () => { clearSession(); router.push("/"); };
+  const selectView = (r: string, href?: string) => {
+    if (href) { router.push(href); return; }
+    localStorage.setItem("role", r); // SUPER 뷰 전환 (account 유지)
+    setRole(r);
+  };
 
   if (!role) return null;
+  const meta = ROLE_META[role] ?? ROLE_META.NURSE;
 
   return (
-    <div className="min-h-screen bg-[#F3F7FB] text-slate-700 flex flex-col font-sans">
-      <header className="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-30 shadow-md">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-[#7a0024] flex items-center justify-center text-white shadow-sm"><ShieldAlert size={22} /></div>
-          <h1 className="text-xl font-black tracking-tight text-slate-900">ThinQ Space <span className="text-[#7a0024]">Sentinel</span></h1>
-        </div>
-        
-        <div className="flex items-center gap-8">
-          {role === "DIRECTOR" && (
-            <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-4 py-1.5 rounded-full text-emerald-700 text-sm shadow-sm animate-in fade-in zoom-in duration-500">
-              <CheckCircle2 size={16} /><span className="font-bold">법정 컴플라이언스 100% 준수</span>
+    <div className="min-h-screen bg-[#F3F7FB] text-slate-700 flex font-sans">
+      <DashSidebar role={role} account={account} userName={userName} onSelect={selectView} onLogout={handleLogout} />
+
+      <div className="flex-1 md:ml-64 flex flex-col min-h-screen min-w-0">
+        {/* 슬림 톱바 */}
+        <header className="bg-white border-b border-slate-200 px-5 sm:px-6 h-16 flex justify-between items-center sticky top-0 z-30 shadow-sm">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="material-symbols-outlined text-[#7a0024]">{meta.icon}</span>
+            <h2 className="text-lg font-bold text-slate-900 truncate">{meta.label}</h2>
+          </div>
+
+          <div className="flex items-center gap-3 sm:gap-4">
+            {role === "DIRECTOR" && (
+              <div className="hidden lg:flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full text-emerald-700 text-xs font-bold">
+                <span className="material-symbols-outlined text-[16px]">verified</span> 법정 컴플라이언스 100%
+              </div>
+            )}
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border ${liveConnected ? "bg-emerald-50 border-emerald-300 text-emerald-700" : "bg-slate-100 border-slate-300 text-slate-500"}`}>
+              <span className="relative flex h-2 w-2">
+                {liveConnected && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />}
+                <span className={`relative inline-flex rounded-full h-2 w-2 ${liveConnected ? "bg-emerald-500" : "bg-slate-400"}`} />
+              </span>
+              201호 {liveConnected ? `LIVE · ${live?.tier ?? "···"}` : "연결중"}
             </div>
-          )}
-
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold border transition-colors ${liveConnected ? "bg-emerald-50 border-emerald-300 text-emerald-700" : "bg-slate-100 border-slate-300 text-slate-500"}`}>
-            <span className="relative flex h-2 w-2">
-              {liveConnected && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />}
-              <span className={`relative inline-flex rounded-full h-2 w-2 ${liveConnected ? "bg-emerald-500" : "bg-slate-400"}`} />
+            <span className="hidden md:flex items-center gap-1.5 text-slate-500 text-sm font-medium">
+              <span className="material-symbols-outlined text-[18px] text-slate-400">schedule</span>{time}
             </span>
-            <Radio size={14} /> 201호 실센서 {liveConnected ? `LIVE · ${live?.tier ?? "···"}` : "연결중"}
           </div>
+        </header>
 
-          <div className="flex items-center gap-2 text-slate-500 font-medium"><Clock size={16} className="text-slate-400"/> {time}</div>
-
-          <div className="flex items-center gap-4 border-l border-slate-200 pl-8">
-            <span className="text-slate-900 font-bold text-lg">{userName}</span>
-            <button onClick={handleLogout} className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-red-50 hover:text-[#7a0024] text-slate-600 rounded-lg text-sm transition-colors border border-slate-200 hover:border-red-200">
-              <LogOut size={14} /> 로그아웃
-            </button>
-          </div>
+        <div className="flex-1 p-5 sm:p-6 lg:p-8 overflow-y-auto w-full max-w-[1600px] mx-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          {role === "NURSE" && <NurseView />}
+          {role === "FM" && <FMView />}
+          {role === "DIRECTOR" && <DirectorView />}
         </div>
-      </header>
-
-      {/* 💡 전체 화면 스크롤바 숨김 적용 */}
-      <div className="flex-1 p-8 overflow-y-auto max-w-[1600px] mx-auto w-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        {role === "NURSE" && <NurseView />}
-        {role === "FM" && <FMView />}
-        {role === "DIRECTOR" && <DirectorView />}
       </div>
     </div>
   );

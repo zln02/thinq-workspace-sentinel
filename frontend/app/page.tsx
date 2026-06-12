@@ -1,9 +1,8 @@
-// frontend/app/page.tsx — 통합 로그인 (다크 글래스 · 좌 3D / 우 폼 · 네뷸라 톤)
+// frontend/app/page.tsx — 통합 로그인 v9 (Stitch 하이테크 다크글래스 · 감염관리 통합 관제 센터)
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, ArrowRight, User, Lock, Building2, ChevronDown } from "lucide-react";
 import { HOSPITALS, ROLE_HOME, authenticate, setSession, bindRegion } from "@/lib/auth";
 
 export default function LoginPage() {
@@ -11,6 +10,7 @@ export default function LoginPage() {
   const [hospitalId, setHospitalId] = useState(HOSPITALS[0].id);
   const [id, setId] = useState("");
   const [pw, setPw] = useState("");
+  const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -30,61 +30,80 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-[#05060c] p-4 sm:p-6 font-sans">
-      <div className="w-full max-w-5xl grid md:grid-cols-2 bg-[#0a0b14] rounded-3xl border border-white/10 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-500">
+    <main className="bg-[#0a0508] h-screen w-screen overflow-hidden flex">
+      {/* 배경: 하이테크 관제 센터 + 그리드/스캔 오버레이 */}
+      <div
+        className="w-full h-full bg-cover bg-center relative flex items-center justify-center p-6 sm:p-12 overflow-hidden"
+        style={{ backgroundImage: "url('https://images.unsplash.com/photo-1551076805-e1869033e561?q=80&w=2000&auto=format&fit=crop')" }}
+      >
+        <div className="absolute inset-0 bg-black/75 mix-blend-multiply" />
+        <div className="absolute inset-0 login-grid-overlay z-0" />
+        <div className="absolute inset-0 login-scan-overlay z-0 w-full h-[200vh] -top-[50vh]" />
 
-        {/* ───────── 좌: Spline 3D 파티클 패널 ───────── */}
-        <div className="relative hidden md:block min-h-[640px] bg-[#0a0b14]">
-          <iframe
-            src="https://my.spline.design/particlenebula-9bJdvFnWOh4OCliIF6lbKqxs/"
-            title="Sentinel" loading="lazy"
-            className="absolute inset-0 w-full h-full pointer-events-none"
-            style={{ border: 0 }}
-          />
-          <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#0a0b14] via-[#0a0b14]/70 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-7 flex items-center gap-2 text-[11px] text-white/70">
-            <span>LG ThinQ</span><span className="w-1 h-1 rounded-full bg-white/40" />
-            <span>질병청 UIS 연동</span><span className="w-1 h-1 rounded-full bg-white/40" />
-            <span>ISMS-P 대응</span>
-          </div>
-        </div>
-
-        {/* ───────── 우: 로그인 폼 (다크 글래스 · 네뷸라 톤) ───────── */}
-        <div className="relative p-8 sm:p-11 flex flex-col justify-center text-white">
-          <div className="pointer-events-none absolute -top-20 -right-20 w-72 h-72 rounded-full bg-violet-500/20 blur-[90px]" />
-
-          <div className="relative flex flex-col items-center text-center mb-7">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-violet-500/30 ring-1 ring-white/10 mb-3">
-              <ShieldCheck size={26} className="text-white" />
+        {/* 다크 글래스 카드 */}
+        <form
+          onSubmit={onSubmit}
+          className="dark-glass rounded-2xl w-full max-w-md p-8 sm:p-12 relative z-10 flex flex-col border-t-4 border-t-[#7a0024] shadow-2xl animate-in fade-in zoom-in-95 duration-500"
+        >
+          <div className="mb-8 flex justify-between items-start">
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined fill text-[#7a0024] text-3xl">coronavirus</span>
+              <h1 className="text-xl font-bold text-white tracking-tight">ThinQ Sentinel</h1>
             </div>
-            <h1 className="text-xl font-black tracking-tight">Workspace Sentinel</h1>
-            <p className="text-[13px] text-white/50 mt-1">요양병원 감염관리 통합 관제</p>
+            <div className="hidden sm:flex items-center gap-2 bg-emerald-400/10 border border-emerald-300/30 px-3 py-1.5 rounded-full">
+              <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
+              <span className="text-[11px] font-semibold text-emerald-200 tracking-wider">System Status: SECURE</span>
+            </div>
           </div>
 
-          <form onSubmit={onSubmit} className="relative space-y-3.5">
-            <Field label="병원" icon={<Building2 size={16} />}>
-              <select
-                value={hospitalId} onChange={(e) => setHospitalId(e.target.value)}
-                className="w-full bg-white/[0.04] border border-white/10 text-white text-sm pl-9 pr-9 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-400/60 appearance-none transition [&>option]:bg-[#0a0b14]"
-              >
-                {HOSPITALS.map((h) => <option key={h.id} value={h.id}>{h.name} · {h.region}</option>)}
-              </select>
-              <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
-            </Field>
+          <div className="mb-9">
+            <h2 className="text-2xl font-bold text-white mb-1 leading-snug">감염관리 통합 관제 센터</h2>
+            <p className="text-sm text-gray-400 font-normal">Infection Control Command Center</p>
+          </div>
 
-            <Field label="아이디" icon={<User size={16} />}>
-              <input
-                value={id} onChange={(e) => setId(e.target.value)} autoComplete="username" placeholder="아이디" required
-                className="w-full bg-white/[0.04] border border-white/10 text-white placeholder:text-white/30 text-sm pl-9 pr-3 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-400/60 transition"
-              />
-            </Field>
+          <div className="flex flex-col gap-5">
+            {/* 관제 거점 (병원) */}
+            <div>
+              <label className="block text-[12px] font-semibold tracking-wider text-gray-400 mb-2">관제 거점</label>
+              <div className="relative">
+                <select
+                  value={hospitalId} onChange={(e) => setHospitalId(e.target.value)}
+                  className="input-glass w-full rounded-lg px-4 py-3 appearance-none text-sm cursor-pointer [&>option]:bg-[#160c11]"
+                >
+                  {HOSPITALS.map((h) => <option key={h.id} value={h.id}>{h.name} · {h.region}</option>)}
+                </select>
+                <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+              </div>
+            </div>
 
-            <Field label="비밀번호" icon={<Lock size={16} />}>
-              <input
-                type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" placeholder="비밀번호" required
-                className="w-full bg-white/[0.04] border border-white/10 text-white placeholder:text-white/30 text-sm pl-9 pr-3 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-400/60 transition"
-              />
-            </Field>
+            {/* 보안 인가 ID */}
+            <div>
+              <label className="block text-[12px] font-semibold tracking-wider text-gray-400 mb-2">보안 인가 ID</label>
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-[20px]">badge</span>
+                <input
+                  value={id} onChange={(e) => setId(e.target.value)} autoComplete="username" placeholder="관리자 ID 입력" required
+                  className="input-glass w-full rounded-lg pl-12 pr-4 py-3 text-sm placeholder-gray-500 transition-all"
+                />
+              </div>
+            </div>
+
+            {/* 인증 키 */}
+            <div>
+              <label className="block text-[12px] font-semibold tracking-wider text-gray-400 mb-2">인증 키</label>
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-[20px]">enhanced_encryption</span>
+                <input
+                  type={showPw ? "text" : "password"} value={pw} onChange={(e) => setPw(e.target.value)}
+                  autoComplete="current-password" placeholder="••••••••" required
+                  className="input-glass w-full rounded-lg pl-12 pr-12 py-3 text-sm placeholder-gray-500 transition-all"
+                />
+                <button type="button" onClick={() => setShowPw((v) => !v)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+                  <span className="material-symbols-outlined text-[20px]">{showPw ? "visibility_off" : "visibility"}</span>
+                </button>
+              </div>
+            </div>
 
             {error && (
               <p className="text-xs text-red-300 font-semibold bg-red-500/10 border border-red-500/25 rounded-lg px-3 py-2">{error}</p>
@@ -92,36 +111,30 @@ export default function LoginPage() {
 
             <button
               type="submit" disabled={busy}
-              className="w-full bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-400 hover:to-violet-500 active:scale-[0.99] disabled:opacity-60 text-white text-sm font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-violet-500/25 mt-1"
+              className="mt-2 text-white font-semibold text-sm py-4 rounded-lg flex items-center justify-center gap-2 transition-all group shadow-[0_4px_14px_rgba(122,0,36,0.4)] bg-gradient-to-r from-[#5e001b] to-[#7a0024] hover:from-[#7a0024] hover:to-[#92002c] disabled:opacity-60 relative overflow-hidden"
             >
-              {busy ? "로그인 중…" : <>로그인 <ArrowRight size={16} /></>}
+              <span className="material-symbols-outlined text-[18px]">lock_person</span>
+              {busy ? "세션 생성 중…" : "암호화 세션 시작"}
+              <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
             </button>
-          </form>
-
-          <div className="relative mt-6 pt-5 border-t border-white/10">
-            <p className="text-[11px] font-bold text-white/35 mb-2 text-center">데모 계정</p>
-            <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-[11px] text-white/45">
-              <span><b className="text-white/75">admin</b>/admin</span>
-              <span><b className="text-white/75">nurse</b>/1234</span>
-              <span><b className="text-white/75">fm</b>/1234</span>
-              <span><b className="text-white/75">director</b>/1234</span>
-              <span><b className="text-white/75">guardian</b>/1234</span>
-            </div>
           </div>
-        </div>
+
+          <div className="mt-8 text-center border-t border-white/10 pt-6 flex flex-col items-center gap-3">
+            <div className="flex items-center gap-1 text-emerald-200/80 text-xs">
+              <span className="material-symbols-outlined text-[14px]">shield</span>
+              <span>End-to-End Encrypted · ISMS-P</span>
+            </div>
+            <p className="text-gray-400 text-[11px] leading-relaxed max-w-sm">
+              인가된 담당자 전용 시스템입니다. 모든 접속·작업은 ISMS-P 규정에 따라 암호화되어 로깅·모니터링됩니다.
+            </p>
+            <p className="text-gray-500 text-xs flex flex-wrap justify-center gap-x-2">
+              <span>데모: <code className="bg-white/10 px-1.5 py-0.5 rounded text-gray-300">admin</code>/<code className="bg-white/10 px-1.5 py-0.5 rounded text-gray-300">admin</code></span>
+              <span className="text-gray-600">·</span>
+              <span>nurse·fm·director·guardian / 1234</span>
+            </p>
+          </div>
+        </form>
       </div>
     </main>
-  );
-}
-
-function Field({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="text-xs font-bold text-white/45 mb-1.5 block">{label}</label>
-      <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 z-10">{icon}</span>
-        {children}
-      </div>
-    </div>
   );
 }
