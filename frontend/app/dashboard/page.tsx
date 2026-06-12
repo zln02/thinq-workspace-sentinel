@@ -235,8 +235,8 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-[#F3F7FB] text-slate-700 flex flex-col font-sans">
       <header className="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-30 shadow-md">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-[#A50034]/20 border border-[#A50034]/50 flex items-center justify-center text-[#A50034]"><ShieldAlert size={24} /></div>
-          <h1 className="text-xl font-bold tracking-wide text-slate-900">ThinQ Space <span className="text-[#A50034]">Sentinel</span></h1>
+          <div className="w-10 h-10 rounded-lg bg-[#7a0024] flex items-center justify-center text-white shadow-sm"><ShieldAlert size={22} /></div>
+          <h1 className="text-xl font-black tracking-tight text-slate-900">ThinQ Space <span className="text-[#7a0024]">Sentinel</span></h1>
         </div>
         
         <div className="flex items-center gap-8">
