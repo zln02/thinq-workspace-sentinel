@@ -346,7 +346,7 @@ function ExternalControlMap() {
           </div>
         ))}
       </div>
-      <p className="text-[11px] text-slate-400 mt-3">↳ 병원체마다 최적 환경이 다름(인플루엔자 가습 50%RH ↔ 노로 제습 45% — <b className="text-slate-600">정반대</b>). 그래서 "무엇이 유행하는지"를 알아야 환경을 정하고, 위험할 때만 그 환경을 만든다.</p>
+      <p className="text-[11px] text-slate-400 mt-3">↳ 병원체마다 최적 환경이 다름(인플루엔자 가습 50%RH ↔ 노로 제습 45% — <b className="text-slate-600">정반대</b>). 그래서 「무엇이 유행하는지」를 알아야 환경을 정하고, 위험할 때만 그 환경을 만든다.</p>
     </div>
   );
 }
