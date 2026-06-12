@@ -1,7 +1,7 @@
 // frontend/app/dashboard/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { 
   ShieldAlert, LogOut, Clock, Users, AlertTriangle, HeartPulse, FileText, 
@@ -13,7 +13,7 @@ import {
   ResponsiveContainer, BarChart, LineChart, ReferenceLine
 } from 'recharts';
 import { FloorPlan, type SpaceCard } from "@/components/domain/FloorPlan";
-import { useLiveWard, useSpacesOverview, useReport, useExternalSignal, useExternalMeta, useCowayStatus, useAcStatus, useControlPlan, sendControl, sendApprove, selectRegion, clearRegion, useBoostState, setControlMode, useControlMode, useSensorSeries, type SpaceOverview } from "@/lib/useSentinel";
+import { useLiveWard, useSpacesOverview, useReport, useExternalSignal, useExternalMeta, useCowayStatus, useAcStatus, useControlPlan, sendControl, sendApprove, selectRegion, clearRegion, useBoostState, setControlMode, useControlMode, useSensorSeries, type SpaceOverview, type DirectorReport } from "@/lib/useSentinel";
 import FlowPanel from "@/components/domain/FlowPanel";
 import { getSession, canAccess, clearSession } from "@/lib/auth";
 import { tierRank, autoResponse } from "@/lib/wardData";
@@ -796,6 +796,54 @@ const COMPLIANCE = [
   { law: "요양병원 적정성평가", duty: "감염관리 영역 연 1회 평가", evidence: "자동 증빙 리포트 (수가 가산)", org: "심평원" },
 ];
 
+// 타이핑 효과 — 텍스트를 글자 단위로 드러냄(AI 브리핑 생성 느낌)
+function useTypewriter(text: string, charMs = 16) {
+  const [n, setN] = useState(0);
+  useEffect(() => { setN(0); }, [text]);
+  useEffect(() => {
+    if (n >= text.length) return;
+    const t = setTimeout(() => setN((x) => x + 1), charMs);
+    return () => clearTimeout(t);
+  }, [n, text, charMs]);
+  return text.slice(0, n);
+}
+
+// 모델 산출값 → 자연어 브리핑(NLG). 생성형 아님 — 실측 지표 조합 자동 요약(정직 라벨).
+function buildBriefing(r: DirectorReport | null): string {
+  if (!r) return "최근 감염관리 집계를 불러오는 중입니다…";
+  const parts: string[] = [];
+  parts.push(`최근 ${r.period.days}일간 ${r.spaces_monitored}개 공간에서 ${r.readings.toLocaleString()}건의 환경을 연속 모니터링했습니다.`);
+  if (r.max_lead_days && r.preempt_region) {
+    const dz = DISEASE_KR[r.preempt_disease ?? ""] ?? r.preempt_disease ?? "감염병";
+    parts.push(`외부 조기경보(${r.preempt_region} ${dz})를 확진피크 ${r.max_lead_days}일 전에 포착해, 센서가 정상인 상태에서도 선제 대응 ${(r.preemptive_actions ?? 0).toLocaleString()}건을 자동 가동했습니다.`);
+  }
+  const poiPct = r.peak_poi * 100;
+  parts.push(`기간 최고 감염위험(Wells-Riley PoI)은 ${poiPct.toFixed(1)}%로 CRITICAL 도달 ${r.alert_events}건에 그쳐 안정적으로 관리되었습니다.`);
+  const man = r.est_cost_saved_krw >= 10000 ? `약 ${(r.est_cost_saved_krw / 10000).toFixed(0)}만원` : `약 ${(r.est_cost_saved_krw / 1000).toFixed(0)}천원`;
+  parts.push(`자동 방역 총 ${r.auto_actions.toLocaleString()}건으로 추정 방역비용 ${man}을 절감했습니다.`);
+  parts.push(`권고: ${poiPct >= 4 ? "다인실 환기 주기 단축 및 식사시간 밀집 모니터링을 권고합니다." : "현재 감염위험은 낮은 수준으로, 평상 운영 유지를 권고합니다."}`);
+  return parts.join(" ");
+}
+
+function AiBriefing({ report }: { report: DirectorReport | null }) {
+  const text = useMemo(() => buildBriefing(report), [report]);
+  const shown = useTypewriter(text, 14);
+  const typing = shown.length < text.length;
+  return (
+    <div className="rounded-2xl border border-indigo-200 border-l-4 border-l-indigo-500 bg-gradient-to-br from-indigo-50/60 to-white p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+      <div className="flex items-center gap-2 mb-2">
+        <span className="w-7 h-7 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600">✨</span>
+        <h3 className="text-base font-bold text-slate-900">AI 자동 브리핑</h3>
+        <span className="text-[11px] font-bold text-slate-400">모델 산출값 기반 자동 요약(NLG)</span>
+        {typing && <span className="ml-auto text-[11px] font-bold text-indigo-500 animate-pulse">작성 중…</span>}
+      </div>
+      <p className="text-sm text-slate-700 leading-relaxed">
+        {shown}<span className={`inline-block w-1.5 ${typing ? "animate-pulse" : "opacity-0"} text-indigo-500`}>▍</span>
+      </p>
+    </div>
+  );
+}
+
 function DirectorView() {
   const report = useReport(30);            // 최근 30일 실측 집계 (없으면 null → 로딩/시뮬)
   const spaces = useSpacesOverview();      // 공간별 라이브 위험도
@@ -861,6 +909,9 @@ function DirectorView() {
           <DownloadCloud size={18} /> 성과 리포트 인쇄·PDF
         </button>
       </div>
+
+      {/* AI 자동 브리핑 — 모델 산출값 자연어 요약 */}
+      <AiBriefing report={report} />
 
       {/* 🛡️ 감염병 사전예방 성과 — 외부 조기경보 → 선제대응 → 확산 차단 (핵심 차별점) */}
       {report && (report.max_lead_days || report.preemptive_actions) ? (
