@@ -319,12 +319,13 @@ async def ingest_reading(r: SensorReading):
                 # poi 0~1, risk_tier 1~5 (DB CHECK 제약). best-effort.
                 await con.execute(
                     "INSERT INTO sentinel.rehva_results "
-                    "(calculated_at, site_id, space_id, poi, r_event, risk_tier, i_value, q_value) "
-                    "VALUES (NOW(), $1, $2, $3, NULL, $4, $5, $6)",
+                    "(calculated_at, site_id, space_id, poi, r_event, risk_tier, i_value, q_value, tier_source) "
+                    "VALUES (NOW(), $1, $2, $3, NULL, $4, $5, $6, $7)",
                     site_uuid, space_uuid,
                     min(max(poi if poi is not None else 0.0, 0.0), 1.0),  # 가스 단독 경로는 poi=None
                     _TIER_RANK.get(tier, 0) + 1,
                     float(DEMO_INFECTORS), float(DEMO_QUANTA),
+                    tier_source,  # sensor=실내센서발 / external=외부 조기경보발 — 사전예방 집계 분리용
                 )
     except Exception as e:  # noqa: BLE001
         logger.warning("sensor 적재 실패(데모 진행): %s", e)
@@ -647,9 +648,11 @@ async def director_report(days: int = 30):
     pool = state.get("db")
     fallback = {
         "period": {"start": None, "end": None, "days": days},
-        "auto_actions": 84, "alert_events": 0, "avg_poi": 0.02, "peak_poi": 0.05,
+        "auto_actions": 84, "preemptive_actions": 52, "sensor_actions": 32,
+        "alert_events": 0, "avg_poi": 0.02, "peak_poi": 0.05,
         "poi_reduction_pct": 83, "spaces_monitored": 8, "readings": 0,
         "est_cost_saved_krw": 84 * EST_SAVING_PER_ACTION_KRW, "compliance_pct": 100,
+        "max_lead_days": 43, "preempt_region": "부산광역시", "preempt_disease": "influenza",
         "weekly": [{"week": "1주차", "actions": 84,
                     "est_saved_krw": 84 * EST_SAVING_PER_ACTION_KRW}],
         "source": "시뮬",
@@ -661,6 +664,7 @@ async def director_report(days: int = 30):
         async with pool.acquire() as con:
             agg = await con.fetchrow(
                 "SELECT COUNT(*) FILTER (WHERE risk_tier>=3) acts, "
+                "COUNT(*) FILTER (WHERE risk_tier>=3 AND tier_source='external') preempt, "
                 "COUNT(*) FILTER (WHERE risk_tier>=5) crit, "
                 "AVG(poi) avg_poi, MAX(poi) max_poi, COUNT(DISTINCT space_id) spaces, "
                 "MIN(calculated_at) t0, MAX(calculated_at) t1 "
@@ -682,9 +686,18 @@ async def director_report(days: int = 30):
         if not agg or agg["acts"] is None or agg["avg_poi"] is None:
             return fallback
         acts = int(agg["acts"] or 0)
+        preempt = int(agg["preempt"] or 0)        # 외부 조기경보발(선제) 대응
+        sensor_acts = max(acts - preempt, 0)      # 실내센서 감지발 대응
         avg_poi = float(agg["avg_poi"] or 0)
         max_poi = float(agg["max_poi"] or 0)
         reduction = round((1 - avg_poi / max_poi) * 100) if max_poi > 0 else 0
+        # 외부 조기경보 선행일수(확진피크 N일 전 사전 포착) — 사전예방 차별점 증거
+        preempt_info = {}
+        try:
+            from backend.api.external_live import preemptive_lead
+            preempt_info = await preemptive_lead()
+        except Exception:  # noqa: BLE001
+            preempt_info = {}
         spaces = int(agg["spaces"] or 0)
         total = int(total_spaces or spaces or 0)
         compliance = round(100 * spaces / total) if total else 0  # 모니터링 커버리지
@@ -701,6 +714,8 @@ async def director_report(days: int = 30):
                 "days": days,
             },
             "auto_actions": acts,
+            "preemptive_actions": preempt,   # 외부 조기경보발 선제 대응(센서 정상이어도 미리 가동)
+            "sensor_actions": sensor_acts,   # 실내센서 감지발 대응
             "alert_events": int(agg["crit"] or 0),
             "avg_poi": round(avg_poi, 4),
             "peak_poi": round(max_poi, 4),
@@ -709,6 +724,10 @@ async def director_report(days: int = 30):
             "readings": int(readings or 0),
             "est_cost_saved_krw": acts * EST_SAVING_PER_ACTION_KRW,
             "compliance_pct": compliance,
+            # 사전예방 차별점: 외부 조기경보가 확진피크보다 며칠 선행했나(최대) + 지역/질환
+            "max_lead_days": preempt_info.get("max_lead_days"),
+            "preempt_region": preempt_info.get("region"),
+            "preempt_disease": preempt_info.get("disease"),
             "weekly": weekly,
             "source": "실측",
         }
