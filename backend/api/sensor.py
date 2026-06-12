@@ -507,19 +507,23 @@ async def sensor_series(space_id: str = "ward_a", minutes: int = 30, points: int
                     space_uuid = space_id
                 else:
                     _, space_uuid = await _resolve_space(con, space_id)
+                # 분단위 집계 — 브릿지가 초당 여러 건 적재해도 차트는 분당 1점(가독성).
+                #   온습도(또는 co2) 실측이 하나라도 있으면 실측으로 취급(현재 CO2 센서 교체 중→온습도 위주).
                 rows = await con.fetch(
-                    "SELECT time, co2_ppm, pm25_ugm3, temperature, humidity "
+                    "SELECT date_trunc('minute', time) AS t, "
+                    "AVG(co2_ppm) co2, AVG(pm25_ugm3) pm25, AVG(temperature) temp, AVG(humidity) rh "
                     "FROM sentinel.sensor_readings "
                     f"WHERE space_id=$1 AND time > NOW() - INTERVAL '{int(minutes)} min' "
-                    "AND co2_ppm IS NOT NULL ORDER BY time",
+                    "AND (temperature IS NOT NULL OR humidity IS NOT NULL OR co2_ppm IS NOT NULL) "
+                    "GROUP BY 1 ORDER BY 1",
                     space_uuid,
                 )
                 out = [{
-                    "t": r["time"].strftime("%H:%M"),
-                    "co2": round(r["co2_ppm"]) if r["co2_ppm"] is not None else None,
-                    "pm25": round(r["pm25_ugm3"]) if r["pm25_ugm3"] is not None else None,
-                    "temp": round(r["temperature"], 1) if r["temperature"] is not None else None,
-                    "rh": round(r["humidity"], 1) if r["humidity"] is not None else None,
+                    "t": r["t"].strftime("%H:%M"),
+                    "co2": round(r["co2"]) if r["co2"] is not None else None,
+                    "pm25": round(r["pm25"]) if r["pm25"] is not None else None,
+                    "temp": round(r["temp"], 1) if r["temp"] is not None else None,
+                    "rh": round(r["rh"], 1) if r["rh"] is not None else None,
                 } for r in rows]
         except Exception as e:  # noqa: BLE001
             logger.warning("series 조회 실패: %s", e)
