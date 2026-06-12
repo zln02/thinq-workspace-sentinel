@@ -55,10 +55,6 @@ export default function LoginPage() {
               <span className="material-symbols-outlined fill text-[#7a0024] text-3xl">coronavirus</span>
               <h1 className="text-xl font-bold text-white tracking-tight">ThinQ Sentinel</h1>
             </div>
-            <div className="hidden sm:flex items-center gap-2 bg-emerald-400/10 border border-emerald-300/30 px-3 py-1.5 rounded-full">
-              <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
-              <span className="text-[11px] font-semibold text-emerald-200 tracking-wider">System Status: SECURE</span>
-            </div>
           </div>
 
           <div className="mb-9">
@@ -124,20 +120,6 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <div className="mt-8 text-center border-t border-white/10 pt-6 flex flex-col items-center gap-3">
-            <div className="flex items-center gap-1 text-emerald-200/80 text-xs">
-              <span className="material-symbols-outlined text-[14px]">shield</span>
-              <span>End-to-End Encrypted · ISMS-P</span>
-            </div>
-            <p className="text-gray-400 text-[11px] leading-relaxed max-w-sm">
-              인가된 담당자 전용 시스템입니다. 모든 접속·작업은 ISMS-P 규정에 따라 암호화되어 로깅·모니터링됩니다.
-            </p>
-            <p className="text-gray-500 text-xs flex flex-wrap justify-center gap-x-2">
-              <span>데모: <code className="bg-white/10 px-1.5 py-0.5 rounded text-gray-300">admin</code>/<code className="bg-white/10 px-1.5 py-0.5 rounded text-gray-300">admin</code></span>
-              <span className="text-gray-600">·</span>
-              <span>nurse·fm·director·guardian / 1234</span>
-            </p>
-          </div>
         </form>
       </div>
     </main>
