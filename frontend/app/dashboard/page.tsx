@@ -13,7 +13,7 @@ import {
   ResponsiveContainer, BarChart, LineChart 
 } from 'recharts';
 import { FloorPlan, type SpaceCard } from "@/components/domain/FloorPlan";
-import { useLiveWard, useSpacesOverview, useReport, useExternalSignal, useCowayStatus, useAcStatus, useControlPlan, sendControl, sendApprove, type SpaceOverview } from "@/lib/useSentinel";
+import { useLiveWard, useSpacesOverview, useReport, useExternalSignal, useCowayStatus, useAcStatus, useControlPlan, sendControl, sendApprove, selectRegion, clearRegion, useBoostState, type SpaceOverview } from "@/lib/useSentinel";
 import FlowPanel from "@/components/domain/FlowPanel";
 import { getSession, canAccess, clearSession } from "@/lib/auth";
 import { tierRank, autoResponse } from "@/lib/wardData";
@@ -264,6 +264,7 @@ const LV_STYLE: Record<string, { dot: string; text: string; bg: string; label: s
 
 function ExternalForecastBanner() {
   const regions = useExternalSignal(60000);
+  const boost = useBoostState(4000);     // 현재 외부 boost 상태(시연 토글 ON/OFF 표시)
   const [myRegion, setMyRegion] = useState<string>("");
   useEffect(() => { setMyRegion(getSession()?.region ?? ""); }, []);
   if (!regions.length) return null;
@@ -273,23 +274,38 @@ function ExternalForecastBanner() {
   const st = LV_STYLE[top.live_level] ?? LV_STYLE.GREEN;
   const disease = DISEASE_KR[top.disease] ?? top.disease;
   const peak = top.conf_peak_date ? `${Number(top.conf_peak_date.slice(5, 7))}월 ${Number(top.conf_peak_date.slice(8, 10))}일` : "-";
+  // 외부 boost 발령 중 여부 — 발령 중이면 배너를 빨강 톤으로 전환하고 "선제 상향 중" 명시.
+  const boostOn = !!boost && !!boost.boost_tier && boost.boost_tier !== "MONITOR";
+  const boostRegion = boost?.region ?? top.region;
+  const wrapCls = boostOn ? "bg-red-50 border-red-300 ring-1 ring-[#7a0024]/30" : st.bg;
   return (
-    <div className={`rounded-2xl border p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 ${st.bg}`}>
+    <div className={`rounded-2xl border p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 ${wrapCls}`}>
       <div className="flex items-center gap-3 shrink-0">
         <span className="text-2xl">🦠</span>
         <div>
           <p className="text-[11px] font-bold text-slate-500">외부 감염병 조기경보 · 질병청 UIS 연동</p>
-          <p className={`text-sm font-black ${st.text}`}>{top.region} {disease} <span>{st.label}({top.live_score ?? "—"})</span></p>
+          <p className={`text-sm font-black ${boostOn ? "text-[#7a0024]" : st.text}`}>{top.region} {disease} <span>{st.label}({top.live_score ?? "—"})</span></p>
         </div>
       </div>
       <div className="hidden sm:block h-9 w-px bg-slate-200" />
       <div className="flex-1 min-w-0">
         <p className="text-sm text-slate-700 font-bold">📈 유행 피크 예측 {peak}{top.lead_days != null && top.lead_days > 0 ? <span className="text-[#7a0024]"> · D-{top.lead_days} 선행 경보</span> : null}</p>
-        <p className="text-xs text-slate-500 mt-0.5">예측 위험 도달 시 ThinQ가 전 병동 <b className="text-slate-700">선제 환기·정화 자동 강화</b> · 전국 {regions.length}개 지역 실시간 감시</p>
+        {boostOn
+          ? <p className="text-xs text-[#7a0024] font-bold mt-0.5">🔴 외부 조기경보 발령 → 전 병동 <b>선제 위험상향({boost?.boost_tier}) 자동 가동 중</b> · {boostRegion}발</p>
+          : <p className="text-xs text-slate-500 mt-0.5">예측 위험 도달 시 ThinQ가 전 병동 <b className="text-slate-700">선제 환기·정화 자동 강화</b> · 전국 {regions.length}개 지역 실시간 감시</p>}
       </div>
+      {/* 시연 토글 — 외부 조기경보 발령 재현(replay) ⇄ 해제. 외부데이터→실내 인과를 라이브로 시연 */}
+      <button
+        onClick={() => (boostOn ? clearRegion() : selectRegion(top.region, "replay"))}
+        className={`shrink-0 px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${
+          boostOn ? "bg-[#7a0024] text-white border-[#7a0024] hover:bg-[#5e001b]"
+                  : "bg-white text-[#7a0024] border-[#7a0024]/40 hover:border-[#7a0024]"}`}
+      >
+        {boostOn ? "■ 선제 발령 해제" : "▶ 선제 시나리오 발령"}
+      </button>
       <span className="relative flex h-2.5 w-2.5 shrink-0">
-        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${st.dot} opacity-60`} />
-        <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${st.dot}`} />
+        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${boostOn ? "bg-red-500" : st.dot} opacity-60`} />
+        <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${boostOn ? "bg-red-500" : st.dot}`} />
       </span>
     </div>
   );
@@ -310,6 +326,8 @@ function NurseView() {
       : { tier: s.tier, poi: s.poi, co2: s.co2_ppm, temp_c: s.temp_c, rh: s.humidity, pm25: s.pm25 };
     return { space_id: s.space_id, space_name: s.space_name, space_type: s.space_type, max_occupancy: s.max_occupancy, isLive, occ: isLive ? (live?.occupancy ?? null) : null, snapshot };
   });
+  // 공간별 tier 출처(센서발/외부 조기경보발) — "이 병동이 왜 위험단계인가"를 카드에 표시.
+  const srcMap = new Map(ov.map((s) => [s.space_id, s.tier_source]));
   const atRisk = spaces
     .filter((s) => tierRank(s.snapshot.tier) >= 1) // CAUTION+
     .sort((a, b) => tierRank(b.snapshot.tier) - tierRank(a.snapshot.tier));
@@ -369,6 +387,13 @@ function NurseView() {
                       <span className="font-black text-slate-900 text-sm truncate">{s.space_name}</span>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded shrink-0 ${isCrit ? "bg-[#7a0024] text-white" : "bg-orange-100 text-orange-700"}`}>{tier}</span>
                     </div>
+                    {/* 위험단계 출처 — 외부 조기경보로 선제 상향된 공간을 명시(센서 정상이어도 외부발 가동) */}
+                    <span className={`inline-flex items-center gap-1 mb-2 px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                      srcMap.get(s.space_id) === "external"
+                        ? "bg-[#7a0024]/10 text-[#7a0024] border border-[#7a0024]/30"
+                        : "bg-slate-100 text-slate-500 border border-slate-200"}`}>
+                      {srcMap.get(s.space_id) === "external" ? "🦠 외부 조기경보 상향" : "📟 실내센서 감지"}
+                    </span>
                     <div className="space-y-1.5">
                       {autoResponse(tier).map((d, i) => (
                         <div key={i} className="flex items-center gap-2 text-xs bg-white border border-slate-200 rounded-lg px-2 py-1.5">
