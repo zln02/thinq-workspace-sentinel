@@ -32,13 +32,18 @@ export default function LoginPage() {
   return (
     <main className="bg-[#0a0508] h-screen w-screen overflow-hidden flex">
       {/* 배경: 하이테크 관제 센터 + 그리드/스캔 오버레이 */}
-      <div
-        className="w-full h-full bg-cover bg-center relative flex items-center justify-center p-6 sm:p-12 overflow-hidden"
-        style={{ backgroundImage: "url('https://images.unsplash.com/photo-1551076805-e1869033e561?q=80&w=2000&auto=format&fit=crop')" }}
-      >
-        <div className="absolute inset-0 bg-black/75 mix-blend-multiply" />
-        <div className="absolute inset-0 login-grid-overlay z-0" />
-        <div className="absolute inset-0 login-scan-overlay z-0 w-full h-[200vh] -top-[50vh]" />
+      <div className="w-full h-full relative flex items-center justify-center p-6 sm:p-12 overflow-hidden">
+        {/* 배경: Spline 3D 인터랙티브 관제 맵 (WebGL 임베드) */}
+        <iframe
+          src="https://my.spline.design/cascadeinteractivemap-QcQ8qFkPFEslxwAmhVJFUtuV/"
+          title="ThinQ Sentinel 3D 관제 맵"
+          loading="lazy"
+          className="absolute inset-0 w-full h-full border-0 z-0"
+        />
+        {/* 가독성 오버레이 — Spline 은은히 비치게 + 그리드/스캔. 클릭은 맵으로 통과(인터랙티브 유지) */}
+        <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/45 to-[#7a0024]/25 pointer-events-none z-0" />
+        <div className="absolute inset-0 login-grid-overlay pointer-events-none z-0" />
+        <div className="absolute inset-0 login-scan-overlay pointer-events-none z-0 w-full h-[200vh] -top-[50vh]" />
 
         {/* 다크 글래스 카드 */}
         <form
