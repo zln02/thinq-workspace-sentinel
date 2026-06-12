@@ -8,12 +8,12 @@ import {
   ActivitySquare, CheckCircle2, Zap, BatteryCharging, Wrench, TrendingDown, 
   X, Check, AlertCircle, Activity, TrendingUp, DownloadCloud, Leaf, Wind, Thermometer, Power, Radio
 } from "lucide-react";
-import { 
-  ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
-  ResponsiveContainer, BarChart, LineChart 
+import {
+  ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer, BarChart, LineChart, ReferenceLine
 } from 'recharts';
 import { FloorPlan, type SpaceCard } from "@/components/domain/FloorPlan";
-import { useLiveWard, useSpacesOverview, useReport, useExternalSignal, useExternalMeta, useCowayStatus, useAcStatus, useControlPlan, sendControl, sendApprove, selectRegion, clearRegion, useBoostState, setControlMode, useControlMode, type SpaceOverview } from "@/lib/useSentinel";
+import { useLiveWard, useSpacesOverview, useReport, useExternalSignal, useExternalMeta, useCowayStatus, useAcStatus, useControlPlan, sendControl, sendApprove, selectRegion, clearRegion, useBoostState, setControlMode, useControlMode, useSensorSeries, type SpaceOverview } from "@/lib/useSentinel";
 import FlowPanel from "@/components/domain/FlowPanel";
 import { getSession, canAccess, clearSession } from "@/lib/auth";
 import { tierRank, autoResponse } from "@/lib/wardData";
@@ -502,6 +502,40 @@ function NurseView() {
   );
 }
 
+// 호실별 실시간 환경 시계열 차트 (CO₂ 중심) — FM 콘솔에 흡수
+function RoomEnvChart({ spaceId, spaceName }: { spaceId: string; spaceName?: string }) {
+  const { source, points } = useSensorSeries(spaceId, 5000);
+  const isReal = source === "실측";
+  const latest = points.length ? points[points.length - 1] : null;
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 border-l-4 border-l-cyan-500 p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)] h-[360px] flex flex-col">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+        <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+          <span className="w-7 h-7 rounded-lg bg-cyan-100 flex items-center justify-center"><Activity size={15} className="text-cyan-600" /></span>
+          {spaceName ?? "선택 공간"} 실시간 환경 — CO₂
+        </h3>
+        <div className="flex items-center gap-2">
+          {latest?.co2 != null && <span className="text-sm font-black text-slate-800">{latest.co2}<span className="text-xs font-normal text-slate-400 ml-0.5">ppm</span></span>}
+          <span className={`text-[11px] font-bold px-2 py-1 rounded-full ${isReal ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>{isReal ? "● 실측 라이브" : "○ 시뮬(센서 미가동)"}</span>
+        </div>
+      </div>
+      <p className="text-xs text-slate-400 mb-3">최근 30분 · 5초 갱신 · 800ppm↑ 환기 권고선</p>
+      <div className="flex-1 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={points} margin={{ top: 8, right: 12, left: -16, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+            <XAxis dataKey="t" stroke="#94A3B8" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} minTickGap={28} />
+            <YAxis stroke="#94A3B8" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} domain={["dataMin - 50", "dataMax + 50"]} />
+            <Tooltip contentStyle={{ borderRadius: 10, border: "1px solid #E5E7EB" }} />
+            <ReferenceLine y={800} stroke="#f59e0b" strokeDasharray="4 4" />
+            <Line type="monotone" dataKey="co2" name="CO₂ (ppm)" stroke="#0891b2" strokeWidth={2.5} dot={false} isAnimationActive={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
 // ============================================================================
 // 🔧 2. 시설관리자(FM) 대시보드
 // ============================================================================
@@ -672,6 +706,9 @@ function FMView() {
           </div>
         </div>
       </div>
+
+      {/* 호실별 실시간 환경 시계열 — 위 콘솔의 선택 호실과 연동 */}
+      <RoomEnvChart spaceId={selId || ctrlKey} spaceName={sel?.space_name} />
 
       {/* 자동 방역 의사결정 흐름 */}
       <FlowPanel spaceId="ward_a" />
