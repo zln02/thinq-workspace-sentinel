@@ -164,7 +164,14 @@ async def list_regions():
         return {"available": False, "reason": "UIS DB 미연결", "regions": []}
     async with pool.acquire() as con:
         rows = await con.fetch(_REGION_SQL)
-    return {"available": True, "count": len(rows), "regions": [_row_to_region(r) for r in rows]}
+        # 최종 데이터 기준일 — 가장 최근 risk_scores 시각(배너 '최종 갱신' 동기화용)
+        as_of = await con.fetchval("SELECT MAX(time)::date FROM risk_scores")
+    return {
+        "available": True, "count": len(rows),
+        "as_of": str(as_of) if as_of else None,
+        "source": "질병관리청(KDCA)·UIS 조기경보",   # 실제 데이터 출처(하수·검색·약국·확진 융합)
+        "regions": [_row_to_region(r) for r in rows],
+    }
 
 
 async def _leading_layers(con, region: str, onset) -> list[dict]:

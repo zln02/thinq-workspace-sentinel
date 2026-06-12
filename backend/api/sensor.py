@@ -16,10 +16,11 @@ from __future__ import annotations
 
 import datetime
 import logging
+import os
 import time
 from typing import Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from backend.api.auth import require_api_key
@@ -36,6 +37,7 @@ _ACTIVE_TIERS = {"ALERT", "HIGH_RISK", "CRITICAL"}  # 강(强) 자동제어: 급
 _GENTLE_TIERS = {"CAUTION"}                    # 약(弱) 선제대응: 공기청정 LOW (외부 ORANGE/YELLOW 포함)
 _last_tier: dict[str, str] = {}
 _pending_approval: dict[str, dict] = {}
+_control_mode: dict[str, str] = {}             # space_id -> "auto"|"manual" (기본 auto). manual이면 자동 액추에이션 보류
 # 역할분리: 카메라(노트북 YOLO)가 실측 재실 '인원수'를 주력 제공, 라파이/아두이노는 환경센서 전용.
 _space_uuid_cache: dict[str, object] = {}
 _coway_cache: dict[str, object] = {"t": 0.0, "data": None}
@@ -355,7 +357,10 @@ async def ingest_reading(r: SensorReading):
     governance = "none"
 
     cur_lv, prev_lv = _gov_level(tier), _gov_level(prev)
-    if cur_lv != prev_lv:                                     # 단계가 바뀔 때만 액추에이션(중복 호출 방지)
+    mode = _control_mode.get(r.space_id, "auto")
+    if mode == "manual":
+        governance = "manual"                                # 수동 모드 — 자동 액추에이션 보류(관리자 직접 제어). tier/로그/SSE는 그대로.
+    elif cur_lv != prev_lv:                                   # 단계가 바뀔 때만 액추에이션(중복 호출 방지)
         if cur_lv == "approval":
             _pending_approval[r.space_id] = {"tier": tier, "wind": "TURBO"}
             approval_required = True                          # 위급(CRITICAL) → 관리자 승인 대기
@@ -453,6 +458,34 @@ async def manual_control(req: ControlReq):
         "space_id": req.space_id, "event": "manual_control", "action": a, "coway": res,
     })
     return {"ok": True, "action": a, "coway": res}
+
+
+class ModeReq(BaseModel):
+    space_id: str = "ward_a"
+    mode: str             # auto | manual
+    password: str = ""
+
+
+@router.post("/mode", dependencies=[Depends(require_api_key)])
+async def set_control_mode(req: ModeReq):
+    """자동/수동 제어 모드 전환 — 관리자 비밀번호 필요(ADMIN_CONTROL_PW, 데모 기본 'admin').
+
+    manual: 자동 거버넌스(코웨이/에어컨 자동 가동) 보류 → 관리자가 콘솔로 직접 제어.
+    auto:   외부신호·센서 기반 자동 차등제어 재개.
+    """
+    admin_pw = os.getenv("ADMIN_CONTROL_PW", "admin")
+    if not req.password or req.password != admin_pw:
+        raise HTTPException(status_code=403, detail="관리자 비밀번호가 올바르지 않습니다")
+    mode = "manual" if req.mode == "manual" else "auto"
+    _control_mode[req.space_id] = mode
+    publish_live(req.space_id, {"space_id": req.space_id, "event": "mode_change", "mode": mode})
+    return {"ok": True, "space_id": req.space_id, "mode": mode}
+
+
+@router.get("/mode")
+async def get_control_mode(space_id: str = "ward_a"):
+    """현재 제어 모드(auto/manual) 조회."""
+    return {"space_id": space_id, "mode": _control_mode.get(space_id, "auto")}
 
 
 @router.get("/coway-status")
