@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import datetime
 import logging
+import math
 import os
 import time
 from typing import Optional
@@ -486,6 +487,54 @@ async def set_control_mode(req: ModeReq):
 async def get_control_mode(space_id: str = "ward_a"):
     """현재 제어 모드(auto/manual) 조회."""
     return {"space_id": space_id, "mode": _control_mode.get(space_id, "auto")}
+
+
+@router.get("/series")
+async def sensor_series(space_id: str = "ward_a", minutes: int = 30, points: int = 30):
+    """선택 공간 환경 시계열(CO2·PM2.5·온도·습도) — FM 실시간 차트용.
+
+    실측(sensor_readings, co2 비어있지 않은 행)이 충분하면 실측, 없으면 라벨된 시뮬 폴백
+    (실센서 미가동 시에도 데모 차트 유지 — overview의 시뮬 라벨 정책과 동일).
+    """
+    from backend.api.main import state
+
+    out = []
+    pool = state.get("db")
+    if pool:
+        try:
+            async with pool.acquire() as con:
+                if "-" in space_id and len(space_id) >= 32:
+                    space_uuid = space_id
+                else:
+                    _, space_uuid = await _resolve_space(con, space_id)
+                rows = await con.fetch(
+                    "SELECT time, co2_ppm, pm25_ugm3, temperature, humidity "
+                    "FROM sentinel.sensor_readings "
+                    f"WHERE space_id=$1 AND time > NOW() - INTERVAL '{int(minutes)} min' "
+                    "AND co2_ppm IS NOT NULL ORDER BY time",
+                    space_uuid,
+                )
+                out = [{
+                    "t": r["time"].strftime("%H:%M"),
+                    "co2": round(r["co2_ppm"]) if r["co2_ppm"] is not None else None,
+                    "pm25": round(r["pm25_ugm3"]) if r["pm25_ugm3"] is not None else None,
+                    "temp": round(r["temperature"], 1) if r["temperature"] is not None else None,
+                    "rh": round(r["humidity"], 1) if r["humidity"] is not None else None,
+                } for r in rows]
+        except Exception as e:  # noqa: BLE001
+            logger.warning("series 조회 실패: %s", e)
+    if len(out) >= 5:
+        return {"space_id": space_id, "source": "실측", "points": out}
+    # 시뮬 폴백 — 공간별로 다른 베이스라인(결정적), 라벨 명시
+    base = 620 + (sum(ord(c) for c in space_id) % 140)
+    sim = [{
+        "t": f"-{points - i}m",
+        "co2": base + int(150 * math.sin(i / 4.0)) + (i * 7 % 45),
+        "pm25": 7 + (i * 3 % 6),
+        "temp": round(23 + 1.3 * math.sin(i / 6.0), 1),
+        "rh": round(48 + 5 * math.sin(i / 5.0), 1),
+    } for i in range(points)]
+    return {"space_id": space_id, "source": "시뮬", "points": sim}
 
 
 @router.get("/coway-status")

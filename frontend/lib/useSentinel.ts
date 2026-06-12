@@ -363,6 +363,24 @@ export async function setControlMode(spaceId: string, mode: "auto" | "manual", p
   }
 }
 
+export type SeriesPoint = { t: string; co2: number | null; pm25: number | null; temp: number | null; rh: number | null };
+/** 선택 공간 환경 시계열(CO2·PM2.5·온습도) 폴링 — FM 실시간 차트. source: 실측|시뮬. */
+export function useSensorSeries(spaceId: string, intervalMs = 5000) {
+  const [data, setData] = useState<{ source: string; points: SeriesPoint[] }>({ source: "", points: [] });
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      fetch(`${API_BASE}/api/sentinel/sensor/series?space_id=${encodeURIComponent(spaceId)}&minutes=30`)
+        .then((r) => r.json())
+        .then((j) => { if (alive && Array.isArray(j.points)) setData({ source: j.source, points: j.points }); })
+        .catch(() => {});
+    load();
+    const t = setInterval(load, intervalMs);
+    return () => { alive = false; clearInterval(t); };
+  }, [spaceId, intervalMs]);
+  return data;
+}
+
 /** 현재 제어 모드(auto/manual) 폴링. */
 export function useControlMode(spaceId: string, intervalMs = 6000) {
   const [mode, setMode] = useState<"auto" | "manual">("auto");
