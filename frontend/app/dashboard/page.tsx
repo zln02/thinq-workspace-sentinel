@@ -13,7 +13,7 @@ import {
   ResponsiveContainer, BarChart, LineChart 
 } from 'recharts';
 import { FloorPlan, type SpaceCard } from "@/components/domain/FloorPlan";
-import { useLiveWard, useSpacesOverview, useReport, useExternalSignal } from "@/lib/useSentinel";
+import { useLiveWard, useSpacesOverview, useReport, useExternalSignal, useCowayStatus, useAcStatus, useControlPlan, sendControl, sendApprove, type SpaceOverview } from "@/lib/useSentinel";
 import FlowPanel from "@/components/domain/FlowPanel";
 import { getSession, canAccess, clearSession } from "@/lib/auth";
 import { tierRank, autoResponse } from "@/lib/wardData";
@@ -39,161 +39,69 @@ function Modal({ title, children, onClose }: { title: string, children: React.Re
 // ============================================================================
 // 🔧 시설관리자 전용: 호실별 가전 맵 컴포넌트
 // ============================================================================
-function FMFloorPlan() {
-  const [selectedRoom, setSelectedRoom] = useState<any>(null);
-
-  const FM_ROOMS = [
-    { code: "101", isHeavyLoad: false, devices: [
-      { name: "LG 퓨리케어 공기청정기", type: "purifier", mode: "스마트", status: "가동중", power: "25W", icon: <Wind size={14}/> },
-      { name: "휘센 시스템에어컨", type: "ac", mode: "냉방 24℃", status: "가동중", power: "800W", icon: <Thermometer size={14}/> },
-      { name: "프리미엄 환기시스템", type: "vent", mode: "-", status: "미가동", power: "0W", icon: <Activity size={14}/> }
-    ]},
-    { code: "102", isHeavyLoad: false, devices: [
-      { name: "LG 퓨리케어 공기청정기", type: "purifier", mode: "취침", status: "가동중", power: "15W", icon: <Wind size={14}/> },
-      { name: "휘센 시스템에어컨", type: "ac", mode: "-", status: "미가동", power: "0W", icon: <Thermometer size={14}/> },
-      { name: "프리미엄 환기시스템", type: "vent", mode: "표준", status: "가동중", power: "45W", icon: <Activity size={14}/> }
-    ]},
-    { code: "103", isHeavyLoad: false, devices: [
-      { name: "LG 퓨리케어 공기청정기", type: "purifier", mode: "-", status: "미가동", power: "0W", icon: <Wind size={14}/> },
-      { name: "휘센 시스템에어컨", type: "ac", mode: "송풍", status: "가동중", power: "50W", icon: <Thermometer size={14}/> },
-      { name: "프리미엄 환기시스템", type: "vent", mode: "-", status: "미가동", power: "0W", icon: <Activity size={14}/> }
-    ]},
-    { code: "104", isHeavyLoad: false, devices: [
-      { name: "LG 퓨리케어 공기청정기", type: "purifier", mode: "스마트", status: "가동중", power: "25W", icon: <Wind size={14}/> },
-      { name: "휘센 시스템에어컨", type: "ac", mode: "냉방 26℃", status: "가동중", power: "600W", icon: <Thermometer size={14}/> },
-      { name: "프리미엄 환기시스템", type: "vent", mode: "-", status: "미가동", power: "0W", icon: <Activity size={14}/> }
-    ]},
-    { code: "201", isHeavyLoad: false, devices: [
-      { name: "LG 퓨리케어 공기청정기", type: "purifier", mode: "스마트", status: "가동중", power: "25W", icon: <Wind size={14}/> },
-      { name: "휘센 시스템에어컨", type: "ac", mode: "냉방 23℃", status: "가동중", power: "900W", icon: <Thermometer size={14}/> },
-      { name: "프리미엄 환기시스템", type: "vent", mode: "-", status: "미가동", power: "0W", icon: <Activity size={14}/> }
-    ]},
-    { code: "202", isHeavyLoad: true, devices: [
-      { name: "LG 퓨리케어 공기청정기", type: "purifier", mode: "클린부스터", status: "가동중", power: "65W", icon: <Wind size={14}/> },
-      { name: "휘센 시스템에어컨", type: "ac", mode: "냉방 22℃", status: "가동중", power: "1200W", icon: <Thermometer size={14}/> },
-      { name: "프리미엄 환기시스템", type: "vent", mode: "급속 환기", status: "가동중", power: "150W", icon: <Activity size={14}/> }
-    ]},
-    { code: "203", isHeavyLoad: false, devices: [
-      { name: "LG 퓨리케어 공기청정기", type: "purifier", mode: "-", status: "미가동", power: "0W", icon: <Wind size={14}/> },
-      { name: "휘센 시스템에어컨", type: "ac", mode: "냉방 25℃", status: "가동중", power: "750W", icon: <Thermometer size={14}/> },
-      { name: "프리미엄 환기시스템", type: "vent", mode: "-", status: "미가동", power: "0W", icon: <Activity size={14}/> }
-    ]},
-    { code: "204", isHeavyLoad: false, devices: [
-      { name: "LG 퓨리케어 공기청정기", type: "purifier", mode: "절전", status: "가동중", power: "5W", icon: <Wind size={14}/> },
-      { name: "휘센 시스템에어컨", type: "ac", mode: "-", status: "미가동", power: "0W", icon: <Thermometer size={14}/> },
-      { name: "프리미엄 환기시스템", type: "vent", mode: "표준", status: "가동중", power: "45W", icon: <Activity size={14}/> }
-    ]},
-    { code: "301", isHeavyLoad: false, devices: [
-      { name: "LG 퓨리케어 공기청정기", type: "purifier", mode: "스마트", status: "가동중", power: "25W", icon: <Wind size={14}/> },
-      { name: "휘센 시스템에어컨", type: "ac", mode: "-", status: "미가동", power: "0W", icon: <Thermometer size={14}/> },
-      { name: "프리미엄 환기시스템", type: "vent", mode: "-", status: "미가동", power: "0W", icon: <Activity size={14}/> }
-    ]},
-    { code: "302", isHeavyLoad: true, devices: [
-      { name: "LG 퓨리케어 공기청정기", type: "purifier", mode: "터보", status: "가동중", power: "60W", icon: <Wind size={14}/> },
-      { name: "휘센 시스템에어컨", type: "ac", mode: "냉방 23℃", status: "가동중", power: "900W", icon: <Thermometer size={14}/> },
-      { name: "프리미엄 환기시스템", type: "vent", mode: "터보 환기", status: "가동중", power: "150W", icon: <Activity size={14}/> }
-    ]},
-    { code: "303", isHeavyLoad: false, devices: [
-      { name: "LG 퓨리케어 공기청정기", type: "purifier", mode: "-", status: "미가동", power: "0W", icon: <Wind size={14}/> },
-      { name: "휘센 시스템에어컨", type: "ac", mode: "제습", status: "가동중", power: "400W", icon: <Thermometer size={14}/> },
-      { name: "프리미엄 환기시스템", type: "vent", mode: "표준", status: "가동중", power: "45W", icon: <Activity size={14}/> }
-    ]},
-    { code: "304", isHeavyLoad: false, devices: [
-      { name: "LG 퓨리케어 공기청정기", type: "purifier", mode: "자동", status: "가동중", power: "25W", icon: <Wind size={14}/> },
-      { name: "휘센 시스템에어컨", type: "ac", mode: "-", status: "미가동", power: "0W", icon: <Thermometer size={14}/> },
-      { name: "프리미엄 환기시스템", type: "vent", mode: "-", status: "미가동", power: "0W", icon: <Activity size={14}/> }
-    ]},
-  ];
-
-  const getDeviceLabel = (type: string) => {
-    if (type === "purifier") return "공청기";
-    if (type === "ac") return "에어컨";
-    return "환기";
-  };
-
+function FMFloorPlan({ spaces }: { spaces: SpaceOverview[] }) {
+  const [sel, setSel] = useState<SpaceOverview | null>(null);
+  const plan = useControlPlan(sel?.space_id ?? "ward_a", sel?.tier ?? null);
+  const tcls = (t: string) => DIR_TIER[t] ?? { ko: t, cls: "bg-slate-100 text-slate-600" };
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {FM_ROOMS.map((room, i) => (
-          <div 
-            key={i} 
-            onClick={() => setSelectedRoom(room)}
-            className={`p-4 rounded-2xl border transition-all cursor-pointer shadow-md flex flex-col relative overflow-hidden group 
-              ${room.isHeavyLoad ? 'bg-red-900/10 border-red-900/50 hover:bg-red-900/20' : 'bg-white border-slate-200 hover:border-blue-500/50'}`}
-          >
-            {room.isHeavyLoad && <div className="absolute top-0 right-0 w-8 h-8 bg-red-900/30 rounded-bl-full border-b border-l border-red-900/50"></div>}
-            
-            <div className="flex justify-between items-center mb-3">
-              <span className={`font-black text-xl ${room.isHeavyLoad ? 'text-red-400' : 'text-slate-700'}`}>{room.code}호</span>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${room.isHeavyLoad ? 'bg-red-900/50 text-red-200' : 'bg-slate-100 text-slate-400'}`}>
-                {room.isHeavyLoad ? '집중제어중' : '정상연동'}
-              </span>
+        {spaces.map((s) => {
+          const t = tcls(s.tier);
+          const isLive = s.source === "실센서";
+          const hot = tierRank(s.tier) >= 2;
+          return (
+            <div key={s.space_id} onClick={() => setSel(s)}
+              className={`p-4 rounded-2xl bg-white cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:-translate-y-1 transition-all flex flex-col border border-slate-200 ${hot ? "border-l-4 border-l-[#7a0024]" : ""}`}>
+              <div className="flex justify-between items-center mb-3">
+                <span className="font-black text-lg text-slate-900">{s.space_name}</span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${isLive ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-400"}`}>{isLive ? "실센서 LIVE" : "시뮬"}</span>
+              </div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className={`text-xs font-bold px-2 py-1 rounded-full ${t.cls}`}>{t.ko}</span>
+                <span className="text-xs text-slate-500">PoI {s.poi != null ? (s.poi * 100).toFixed(0) : "—"}%</span>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5 text-[11px] text-slate-500 mt-auto">
+                <span>CO₂ {s.co2_ppm ?? "—"}<span className="text-slate-400">ppm</span></span>
+                <span>PM2.5 {s.pm25 ?? "—"}</span>
+                <span>{s.temp_c != null ? s.temp_c.toFixed(1) : "—"}°C</span>
+                <span>습도 {s.humidity != null ? s.humidity.toFixed(0) : "—"}%</span>
+              </div>
             </div>
-
-            <div className="space-y-2 mt-auto">
-              {room.devices.map((d, idx) => {
-                const isOn = d.status === "가동중";
-                return (
-                  <div key={idx} className="flex items-center justify-between text-xs bg-slate-50/50 px-2 py-1.5 rounded-lg border border-slate-200/50">
-                    <div className="flex items-center gap-1.5">
-                      <span className={isOn ? (room.isHeavyLoad ? 'text-red-400' : 'text-blue-600') : 'text-slate-600'}>{d.icon}</span>
-                      <span className={isOn ? 'text-slate-600 font-medium' : 'text-slate-500'}>{getDeviceLabel(d.type)}</span>
-                    </div>
-                    <span className={`font-bold ${isOn ? (room.isHeavyLoad ? 'text-red-300' : 'text-slate-900') : 'text-slate-600'}`}>{isOn ? d.mode : 'OFF'}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      {selectedRoom && (
-        <Modal title={`🔌 ${selectedRoom.code}호 실시간 가전 상세 제어 정보`} onClose={() => setSelectedRoom(null)}>
+      {sel && (
+        <Modal title={`🔌 ${sel.space_name} 제어 계획 (control-plan)`} onClose={() => setSel(null)}>
           <div className="space-y-4">
-            <div className="mb-6 pb-4 border-b border-slate-200 flex justify-between items-center">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div>
-                <h3 className="text-slate-400 text-sm mb-1">현재 병실 통신 상태</h3>
-                <p className="text-green-400 font-bold flex items-center gap-2"><CheckCircle2 size={16}/> ThinQ 허브 온라인 (Ping: 12ms)</p>
+                <p className="text-sm text-slate-400">현재 위험 등급</p>
+                <p className="font-bold text-slate-900">{DIR_TIER[sel.tier]?.ko ?? sel.tier} · PoI {sel.poi != null ? (sel.poi * 100).toFixed(1) : "—"}%</p>
               </div>
               <div className="text-right">
-                <h3 className="text-slate-400 text-sm mb-1">총 소비 전력</h3>
-                <p className="text-slate-900 font-black text-xl">
-                  {selectedRoom.devices.reduce((acc: number, cur: any) => acc + parseInt(cur.power), 0)}<span className="text-sm text-slate-500 font-normal ml-1">W</span>
-                </p>
+                <p className="text-sm text-slate-400">병원체 · 계절</p>
+                <p className="font-bold text-slate-900">{plan?.pathogen ?? "—"} · {plan?.season ?? "—"}</p>
               </div>
             </div>
-            
-            <h4 className="text-sm font-bold text-slate-600 mb-3">설치된 IoT 기기 목록</h4>
-            {selectedRoom.devices.map((device: any, idx: number) => {
-              const isOn = device.status === "가동중";
-              return (
-                <div key={idx} className={`border p-5 rounded-xl flex items-center justify-between transition ${isOn ? 'bg-slate-100/50 border-slate-200' : 'bg-slate-100 border-slate-200 opacity-60'}`}>
-                  <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-xl ${!isOn ? 'bg-slate-100 text-slate-600' : (device.mode.includes("터보") || device.mode.includes("부스터") || device.mode.includes("급속") ? 'bg-red-900/30 text-red-400' : 'bg-blue-900/20 text-blue-600')}`}>
-                      {isOn ? device.icon : <Power size={16}/>}
-                    </div>
-                    <div>
-                      <h5 className={`font-bold text-lg ${isOn ? 'text-slate-900' : 'text-slate-500'}`}>{device.name}</h5>
-                      <div className="flex items-center gap-3 mt-1.5">
-                        <span className="text-sm text-slate-400 font-medium">현재 상태: <span className={isOn ? 'text-slate-700' : 'text-slate-600'}>{isOn ? device.mode : '전원 꺼짐'}</span></span>
-                        {isOn && (
-                          <>
-                            <span className="text-slate-600">|</span>
-                            <span className="text-sm text-slate-400 font-medium flex items-center gap-1">
-                              <BatteryCharging size={14} className="text-yellow-500"/> 전력량: <span className="text-slate-700">{device.power}</span>
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div className={`px-4 py-1.5 rounded-lg text-sm font-bold shadow-md ${isOn ? 'bg-green-600 text-white' : 'bg-slate-100 text-slate-500 border border-slate-200'}`}>
-                    {device.status}
+            <h4 className="text-sm font-bold text-slate-600">적용 가전 (자동 세팅)</h4>
+            {plan?.applied?.length ? plan.applied.map((d, i) => (
+              <div key={i} className="border border-slate-200 p-4 rounded-xl flex items-center justify-between bg-emerald-50/40">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-700"><Wind size={16} /></div>
+                  <div>
+                    <p className="font-bold text-slate-900">{d.name_kr}</p>
+                    <p className="text-xs text-slate-400">{d.reason}</p>
                   </div>
                 </div>
-              );
-            })}
+                <span className="px-3 py-1.5 rounded-lg text-sm font-bold bg-emerald-600 text-white">{d.setting ?? "가동"}</span>
+              </div>
+            )) : <p className="text-sm text-slate-400">현재 등급에서는 자동 가동 대상 가전이 없습니다 (대기).</p>}
+            {plan?.skipped?.length ? (
+              <p className="text-xs text-slate-400">대기: {plan.skipped.map((d) => d.name_kr).join(", ")}</p>
+            ) : null}
+            {plan?.rationale && <p className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-lg p-3">근거: {plan.rationale}</p>}
           </div>
         </Modal>
       )}
@@ -461,18 +369,41 @@ function NurseView() {
 // 🔧 2. 시설관리자(FM) 대시보드
 // ============================================================================
 function FMView() {
-  const [fmModal, setFmModal] = useState<"CONN" | "AUTO" | "FILTER" | null>(null);
+  const spaces = useSpacesOverview(5000);
+  const coway = useCowayStatus(8000);
+  const ac = useAcStatus(10000);
+  const report = useReport(30);
+  const { data: live } = useLiveWard("ward_a");
+  const [busy, setBusy] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
-  // 💡 가상 데이터 124건 맥락에 맞추기 위해 로그 리스트 확장
-  const LOGS = [
-    { time: "10:45:12", event: "가전 제어", detail: "[302호] 환기기 터보 모드 자동 가동", status: "성공", badge: "bg-blue-900/30 text-blue-600" },
-    { time: "10:30:00", event: "위험 감지", detail: "[202호] CO2 농도 1450ppm 초과 감지", status: "경고", badge: "bg-red-900/30 text-red-400" },
-    { time: "09:20:15", event: "가전 제어", detail: "[202호] 에어컨 냉방 22도 하향 제어", status: "성공", badge: "bg-blue-900/30 text-blue-600" },
-    { time: "09:15:30", event: "시스템", detail: "ThinQ AI 감염 예측 모델 정기 업데이트", status: "성공", badge: "bg-slate-100 text-slate-600" },
-    { time: "08:10:05", event: "가전 제어", detail: "[101호] 공기청정기 스마트 모드 전환", status: "성공", badge: "bg-blue-900/30 text-blue-600" },
-    { time: "08:00:10", event: "시스템", detail: "전체 병동 아침 기상 루틴 가동", status: "성공", badge: "bg-slate-100 text-slate-600" },
-    { time: "07:45:22", event: "가전 제어", detail: "[104호] 시스템에어컨 제습 모드 가동", status: "성공", badge: "bg-blue-900/30 text-blue-600" },
-  ];
+  const responding = spaces.filter((s) => tierRank(s.tier) >= 2);
+  const c = coway as Record<string, unknown> | null;
+  const a = ac as Record<string, unknown> | null;
+  const cowayAvail = !!c && c.available !== false;
+  const cowayOn = c?.is_on === true;
+  const cowayPower = c?.power_est_w as number | undefined;
+  const cowayMode = cowayOn ? (c?.rapid_mode ? "급속(터보)" : c?.auto_mode ? "자동" : "가동") : "대기";
+  const acAvail = !!a && a.available !== false;
+  const acOn = a?.is_on === true;
+  const governance = live?.governance ?? "none";
+  const approvalNeeded = live?.approval_required === true;
+  const govLabel: Record<string, string> = { none: "대기", auto: "AI 자동제어", approval_required: "관리자 승인 대기", approved: "승인 실행", auto_restore: "정상 복귀" };
+
+  const act = async (action: string, label: string) => {
+    setBusy(action);
+    await sendControl(action, "ward_a");
+    setBusy(null);
+    setToast(`${label} 명령 전송됨`);
+    setTimeout(() => setToast(null), 2400);
+  };
+  const approve = async () => {
+    setBusy("approve");
+    await sendApprove("ward_a");
+    setBusy(null);
+    setToast("고위험 제어 승인됨");
+    setTimeout(() => setToast(null), 2400);
+  };
 
   const fmDeviceRiskData = [
     { name: '1일', 평균위험도: 12, 제어건수: 24 }, { name: '2일', 평균위험도: 15, 제어건수: 41 },
@@ -480,136 +411,110 @@ function FMView() {
     { name: '5일', 평균위험도: 10, 제어건수: 18 }, { name: '6일', 평균위험도: 14, 제어건수: 29 },
   ];
 
+  const Btn = ({ a: action, label, kind }: { a: string; label: string; kind?: "p" | "d" | "n" }) => (
+    <button onClick={() => act(action, label)} disabled={busy !== null}
+      className={`px-3 py-2 rounded-lg text-sm font-bold transition active:scale-95 disabled:opacity-50 ${
+        kind === "p" ? "bg-[#7a0024] text-white hover:bg-[#92002c]" :
+        kind === "d" ? "bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200" :
+        "bg-blue-600 text-white hover:bg-blue-500"}`}>
+      {busy === action ? "전송중…" : label}
+    </button>
+  );
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      
-      <div className="grid grid-cols-4 gap-6">
-        <div onClick={() => setFmModal("CONN")} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg flex flex-col justify-center cursor-pointer hover:bg-slate-100 transition group">
-          <div className="flex items-center gap-4 mb-2"><div className="p-3 bg-green-900/20 rounded-xl text-green-400 group-hover:scale-110 transition"><Zap size={20}/></div><p className="text-sm text-slate-400 font-medium group-hover:text-green-400 transition">가전 연결 상태</p></div>
-          <p className="text-3xl font-black text-slate-900 pl-1">48<span className="text-sm font-normal ml-1 text-slate-500">대 정상</span></p>
+      {/* KPI — 실데이터 */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white rounded-2xl border border-slate-200 border-t-[3px] border-t-[#7a0024] p-5 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+          <p className="kpi-label mb-1">실시간 감시 공간</p>
+          <div className="kpi-value">{spaces.length}<span className="text-sm font-normal text-slate-400 ml-1">개</span></div>
         </div>
-        <div onClick={() => setFmModal("AUTO")} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg flex flex-col justify-center cursor-pointer hover:bg-slate-100 transition group">
-          <div className="flex items-center gap-4 mb-2"><div className="p-3 bg-blue-900/20 rounded-xl text-blue-600 group-hover:scale-110 transition"><BatteryCharging size={20}/></div><p className="text-sm text-slate-400 font-medium group-hover:text-blue-600 transition">금일 자동 제어</p></div>
-          <p className="text-3xl font-black text-slate-900 pl-1">124<span className="text-sm font-normal ml-1 text-slate-500">건</span></p>
+        <div className="bg-white rounded-2xl border border-slate-200 border-t-[3px] border-t-orange-500 p-5 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+          <p className="kpi-label mb-1">ThinQ 자동대응 가동</p>
+          <div className="kpi-value">{responding.length}<span className="text-sm font-normal text-slate-400 ml-1">개소</span></div>
         </div>
-        {/* 💡 필터 교체 요망 데이터 일치 */}
-        <div onClick={() => setFmModal("FILTER")} className="bg-white border border-[#7a0024]/50 rounded-2xl p-6 shadow-lg flex flex-col justify-center cursor-pointer hover:bg-slate-100 transition group relative overflow-hidden">
-          <div className="absolute inset-0 bg-[#7a0024]/5 group-hover:bg-[#7a0024]/10 transition"></div>
-          <div className="flex items-center gap-4 mb-2 relative z-10"><div className="p-3 bg-red-900/20 rounded-xl text-[#7a0024] group-hover:scale-110 transition"><Wrench size={20}/></div><p className="text-sm text-slate-400 font-medium group-hover:text-[#7a0024] transition">필터 교체 요망</p></div>
-          <p className="text-3xl font-black text-[#7a0024] pl-1 relative z-10">2<span className="text-sm font-normal ml-1 text-slate-500">건 필요</span></p>
+        <div className="bg-white rounded-2xl border border-slate-200 border-t-[3px] border-t-emerald-500 p-5 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+          <p className="kpi-label mb-1 flex items-center gap-1">코웨이 공기청정기 {cowayAvail && <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />}</p>
+          <div className="text-2xl font-black text-slate-900">{cowayAvail ? cowayMode : "데모"}<span className="text-xs font-normal text-slate-400 ml-1">{cowayPower != null ? `${cowayPower}W` : ""}</span></div>
         </div>
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg flex flex-col justify-center">
-          <div className="flex items-center gap-4 mb-2"><div className="p-3 bg-orange-900/20 rounded-xl text-orange-400"><Activity size={20}/></div><p className="text-sm text-slate-400 font-medium">일일 전력 사용</p></div>
-          <p className="text-3xl font-black text-slate-900 pl-1">450<span className="text-sm font-normal ml-1 text-slate-500">kWh</span></p>
+        <div className="bg-white rounded-2xl border border-slate-200 border-t-[3px] border-t-blue-500 p-5 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+          <p className="kpi-label mb-1">자동 선제대응(30일)</p>
+          <div className="kpi-value">{report ? report.auto_actions.toLocaleString() : "—"}<span className="text-sm font-normal text-slate-400 ml-1">건</span></div>
         </div>
       </div>
 
-      {/* 자동 방역 의사결정 흐름 — 외부신호→센서→계산→결정→가전 (시설관리자: 가전 제어 근거) */}
+      {/* 실 가전 제어 콘솔 — 키오스크 제어판 흡수 (실제 액추에이션) */}
+      <div className="bg-white rounded-2xl border border-slate-200 border-t-[3px] border-t-[#7a0024] p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2"><Power size={20} className="text-[#7a0024]" /> 실 가전 제어 콘솔</h3>
+          <span className={`text-xs font-bold px-3 py-1 rounded-full ${governance === "auto" ? "bg-emerald-50 text-emerald-700" : approvalNeeded ? "bg-red-50 text-red-700" : "bg-slate-100 text-slate-500"}`}>거버넌스: {govLabel[governance] ?? governance}</span>
+        </div>
+        <p className="text-xs text-slate-400 mb-5">201호 실센서 공간 · 실제 LG ThinQ/SmartThings 가전을 직접 제어합니다</p>
+
+        {approvalNeeded && (
+          <div className="mb-5 p-4 rounded-xl bg-red-50 border border-red-200 flex items-center justify-between">
+            <p className="text-sm text-red-700 font-bold flex items-center gap-2"><AlertTriangle size={16} /> 고위험(CRITICAL) 제어 승인 대기 중</p>
+            <button onClick={approve} disabled={busy !== null} className="px-4 py-2 rounded-lg bg-[#7a0024] text-white text-sm font-bold hover:bg-[#92002c] active:scale-95 disabled:opacity-50">⚠ 고위험 제어 승인</button>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="border border-slate-200 rounded-xl p-5 bg-slate-50/50">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2"><div className="p-2 rounded-lg bg-blue-50 text-blue-600"><Wind size={18} /></div><div><p className="font-bold text-slate-900">코웨이 공기청정기</p><p className="text-xs text-slate-400">{cowayAvail ? (cowayOn ? `${cowayMode}${cowayPower != null ? ` · ${cowayPower}W` : ""}` : "전원 대기") : "어댑터 미연동 (데모)"}</p></div></div>
+              <span className={`text-[10px] font-bold px-2 py-1 rounded ${cowayOn ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-500 border border-slate-200"}`}>{cowayOn ? "가동중" : "OFF"}</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Btn a="on" label="전원 ON" kind="n" />
+              <Btn a="off" label="전원 OFF" kind="d" />
+              <Btn a="rapid" label="급속" kind="p" />
+              <Btn a="auto" label="자동" kind="d" />
+            </div>
+          </div>
+          <div className="border border-slate-200 rounded-xl p-5 bg-slate-50/50">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2"><div className="p-2 rounded-lg bg-orange-50 text-orange-600"><Thermometer size={18} /></div><div><p className="font-bold text-slate-900">시스템 에어컨</p><p className="text-xs text-slate-400">{acAvail ? (acOn ? `${a?.mode ?? "냉방"} ${a?.set_temp ?? ""}℃ · 실내 ${a?.room_temp ?? "—"}℃` : "전원 대기") : "어댑터 미연동 (데모)"}</p></div></div>
+              <span className={`text-[10px] font-bold px-2 py-1 rounded ${acOn ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-500 border border-slate-200"}`}>{acOn ? "가동중" : "OFF"}</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Btn a="ac_on" label="송풍 환기 ON" kind="n" />
+              <Btn a="ac_off" label="전원 OFF" kind="d" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 자동 방역 의사결정 흐름 */}
       <FlowPanel spaceId="ward_a" />
 
-      <div className="grid grid-cols-2 gap-6">
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg flex flex-col h-[400px]">
-          <h3 className="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2"><TrendingUp size={20} className="text-blue-600"/> 일별 자동 제어 건수 및 평균 감염 위험도</h3>
-          <p className="text-sm text-slate-400 mb-6">ThinQ AI 시스템 개입에 따른 위험도 하락 상관관계</p>
-          <div className="flex-1 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={fmDeviceRiskData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" strokeOpacity={0.5} vertical={false} />
-                <XAxis dataKey="name" stroke="#6B7280" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-                <YAxis yAxisId="left" stroke="#6B7280" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} domain={[0, 40]} />
-                <YAxis yAxisId="right" orientation="right" stroke="#6B7280" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: 'none' }} />
-                <Legend wrapperStyle={{ paddingTop: '10px' }} />
-                <Bar yAxisId="right" dataKey="제어건수" name="가전 제어 건수 (건)" fill="#3B82F6" barSize={30} radius={[4,4,0,0]} />
-                <Line yAxisId="left" type="monotone" dataKey="평균위험도" name="평균 위험도 (%)" stroke="#7a0024" strokeWidth={3} dot={{ r: 4 }} />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-lg flex flex-col h-[400px]">
-          <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
-            <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2"><ActivitySquare size={20} className="text-teal-400"/> 실시간 기기 제어 로그</h3>
-          </div>
-          {/* 💡 FM 로그 스크롤바 숨김 */}
-          <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-[#1F2937] text-slate-400 text-sm border-b border-slate-200 sticky top-0 z-10">
-                  <th className="p-4 font-semibold w-24">시간</th><th className="p-4 font-semibold w-28">분류</th><th className="p-4 font-semibold">동작 내역</th>
-                </tr>
-              </thead>
-              <tbody>
-                {LOGS.map((log, idx) => (
-                  <tr key={idx} className="border-b border-slate-200/50 hover:bg-slate-100/30 transition text-sm">
-                    <td className="p-4 text-slate-400 font-mono">{log.time}</td>
-                    <td className="p-4"><span className={`px-2 py-1 rounded text-[11px] font-bold ${log.badge}`}>{log.event}</span></td>
-                    <td className="p-4 text-slate-700">{log.detail}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      {/* 일별 추이 차트 (시연) */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)] h-[360px] flex flex-col">
+        <h3 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2"><TrendingUp size={20} className="text-blue-600" /> 일별 자동 제어 건수 및 평균 감염 위험도</h3>
+        <p className="text-xs text-slate-400 mb-4">ThinQ AI 개입에 따른 위험도 하락 상관관계 (시연 데이터)</p>
+        <div className="flex-1 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={fmDeviceRiskData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" strokeOpacity={0.5} vertical={false} />
+              <XAxis dataKey="name" stroke="#6B7280" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+              <YAxis yAxisId="left" stroke="#6B7280" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} domain={[0, 40]} />
+              <YAxis yAxisId="right" orientation="right" stroke="#6B7280" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: 'none' }} />
+              <Legend wrapperStyle={{ paddingTop: '10px' }} />
+              <Bar yAxisId="right" dataKey="제어건수" name="가전 제어 건수 (건)" fill="#3B82F6" barSize={30} radius={[4, 4, 0, 0]} />
+              <Line yAxisId="left" type="monotone" dataKey="평균위험도" name="평균 위험도 (%)" stroke="#7a0024" strokeWidth={3} dot={{ r: 4 }} />
+            </ComposedChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
-      <div className="space-y-4">
-        <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2"><Zap className="text-yellow-500"/> 실시간 병실 IoT 가전 동작 상태 맵</h3>
-        <p className="text-sm text-slate-400 mb-2">각 호실 카드의 아이콘 리스트를 통해 현재 전원 OFF(미가동) 상태인 기기와, 가동 중인 기기의 모드를 직관적으로 확인할 수 있습니다.</p>
-        <FMFloorPlan />
+      {/* 실시간 병동 환경·제어 맵 (실데이터) */}
+      <div className="space-y-3">
+        <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2"><Wind className="text-[#7a0024]" size={20} /> 실시간 병동 환경·제어 맵 <span className="text-xs font-normal text-slate-500">· 백엔드 라이브 · 카드 클릭 시 제어 계획</span></h3>
+        <FMFloorPlan spaces={spaces} />
       </div>
-      
-      {/* KPI 카드 클릭 시 뜨는 모달들 */}
-      {fmModal === "CONN" && (
-        <Modal title="🔌 층별 가전 연결 상태 확인" onClose={() => setFmModal(null)}>
-          <div className="grid grid-cols-2 gap-4 text-base">
-            <div className="p-4 bg-slate-100 border border-slate-200 rounded-xl flex justify-between items-center"><span className="text-slate-700">101호 공기청정기</span><span className="text-green-400 font-bold bg-green-900/20 px-3 py-1 rounded-lg"><Check size={16} className="inline mr-1"/> 정상 연동</span></div>
-            <div className="p-4 bg-slate-100 border border-slate-200 rounded-xl flex justify-between items-center"><span className="text-slate-700">101호 시스템에어컨</span><span className="text-green-400 font-bold bg-green-900/20 px-3 py-1 rounded-lg"><Check size={16} className="inline mr-1"/> 정상 연동</span></div>
-            <div className="p-4 bg-slate-100 border border-slate-200 rounded-xl flex justify-between items-center"><span className="text-slate-700">102호 프리미엄환기</span><span className="text-green-400 font-bold bg-green-900/20 px-3 py-1 rounded-lg"><Check size={16} className="inline mr-1"/> 정상 연동</span></div>
-            <div className="p-4 bg-slate-100 border border-slate-200 rounded-xl flex justify-between items-center"><span className="text-slate-700">102호 시스템에어컨</span><span className="text-green-400 font-bold bg-green-900/20 px-3 py-1 rounded-lg"><Check size={16} className="inline mr-1"/> 정상 연동</span></div>
-          </div>
-        </Modal>
-      )}
-      {/* 💡 가상 데이터 124건 맥락 일치 모달 */}
-      {fmModal === "AUTO" && (
-        <Modal title="⚙️ 금일 AI 가전 자동 제어 내역 (총 124건)" onClose={() => setFmModal(null)}>
-           <ul className="space-y-3 text-base text-slate-700">
-             <li className="p-4 bg-blue-900/10 border border-blue-900/30 rounded-xl flex gap-4 items-start">
-                <span className="text-blue-600 font-mono font-bold mt-0.5">10:45</span>
-                <div><p className="font-bold text-slate-900 mb-1">[302호] 실내 CO2 상승 감지</p><p className="text-sm text-slate-400">환기기 터보 가동 (20분간 유지 후 모니터링)</p></div>
-             </li>
-             <li className="p-4 bg-blue-900/10 border border-blue-900/30 rounded-xl flex gap-4 items-start">
-                <span className="text-blue-600 font-mono font-bold mt-0.5">09:20</span>
-                <div><p className="font-bold text-slate-900 mb-1">[202호] 환자 고열 감지 연동</p><p className="text-sm text-slate-400">시스템 에어컨 냉방 22도 목표로 하향 조절 완료</p></div>
-             </li>
-             <li className="p-4 bg-blue-900/10 border border-blue-900/30 rounded-xl flex gap-4 items-start">
-                <span className="text-blue-600 font-mono font-bold mt-0.5">08:10</span>
-                <div><p className="font-bold text-slate-900 mb-1">[101호] 미세먼지 유입 감지</p><p className="text-sm text-slate-400">공기청정기 스마트 모드 전환 및 풍량 증가</p></div>
-             </li>
-             <li className="p-4 bg-slate-100/50 border border-slate-200/50 rounded-xl flex gap-4 items-start">
-                <span className="text-slate-400 font-mono font-bold mt-0.5">08:00</span>
-                <div><p className="font-bold text-slate-900 mb-1">[전체 병동] 아침 기상 루틴</p><p className="text-sm text-slate-400">전 객실 스마트 루버 활성화 및 공기청정 시작</p></div>
-             </li>
-             <div className="text-center text-sm text-slate-500 mt-4 bg-slate-100/30 py-3 rounded-lg border border-slate-200/30">
-               ... 외 120건의 AI 자동 제어가 성공적으로 수행되었습니다.
-             </div>
-           </ul>
-        </Modal>
-      )}
-      {/* 💡 필터 교체 2건 데이터 일치 */}
-      {fmModal === "FILTER" && (
-        <Modal title="🛠️ 기기 필터 교체 대상" onClose={() => setFmModal(null)}>
-           <div className="space-y-4">
-            <div className="p-5 border border-[#7a0024]/50 bg-red-900/10 rounded-xl flex items-center justify-between">
-              <div><h4 className="text-lg font-bold text-red-400 flex items-center gap-2"><AlertCircle size={18}/> 202호 공기청정기</h4><p className="text-sm text-slate-600 mt-2">헤파필터 수명 5% 잔여 (교체 시급)</p></div>
-              <button className="px-4 py-2 bg-[#7a0024] text-white text-sm font-bold rounded-lg hover:bg-red-700 shadow-lg">작업 완료 처리</button>
-            </div>
-            <div className="p-5 border border-orange-900/50 bg-orange-900/10 rounded-xl flex items-center justify-between">
-              <div><h4 className="text-lg font-bold text-orange-400 flex items-center gap-2"><AlertCircle size={18}/> 104호 시스템에어컨</h4><p className="text-sm text-slate-600 mt-2">프리필터 먼지 누적 (청소/교체 권장)</p></div>
-              <button className="px-4 py-2 bg-orange-600 text-white text-sm font-bold rounded-lg hover:bg-orange-700 shadow-lg">작업 완료 처리</button>
-            </div>
-          </div>
-        </Modal>
+
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-sm font-bold px-5 py-3 rounded-xl shadow-xl animate-in fade-in slide-in-from-bottom-2">{toast}</div>
       )}
     </div>
   );

@@ -282,13 +282,28 @@ export function useReport(days = 30, intervalMs = 30000) {
 /** 제어 명령 (코웨이/에어컨 ON·OFF·급속 등). */
 export async function sendControl(action: string, spaceId = "ward_a") {
   try {
-    await fetch(`${API_BASE}/api/sentinel/sensor/control`, {
+    const r = await fetch(`${API_BASE}/api/sentinel/sensor/control`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ space_id: spaceId, action }),
     });
+    return await r.json();
   } catch {
-    /* ignore */
+    return null;
+  }
+}
+
+/** 대기 중인 고위험(HIGH_RISK/CRITICAL) 제어 승인 실행. */
+export async function sendApprove(spaceId = "ward_a") {
+  try {
+    const r = await fetch(`${API_BASE}/api/sentinel/sensor/approve`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ space_id: spaceId }),
+    });
+    return await r.json();
+  } catch {
+    return null;
   }
 }
 
