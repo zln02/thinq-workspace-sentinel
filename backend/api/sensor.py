@@ -32,7 +32,8 @@ router = APIRouter(prefix="/api/v1/sensor", tags=["sensor"])
 
 _AUTO_TIER = "ALERT"                           # 자동 제어 허용 tier
 _APPROVAL_TIERS = {"CRITICAL"}                 # 관리자 승인 필요 (위급만 — ALERT/HIGH_RISK는 자동)
-_ACTIVE_TIERS = {"ALERT", "HIGH_RISK", "CRITICAL"}
+_ACTIVE_TIERS = {"ALERT", "HIGH_RISK", "CRITICAL"}  # 강(强) 자동제어: 급속+송풍
+_GENTLE_TIERS = {"CAUTION"}                    # 약(弱) 선제대응: 공기청정 LOW (외부 ORANGE/YELLOW 포함)
 _last_tier: dict[str, str] = {}
 _pending_approval: dict[str, dict] = {}
 # 역할분리: 카메라(노트북 YOLO)가 실측 재실 '인원수'를 주력 제공, 라파이/아두이노는 환경센서 전용.
@@ -69,6 +70,20 @@ DEMO_EXPOSURE_H = 1.0
 
 _TIER_RANK = {"MONITOR": 0, "CAUTION": 1, "ALERT": 2, "HIGH_RISK": 3, "CRITICAL": 4}
 _TIER_NAMES = ["MONITOR", "CAUTION", "ALERT", "HIGH_RISK", "CRITICAL"]
+
+
+def _gov_level(t) -> str:
+    """tier → 자동제어 단계(위험도 비례). '항상 최대'가 아니라 등급별 차등이 핵심.
+
+    approval(CRITICAL) > strong(ALERT/HIGH_RISK) > gentle(CAUTION) > idle(MONITOR).
+    """
+    if t in _APPROVAL_TIERS:
+        return "approval"
+    if t in _ACTIVE_TIERS:
+        return "strong"
+    if t in _GENTLE_TIERS:
+        return "gentle"
+    return "idle"
 
 
 def _env_tier(temp: Optional[float], humidity: Optional[float]) -> str:
@@ -330,27 +345,35 @@ async def ingest_reading(r: SensorReading):
     except Exception as e:  # noqa: BLE001
         logger.warning("sensor 적재 실패(데모 진행): %s", e)
 
-    # 4) 하이브리드 거버넌스
+    # 4) 하이브리드 거버넌스 — 위험도 '비례' 차등제어(항상 최대 아님).
+    #    idle(MONITOR)=대기 / gentle(CAUTION)=공청 약 / strong(ALERT↑)=급속+송풍 / approval(CRITICAL)=승인.
+    #    외부 ORANGE/YELLOW→CAUTION 도 gentle로 '실제' 가동 → 표시-작동 일치(정직성).
     prev = _last_tier.get(r.space_id)
     _last_tier[r.space_id] = tier
     coway_action = None
     approval_required = False
     governance = "none"
 
-    if tier in _APPROVAL_TIERS and prev not in _APPROVAL_TIERS:
-        _pending_approval[r.space_id] = {"tier": tier, "wind": "TURBO"}
-        approval_required = True                             # 위급(CRITICAL) → 관리자 승인 대기
-        governance = "approval_required"
-    elif tier in _ACTIVE_TIERS and prev not in _ACTIVE_TIERS:
-        await _power_coway(True)                             # 전원 확실히 ON
-        coway_action = await _control_coway("TURBO")        # ALERT/HIGH_RISK 진입 → 자동 급속
-        await _control_ac(True, mode="WIND", wind="HIGH")   # 에어컨 송풍 → 환기 보조(Q_aux)
-        governance = "auto"
-    elif tier not in _ACTIVE_TIERS and prev in _ACTIVE_TIERS:
-        coway_action = await _power_coway(False)            # 정상 복귀 → 전원 OFF (시연)
-        await _control_ac(False)                            # 에어컨도 OFF
-        _pending_approval.pop(r.space_id, None)
-        governance = "auto_restore"
+    cur_lv, prev_lv = _gov_level(tier), _gov_level(prev)
+    if cur_lv != prev_lv:                                     # 단계가 바뀔 때만 액추에이션(중복 호출 방지)
+        if cur_lv == "approval":
+            _pending_approval[r.space_id] = {"tier": tier, "wind": "TURBO"}
+            approval_required = True                          # 위급(CRITICAL) → 관리자 승인 대기
+            governance = "approval_required"
+        elif cur_lv == "strong":
+            await _power_coway(True)                          # 전원 ON
+            coway_action = await _control_coway("TURBO")     # ALERT/HIGH_RISK → 급속
+            await _control_ac(True, mode="WIND", wind="HIGH")  # 에어컨 송풍 → 환기 보조(Q_aux)
+            governance = "auto"
+        elif cur_lv == "gentle":
+            await _power_coway(True)                          # 경계(CAUTION) 선제 약대응
+            coway_action = await _control_coway("LOW")       # 공기청정 약(LOW) — 에어컨은 과대응 방지 위해 미가동
+            governance = "auto_gentle"
+        else:                                                # idle(MONITOR) → 정상 복귀
+            coway_action = await _power_coway(False)
+            await _control_ac(False)
+            _pending_approval.pop(r.space_id, None)
+            governance = "auto_restore"
 
     # 5) SSE 푸시 (공식 대입값 포함 — 알고리즘 투명성)
     payload = {

@@ -293,6 +293,13 @@ function ExternalForecastBanner() {
         {boostOn
           ? <p className="text-xs text-[#7a0024] font-bold mt-0.5">🔴 외부 조기경보 발령 → 전 병동 <b>선제 위험상향({boost?.boost_tier}) 자동 가동 중</b> · {boostRegion}발</p>
           : <p className="text-xs text-slate-500 mt-0.5">예측 위험 도달 시 ThinQ가 전 병동 <b className="text-slate-700">선제 환기·정화 자동 강화</b> · 전국 {regions.length}개 지역 실시간 감시</p>}
+        {/* 다층 외부 데이터 출처 — "우리가 빌려오는 데이터의 풍부함" 부각 */}
+        <div className="flex flex-wrap items-center gap-1 mt-1.5">
+          <span className="text-[10px] font-bold text-slate-400 mr-0.5">수집원</span>
+          {["질병청 확진", "하수 KOWAS", "검색 데이터랩", "약국 OTC", "기온 KMA"].map((s) => (
+            <span key={s} className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white/70 text-slate-600 border border-slate-300/60">{s}</span>
+          ))}
+        </div>
       </div>
       {/* 시연 토글 — 외부 조기경보 발령 재현(replay) ⇄ 해제. 외부데이터→실내 인과를 라이브로 시연 */}
       <button
@@ -307,6 +314,39 @@ function ExternalForecastBanner() {
         <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${boostOn ? "bg-red-500" : st.dot} opacity-60`} />
         <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${boostOn ? "bg-red-500" : st.dot}`} />
       </span>
+    </div>
+  );
+}
+
+// 외부 경보등급 → 가전 차등제어 상관 패널 — "항상 최대가 아니라 위험도 비례" 차별점 증명
+function ExternalControlMap() {
+  const boost = useBoostState(4000);
+  const lv = boost?.boost_tier ?? "MONITOR";
+  const active = lv === "MONITOR" ? 0 : lv === "CAUTION" ? 1 : (lv === "ALERT" || lv === "HIGH_RISK") ? 2 : 3;
+  const rows = [
+    { ext: "🟢 정상 (GREEN)", resp: "평상 감시", dev: "가전 대기 · 에너지 절약", on: "ring-emerald-400 bg-emerald-50" },
+    { ext: "🟡🟠 주의·경계 (YELLOW/ORANGE)", resp: "선제 약(弱)대응", dev: "공기청정 LOW 자동 가동", on: "ring-amber-400 bg-amber-50" },
+    { ext: "🔴 심각 (RED)", resp: "선제 강(强)대응", dev: "공청 TURBO + 에어컨 송풍 환기", on: "ring-red-400 bg-red-50" },
+    { ext: "⚫ 위급 (내부 CRITICAL)", resp: "관리자 승인 후 최대", dev: "전 병동 터보 · 승인 거버넌스", on: "ring-rose-500 bg-rose-50" },
+  ];
+  return (
+    <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+      <div className="flex flex-wrap items-center gap-2 mb-1">
+        <Zap size={18} className="text-[#7a0024]" />
+        <h3 className="text-base font-bold text-slate-900">외부 경보 → ThinQ 가전 차등 자동제어</h3>
+        <span className="text-[11px] font-bold text-slate-400">위험도에 비례 — 항상 최대로 돌리지 않음(에너지·과대응 방지)</span>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 mt-3">
+        {rows.map((r, i) => (
+          <div key={i} className={`rounded-xl border border-slate-200 p-3 transition-all ${i === active ? `ring-2 ${r.on}` : "bg-slate-50/50 opacity-70"}`}>
+            <p className="text-xs font-black text-slate-800">{r.ext}</p>
+            <p className="text-[11px] text-slate-500 mt-1">{r.resp}</p>
+            <p className="text-[11px] font-bold text-slate-700 mt-1.5 leading-snug">{r.dev}</p>
+            {i === active && <p className="text-[10px] font-bold text-[#7a0024] mt-1.5">● 현재 적용 중</p>}
+          </div>
+        ))}
+      </div>
+      <p className="text-[11px] text-slate-400 mt-3">↳ 병원체마다 최적 환경이 다름(인플루엔자 가습 50%RH ↔ 노로 제습 45% — <b className="text-slate-600">정반대</b>). 그래서 "무엇이 유행하는지"를 알아야 환경을 정하고, 위험할 때만 그 환경을 만든다.</p>
     </div>
   );
 }
@@ -343,6 +383,9 @@ function NurseView() {
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* 외부 감염병 조기경보 — 외부 예측 → 선제 예방 차별점 */}
       <ExternalForecastBanner />
+
+      {/* 외부 경보 → 가전 차등제어 상관 (반박 방어: "항상 최대" 아님) */}
+      <ExternalControlMap />
 
       {/* 상단 KPI — 환경·감염·ThinQ 자동대응 중심 (백엔드 라이브) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -481,7 +524,7 @@ function FMView() {
   const acOn = a?.is_on === true;
   const governance = live?.governance ?? "none";
   const approvalNeeded = live?.approval_required === true;
-  const govLabel: Record<string, string> = { none: "대기", auto: "AI 자동제어", approval_required: "관리자 승인 대기", approved: "승인 실행", auto_restore: "정상 복귀" };
+  const govLabel: Record<string, string> = { none: "대기", auto: "AI 자동제어(강)", auto_gentle: "AI 선제 약대응", approval_required: "관리자 승인 대기", approved: "승인 실행", auto_restore: "정상 복귀" };
 
   const act = async (action: string, label: string) => {
     setBusy(action);
