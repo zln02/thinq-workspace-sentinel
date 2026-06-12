@@ -20,6 +20,8 @@ export type LiveSensor = {
   humidity: number | null;
   gas_raw: number | null;
   occupancy?: number | null;  // 실측 재실 인원(LD2410C): 0=빈 병실 / >0=재실. 미측정 시 백엔드 DEMO_OCCUPANCY
+  tier_source?: "sensor" | "external";  // 이 tier가 실내센서 감지(sensor)인지 외부 조기경보 상향(external)인지
+  boost_region?: string | null;         // tier_source=external일 때 발령 지역(예: 부산광역시)
   governance: string;
   approval_required: boolean;
   formula?: Record<string, unknown>;
@@ -81,6 +83,7 @@ export type SpaceOverview = {
   area_m2?: number;
   max_occupancy: number;
   tier: string;
+  tier_source?: "sensor" | "external";  // 이 공간 tier가 외부 조기경보발(發) 상향이면 "external"
   poi: number | null;
   source: string;       // "실센서" | "시뮬"
   gas_raw: number | null;
@@ -277,6 +280,66 @@ export function useReport(days = 30, intervalMs = 30000) {
     };
   }, [days, intervalMs]);
   return report;
+}
+
+// ── 외부 조기경보 boost 토글 (시연용 선제 시나리오 ON/OFF) ──────────────
+//  select-region: 지역 선택 → 조기경보 등급으로 전 병동 tier 선제 상향(가전 자동가동까지 연쇄)
+//  clear-region : 해제 → 전 병동이 센서 실측 tier로 복귀
+//  데모 모드(SENTINEL_API_KEY 미설정)에선 헤더 없이 통과. 운영 시 키 헤더 필요.
+
+/** 시연 선제 시나리오 ON — 지역 조기경보 발령 재현(replay=시즌피크 / live=현재 실시간). */
+export async function selectRegion(region: string, mode: "replay" | "live" = "replay") {
+  try {
+    const r = await fetch(`${API_BASE}/api/sentinel/external/select-region`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ region, mode }),
+    });
+    return await r.json();
+  } catch {
+    return null;
+  }
+}
+
+/** 시연 선제 시나리오 OFF — 외부 boost 해제(평상시 복귀). */
+export async function clearRegion() {
+  try {
+    const r = await fetch(`${API_BASE}/api/sentinel/external/clear-region`, { method: "POST" });
+    return await r.json();
+  } catch {
+    return null;
+  }
+}
+
+export type BoostState = {
+  region: string | null;
+  boost_tier: string;        // MONITOR | CAUTION | ALERT | ...
+  mode: string | null;       // replay | live | null
+  info?: Record<string, unknown> | null;
+};
+
+/** 현재 외부 boost 상태 폴링 — 토글 버튼 ON/OFF 표시 + 인과 배지용. */
+export function useBoostState(intervalMs = 5000) {
+  const [boost, setBoost] = useState<BoostState | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const r = await fetch(`${API_BASE}/api/sentinel/external/selected`);
+        const j = await r.json();
+        if (alive) setBoost(j);
+      } catch {
+        /* ignore */
+      }
+    };
+    load();
+    const t = setInterval(load, intervalMs);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, [intervalMs]);
+  return boost;
 }
 
 /** 제어 명령 (코웨이/에어컨 ON·OFF·급속 등). */
