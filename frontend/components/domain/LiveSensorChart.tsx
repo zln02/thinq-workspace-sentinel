@@ -23,7 +23,7 @@ export default function LiveSensorChart() {
           <Tooltip />
           <ReferenceLine y={1000} stroke="#F9A825" strokeDasharray="4 4" label={{ value: "주의", fontSize: 11 }} />
           <ReferenceLine y={1500} stroke="#C62828" strokeDasharray="4 4" label={{ value: "위험", fontSize: 11 }} />
-          <Line type="monotone" dataKey="co2" stroke="#A50034" strokeWidth={2} dot={false} />
+          <Line type="monotone" dataKey="co2" stroke="#7a0024" strokeWidth={2} dot={false} />
         </LineChart>
       </ResponsiveContainer>
     </div>

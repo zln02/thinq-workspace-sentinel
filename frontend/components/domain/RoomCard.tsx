@@ -10,7 +10,7 @@ const THEME_MAP: Record<TierType, { accent: string; cardBg: string; dot: string;
   MONITOR:   { accent: "border-l-emerald-400", cardBg: "bg-white",    dot: "bg-emerald-500", badge: "bg-emerald-50 text-emerald-700", label: "Monitor" },
   CAUTION:   { accent: "border-l-amber-400",   cardBg: "bg-white",    dot: "bg-amber-500",   badge: "bg-amber-50 text-amber-700",   label: "Caution" },
   ALERT:     { accent: "border-l-orange-500",  cardBg: "bg-orange-50/60", dot: "bg-orange-500", badge: "bg-orange-100 text-orange-700", label: "Alert" },
-  HIGH_RISK: { accent: "border-l-[#A50034]",   cardBg: "bg-red-50",   dot: "bg-[#A50034]",   badge: "bg-red-100 text-[#A50034]",    label: "High Risk" },
+  HIGH_RISK: { accent: "border-l-[#7a0024]",   cardBg: "bg-red-50",   dot: "bg-[#7a0024]",   badge: "bg-red-100 text-[#7a0024]",    label: "High Risk" },
   CRITICAL:  { accent: "border-l-red-600",     cardBg: "bg-red-100/70", dot: "bg-red-600",   badge: "bg-red-600 text-white",        label: "Critical" },
 };
 

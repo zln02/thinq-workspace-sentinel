@@ -22,8 +22,8 @@ export default function PersonaSwitcher() {
           onClick={() => router.push(`?persona=${p.id}`)}
           className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${
             current === p.id
-              ? "bg-[#A50034] text-white border-[#A50034]"
-              : "bg-white text-gray-600 border-gray-300 hover:border-[#A50034]"
+              ? "bg-[#7a0024] text-white border-[#7a0024]"
+              : "bg-white text-gray-600 border-gray-300 hover:border-[#7a0024]"
           }`}
         >
           {p.label} · {p.role}
