@@ -347,6 +347,39 @@ export function useBoostState(intervalMs = 5000) {
   return boost;
 }
 
+// ── 자동/수동 제어 모드 (모드 전환 시 관리자 비밀번호) ─────────────────────
+/** 모드 전환 — 관리자 비밀번호 검증(서버). 성공 {ok:true,mode} / 실패 {ok:false}. */
+export async function setControlMode(spaceId: string, mode: "auto" | "manual", password: string) {
+  try {
+    const r = await fetch(`${API_BASE}/api/sentinel/sensor/mode`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ space_id: spaceId, mode, password }),
+    });
+    if (r.status === 403) return { ok: false, reason: "관리자 비밀번호가 올바르지 않습니다" };
+    return await r.json();
+  } catch {
+    return { ok: false, reason: "통신 오류" };
+  }
+}
+
+/** 현재 제어 모드(auto/manual) 폴링. */
+export function useControlMode(spaceId: string, intervalMs = 6000) {
+  const [mode, setMode] = useState<"auto" | "manual">("auto");
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      fetch(`${API_BASE}/api/sentinel/sensor/mode?space_id=${spaceId}`)
+        .then((r) => r.json())
+        .then((j) => { if (alive && j.mode) setMode(j.mode); })
+        .catch(() => {});
+    load();
+    const t = setInterval(load, intervalMs);
+    return () => { alive = false; clearInterval(t); };
+  }, [spaceId, intervalMs]);
+  return mode;
+}
+
 /** 제어 명령 (코웨이/에어컨 ON·OFF·급속 등). */
 export async function sendControl(action: string, spaceId = "ward_a") {
   try {
@@ -386,6 +419,23 @@ export type RegionSignal = {
   lead_days: number | null;
   per_100k: number | null;
 };
+
+/** 외부 신호 메타(최종 데이터 기준일·출처기관) — 배너 '최종 갱신' 동기화용. */
+export function useExternalMeta(intervalMs = 60000) {
+  const [meta, setMeta] = useState<{ as_of: string | null; source: string | null }>({ as_of: null, source: null });
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      fetch(`${API_BASE}/api/sentinel/external/regions`)
+        .then((r) => r.json())
+        .then((j) => { if (alive) setMeta({ as_of: j.as_of ?? null, source: j.source ?? null }); })
+        .catch(() => {});
+    load();
+    const t = setInterval(load, intervalMs);
+    return () => { alive = false; clearInterval(t); };
+  }, [intervalMs]);
+  return meta;
+}
 
 /** 외부 감염병 조기경보(질병청·UIS 연동) 전국 지역 신호 폴링 — 선제 예방 차별점. */
 export function useExternalSignal(intervalMs = 60000) {

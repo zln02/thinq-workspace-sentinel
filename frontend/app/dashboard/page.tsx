@@ -13,7 +13,7 @@ import {
   ResponsiveContainer, BarChart, LineChart 
 } from 'recharts';
 import { FloorPlan, type SpaceCard } from "@/components/domain/FloorPlan";
-import { useLiveWard, useSpacesOverview, useReport, useExternalSignal, useCowayStatus, useAcStatus, useControlPlan, sendControl, sendApprove, selectRegion, clearRegion, useBoostState, type SpaceOverview } from "@/lib/useSentinel";
+import { useLiveWard, useSpacesOverview, useReport, useExternalSignal, useExternalMeta, useCowayStatus, useAcStatus, useControlPlan, sendControl, sendApprove, selectRegion, clearRegion, useBoostState, setControlMode, useControlMode, type SpaceOverview } from "@/lib/useSentinel";
 import FlowPanel from "@/components/domain/FlowPanel";
 import { getSession, canAccess, clearSession } from "@/lib/auth";
 import { tierRank, autoResponse } from "@/lib/wardData";
@@ -264,6 +264,7 @@ const LV_STYLE: Record<string, { dot: string; text: string; bg: string; label: s
 
 function ExternalForecastBanner() {
   const regions = useExternalSignal(60000);
+  const meta = useExternalMeta(60000);   // 최종 데이터 기준일·출처기관
   const boost = useBoostState(4000);     // 현재 외부 boost 상태(시연 토글 ON/OFF 표시)
   const [myRegion, setMyRegion] = useState<string>("");
   useEffect(() => { setMyRegion(getSession()?.region ?? ""); }, []);
@@ -283,7 +284,7 @@ function ExternalForecastBanner() {
       <div className="flex items-center gap-3 shrink-0">
         <span className="text-2xl">🦠</span>
         <div>
-          <p className="text-[11px] font-bold text-slate-500">외부 감염병 조기경보 · 질병청 UIS 연동</p>
+          <p className="text-[11px] font-bold text-slate-500">외부 감염병 조기경보 · {meta.source ?? "질병관리청·UIS"}{meta.as_of ? ` · 기준 ${meta.as_of}` : ""}</p>
           <p className={`text-sm font-black ${boostOn ? "text-[#7a0024]" : st.text}`}>{top.region} {disease} <span>{st.label}({top.live_score ?? "—"})</span></p>
         </div>
       </div>
@@ -330,9 +331,9 @@ function ExternalControlMap() {
     { ext: "⚫ 위급 (내부 CRITICAL)", resp: "관리자 승인 후 최대", dev: "전 병동 터보 · 승인 거버넌스", on: "ring-rose-500 bg-rose-50" },
   ];
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+    <div className="bg-violet-50/40 border border-violet-200 border-l-4 border-l-violet-500 rounded-2xl p-5 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
       <div className="flex flex-wrap items-center gap-2 mb-1">
-        <Zap size={18} className="text-[#7a0024]" />
+        <div className="w-7 h-7 rounded-lg bg-violet-100 flex items-center justify-center"><Zap size={15} className="text-violet-600" /></div>
         <h3 className="text-base font-bold text-slate-900">외부 경보 → ThinQ 가전 차등 자동제어</h3>
         <span className="text-[11px] font-bold text-slate-400">위험도에 비례 — 항상 최대로 돌리지 않음(에너지·과대응 방지)</span>
       </div>
@@ -409,8 +410,8 @@ function NurseView() {
 
       {/* 메인: 병동 환경 관제맵 + ThinQ 자동대응 라이브 */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-        <div className="xl:col-span-3 space-y-3">
-          <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2"><Wind className="text-blue-600" size={20} /> 병동 환경 관제맵 <span className="text-xs font-normal text-slate-500">· 백엔드 라이브 · CO₂ → AI 5-Tier</span></h3>
+        <div className="xl:col-span-3 bg-blue-50/30 border border-blue-200 border-l-4 border-l-blue-500 rounded-2xl p-4 space-y-3">
+          <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2"><span className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center"><Wind className="text-blue-600" size={18} /></span> 병동 환경 관제맵 <span className="text-xs font-normal text-slate-500">· 백엔드 라이브 · CO₂ → AI 5-Tier</span></h3>
           <FloorPlan spaces={spaces} />
         </div>
 
@@ -455,8 +456,8 @@ function NurseView() {
       </div>
 
       {/* 하단: 수간호사 인수인계 (축소) */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
-        <h3 className="text-base font-bold text-slate-900 mb-3 flex items-center gap-2"><FileText className="text-blue-600" size={18} /> 수간호사 인수인계</h3>
+      <div className="bg-amber-50/40 border border-amber-200 border-l-4 border-l-amber-400 rounded-2xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+        <h3 className="text-base font-bold text-slate-900 mb-3 flex items-center gap-2"><span className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center"><FileText className="text-amber-600" size={15} /></span> 수간호사 인수인계</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
             <p className="text-xs text-slate-500 mb-1">오늘 08:00 작성</p>
@@ -513,6 +514,35 @@ function FMView() {
   const [busy, setBusy] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
+  // 제어 대상 호실 선택 (기본: 201호 실센서). 실센서 공간은 제어키 "ward_a"(브릿지 적재 키)로 매핑.
+  const [selId, setSelId] = useState<string>("");
+  useEffect(() => {
+    if (!selId && spaces.length) setSelId((spaces.find((s) => s.source === "실센서") ?? spaces[0]).space_id);
+  }, [spaces, selId]);
+  const sel = spaces.find((s) => s.space_id === selId) ?? null;
+  const ctrlKey = sel?.source === "실센서" ? "ward_a" : (sel?.space_id ?? "ward_a");
+  const mode = useControlMode(ctrlKey);
+
+  // 자동/수동 모드 전환 — 관리자 비밀번호 모달
+  const [pwModal, setPwModal] = useState<null | "auto" | "manual">(null);
+  const [pw, setPw] = useState("");
+  const [pwErr, setPwErr] = useState("");
+  const [pwBusy, setPwBusy] = useState(false);
+  const submitMode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pwModal) return;
+    setPwBusy(true); setPwErr("");
+    const res = await setControlMode(ctrlKey, pwModal, pw);
+    setPwBusy(false);
+    if (res?.ok) {
+      setToast(`${pwModal === "manual" ? "수동" : "자동"} 모드로 전환됨`);
+      setTimeout(() => setToast(null), 2400);
+      setPwModal(null); setPw("");
+    } else {
+      setPwErr(res?.reason ?? "전환 실패");
+    }
+  };
+
   const responding = spaces.filter((s) => tierRank(s.tier) >= 2);
   const c = coway as Record<string, unknown> | null;
   const a = ac as Record<string, unknown> | null;
@@ -528,9 +558,9 @@ function FMView() {
 
   const act = async (action: string, label: string) => {
     setBusy(action);
-    await sendControl(action, "ward_a");
+    await sendControl(action, ctrlKey);
     setBusy(null);
-    setToast(`${label} 명령 전송됨`);
+    setToast(`[${sel?.space_name ?? ctrlKey}] ${label} 명령 전송됨`);
     setTimeout(() => setToast(null), 2400);
   };
   const approve = async () => {
@@ -581,11 +611,34 @@ function FMView() {
 
       {/* 실 가전 제어 콘솔 — 키오스크 제어판 흡수 (실제 액추에이션) */}
       <div className="bg-white rounded-2xl border border-slate-200 border-t-[3px] border-t-[#7a0024] p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
           <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2"><Power size={20} className="text-[#7a0024]" /> 실 가전 제어 콘솔</h3>
-          <span className={`text-xs font-bold px-3 py-1 rounded-full ${governance === "auto" ? "bg-emerald-50 text-emerald-700" : approvalNeeded ? "bg-red-50 text-red-700" : "bg-slate-100 text-slate-500"}`}>거버넌스: {govLabel[governance] ?? governance}</span>
+          <div className="flex items-center gap-2">
+            {/* 자동/수동 모드 — 전환 시 관리자 비밀번호 */}
+            <span className={`text-[11px] font-bold px-2 py-1 rounded-full ${mode === "manual" ? "bg-amber-100 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
+              {mode === "manual" ? "🔧 수동 모드" : "🤖 자동 모드"}
+            </span>
+            <button
+              onClick={() => { setPwErr(""); setPw(""); setPwModal(mode === "manual" ? "auto" : "manual"); }}
+              className="text-[11px] font-bold px-2.5 py-1 rounded-full border border-slate-300 text-slate-600 hover:border-[#7a0024] hover:text-[#7a0024] transition-colors"
+            >
+              {mode === "manual" ? "자동으로 전환" : "수동으로 전환"} 🔒
+            </button>
+            <span className={`text-xs font-bold px-3 py-1 rounded-full ${governance === "auto" ? "bg-emerald-50 text-emerald-700" : approvalNeeded ? "bg-red-50 text-red-700" : "bg-slate-100 text-slate-500"}`}>거버넌스: {govLabel[governance] ?? governance}</span>
+          </div>
         </div>
-        <p className="text-xs text-slate-400 mb-5">201호 실센서 공간 · 실제 LG ThinQ/SmartThings 가전을 직접 제어합니다</p>
+        {/* 제어 대상 호실 선택 */}
+        <div className="flex items-center gap-2 mb-4 mt-2">
+          <span className="text-xs font-bold text-slate-500">제어 대상</span>
+          <select
+            value={selId} onChange={(e) => setSelId(e.target.value)}
+            className="text-sm font-bold border border-slate-300 rounded-lg px-3 py-1.5 bg-white text-slate-800 cursor-pointer focus:outline-none focus:border-[#7a0024]"
+          >
+            {spaces.map((s) => <option key={s.space_id} value={s.space_id}>{s.space_name}{s.source === "실센서" ? " · 실센서" : ""}</option>)}
+          </select>
+          {mode === "manual" && <span className="text-[11px] text-amber-600 font-bold">· 수동 모드 — 자동 제어 보류 중</span>}
+        </div>
+        <p className="text-xs text-slate-400 mb-5">{sel?.space_name ?? "201호"} · 실제 LG ThinQ/SmartThings 가전을 직접 제어합니다</p>
 
         {approvalNeeded && (
           <div className="mb-5 p-4 rounded-xl bg-red-50 border border-red-200 flex items-center justify-between">
@@ -651,6 +704,31 @@ function FMView() {
 
       {toast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-sm font-bold px-5 py-3 rounded-xl shadow-xl animate-in fade-in slide-in-from-bottom-2">{toast}</div>
+      )}
+
+      {/* 자동/수동 모드 전환 — 관리자 비밀번호 모달 */}
+      {pwModal && (
+        <Modal title={`${pwModal === "manual" ? "🔧 수동" : "🤖 자동"} 모드 전환 — 관리자 인증`} onClose={() => setPwModal(null)}>
+          <form onSubmit={submitMode} className="space-y-4">
+            <p className="text-sm text-slate-600">
+              <b className="text-slate-900">{sel?.space_name ?? "대상 공간"}</b> 제어를{" "}
+              <b className={pwModal === "manual" ? "text-amber-600" : "text-emerald-600"}>{pwModal === "manual" ? "수동(관리자 직접 제어)" : "자동(AI 차등제어)"}</b> 모드로 전환합니다.
+              {pwModal === "manual" && <span className="block text-xs text-amber-600 mt-1">⚠ 수동 모드에서는 외부신호·센서 기반 자동 가동이 보류됩니다.</span>}
+            </p>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 mb-1.5">관리자 비밀번호</label>
+              <input
+                type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoFocus placeholder="관리자 비밀번호"
+                className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#7a0024]"
+              />
+              {pwErr && <p className="text-xs text-red-600 font-bold mt-1.5">{pwErr}</p>}
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button type="button" onClick={() => setPwModal(null)} className="px-4 py-2 rounded-lg text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">취소</button>
+              <button type="submit" disabled={pwBusy} className="px-4 py-2 rounded-lg text-sm font-bold bg-[#7a0024] text-white hover:bg-[#92002c] disabled:opacity-50">{pwBusy ? "인증 중…" : "전환"}</button>
+            </div>
+          </form>
+        </Modal>
       )}
     </div>
   );
