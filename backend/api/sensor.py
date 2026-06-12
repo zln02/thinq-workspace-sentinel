@@ -662,14 +662,22 @@ async def director_report(days: int = 30):
     try:
         interval = f"{int(days)} days"
         async with pool.acquire() as con:
+            # 자동대응 '건수'는 개별 reading이 아니라 ALERT '진입 이벤트'로 집계.
+            #   = tier가 ALERT 미만→ALERT↑ 로 바뀐 순간 = 가전 자동가동이 실제 트리거된 횟수.
+            #   (reading 단위로 세면 한 번의 환기 에피소드가 수천 건으로 부풀어 오차).
             agg = await con.fetchrow(
-                "SELECT COUNT(*) FILTER (WHERE risk_tier>=3) acts, "
-                "COUNT(*) FILTER (WHERE risk_tier>=3 AND tier_source='external') preempt, "
-                "COUNT(*) FILTER (WHERE risk_tier>=5) crit, "
-                "AVG(poi) avg_poi, MAX(poi) max_poi, COUNT(DISTINCT space_id) spaces, "
-                "MIN(calculated_at) t0, MAX(calculated_at) t1 "
-                "FROM sentinel.rehva_results "
-                f"WHERE calculated_at > NOW() - INTERVAL '{interval}'"
+                "WITH seq AS ("
+                "  SELECT space_id, calculated_at, poi, risk_tier, tier_source, "
+                "    LAG(risk_tier) OVER (PARTITION BY space_id ORDER BY calculated_at) prev "
+                "  FROM sentinel.rehva_results "
+                f"  WHERE calculated_at > NOW() - INTERVAL '{interval}') "
+                "SELECT "
+                "  COUNT(*) FILTER (WHERE risk_tier>=3 AND (prev IS NULL OR prev<3)) acts, "
+                "  COUNT(*) FILTER (WHERE risk_tier>=3 AND (prev IS NULL OR prev<3) AND tier_source='external') preempt, "
+                "  COUNT(*) FILTER (WHERE risk_tier>=5 AND (prev IS NULL OR prev<5)) crit, "
+                "  AVG(poi) avg_poi, MAX(poi) max_poi, COUNT(DISTINCT space_id) spaces, "
+                "  MIN(calculated_at) t0, MAX(calculated_at) t1 "
+                "FROM seq"
             )
             readings = await con.fetchval(
                 "SELECT COUNT(*) FROM sentinel.sensor_readings "
@@ -677,11 +685,14 @@ async def director_report(days: int = 30):
             )
             total_spaces = await con.fetchval("SELECT COUNT(*) FROM sentinel.spaces")
             weekly_rows = await con.fetch(
+                "WITH seq AS ("
+                "  SELECT space_id, calculated_at, risk_tier, "
+                "    LAG(risk_tier) OVER (PARTITION BY space_id ORDER BY calculated_at) prev "
+                "  FROM sentinel.rehva_results "
+                f"  WHERE calculated_at > NOW() - INTERVAL '{interval}') "
                 "SELECT date_trunc('week', calculated_at)::date wk, "
-                "COUNT(*) FILTER (WHERE risk_tier>=3) acts "
-                "FROM sentinel.rehva_results "
-                f"WHERE calculated_at > NOW() - INTERVAL '{interval}' "
-                "GROUP BY 1 ORDER BY 1"
+                "COUNT(*) FILTER (WHERE risk_tier>=3 AND (prev IS NULL OR prev<3)) acts "
+                "FROM seq GROUP BY 1 ORDER BY 1"
             )
         if not agg or agg["acts"] is None or agg["avg_poi"] is None:
             return fallback
