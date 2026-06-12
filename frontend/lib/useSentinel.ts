@@ -246,6 +246,8 @@ export function useKpi(intervalMs = 30000) {
 export type DirectorReport = {
   period: { start: string | null; end: string | null; days: number };
   auto_actions: number;
+  preemptive_actions?: number;   // 외부 조기경보발 선제 대응(센서 정상이어도 미리 가동)
+  sensor_actions?: number;       // 실내센서 감지발 대응
   alert_events: number;
   avg_poi: number;
   peak_poi: number;
@@ -254,6 +256,9 @@ export type DirectorReport = {
   readings: number;
   est_cost_saved_krw: number;
   compliance_pct: number;
+  max_lead_days?: number | null;     // 외부 조기경보가 확진피크보다 며칠 선행했나(최대)
+  preempt_region?: string | null;    // 그 지역
+  preempt_disease?: string | null;   // 그 질환
   weekly: { week: string; date?: string; actions: number; est_saved_krw: number }[];
   source: string;
 };

@@ -124,6 +124,38 @@ def _row_to_region(r) -> dict:
     }
 
 
+# 병원장 리포트용 — 외부 조기경보가 확진피크보다 며칠 '선행'했는지(최대) + 지역/질환.
+#   ew.onset(ORANGE/RED 최초 발령일) vs 확진피크일 차이 = 사전 포착 리드타임. 핵심 차별점 증거.
+_LEAD_SQL = """
+WITH ew AS (
+  SELECT region, MIN(time)::date AS onset
+  FROM risk_scores WHERE alert_level IN ('ORANGE','RED') GROUP BY region),
+cp AS (
+  SELECT DISTINCT ON (region) region, time::date AS d, disease
+  FROM confirmed_cases ORDER BY region, per_100k DESC)
+SELECT cp.region, cp.disease, (cp.d - ew.onset) AS lead_days
+FROM cp JOIN ew USING(region)
+WHERE (cp.d - ew.onset) IS NOT NULL AND (cp.d - ew.onset) > 0
+ORDER BY lead_days DESC LIMIT 1
+"""
+
+
+async def preemptive_lead() -> dict:
+    """최대 선행일수 + 그 지역/질환. UIS 미연결/데이터 없으면 빈 dict(리포트는 폴백)."""
+    pool = await _uis_pool()
+    if not pool:
+        return {}
+    try:
+        async with pool.acquire() as con:
+            r = await con.fetchrow(_LEAD_SQL)
+        if not r:
+            return {}
+        return {"max_lead_days": int(r["lead_days"]),
+                "region": r["region"], "disease": r["disease"]}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
 @router.get("/regions")
 async def list_regions():
     """시도별 조기경보(현재/시즌피크) + 확진피크 + 리드타임 (드롭다운용)."""

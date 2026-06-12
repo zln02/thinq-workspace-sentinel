@@ -661,7 +661,7 @@ function DirectorView() {
   const KPIS = [
     { Icon: Zap, iconCls: "text-amber-600", noteCls: "text-amber-700 bg-amber-50",
       label: "자동 선제대응", value: report ? report.auto_actions.toLocaleString() : "—", unit: "건",
-      note: `최근 ${report?.period.days ?? 30}일 · tier ALERT↑ 무인 대응` },
+      note: `외부발 ${(report?.preemptive_actions ?? 0).toLocaleString()} + 센서발 ${(report?.sensor_actions ?? 0).toLocaleString()} · 최근 ${report?.period.days ?? 30}일` },
     { Icon: ActivitySquare, iconCls: "text-blue-600", noteCls: "text-blue-700 bg-blue-50",
       label: "연속 모니터링 기록", value: report ? report.readings.toLocaleString() : "—", unit: "건",
       note: `감염관리 증빙 자동 로깅 · ${report?.spaces_monitored ?? 0}개 공간` },
@@ -697,6 +697,38 @@ function DirectorView() {
           <DownloadCloud size={18} /> 성과 리포트 인쇄·PDF
         </button>
       </div>
+
+      {/* 🛡️ 감염병 사전예방 성과 — 외부 조기경보 → 선제대응 → 확산 차단 (핵심 차별점) */}
+      {report && (report.max_lead_days || report.preemptive_actions) ? (
+        <div className="rounded-2xl border border-[#7a0024]/30 bg-gradient-to-r from-[#7a0024]/[0.06] to-transparent p-6">
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <ShieldAlert size={18} className="text-[#7a0024]" />
+            <h3 className="text-lg font-bold text-slate-900">감염병 <span className="text-[#7a0024]">사전예방</span> 성과</h3>
+            <span className="text-[11px] font-bold text-slate-400">사후 대응이 아닌 — 외부 유행을 미리 차단</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* ① 외부 선행 포착 — 우리의 진짜 무기 */}
+            <div className="bg-white rounded-xl border border-slate-200 p-5">
+              <p className="text-xs font-bold text-slate-500 mb-1">외부 조기경보 선행 포착</p>
+              <p className="text-4xl font-black text-[#7a0024]">{report.max_lead_days ?? "—"}<span className="text-base font-bold text-slate-400 ml-1">일 전</span></p>
+              <p className="text-[11px] text-slate-500 mt-1">{report.preempt_region ?? ""} {DISEASE_KR[report.preempt_disease ?? ""] ?? report.preempt_disease ?? ""} 확진피크 전 사전 감지 · 질병청·UIS</p>
+            </div>
+            {/* ② 선제 대응 — 센서 정상에도 미리 가동 */}
+            <div className="bg-white rounded-xl border border-slate-200 p-5">
+              <p className="text-xs font-bold text-slate-500 mb-1">선제 자동대응 <span className="text-[#7a0024]">(센서 정상에도)</span></p>
+              <p className="text-4xl font-black text-slate-900">{(report.preemptive_actions ?? 0).toLocaleString()}<span className="text-base font-bold text-slate-400 ml-1">건</span></p>
+              <p className="text-[11px] text-slate-500 mt-1">외부발 {(report.preemptive_actions ?? 0).toLocaleString()} + 센서발 {(report.sensor_actions ?? 0).toLocaleString()} = 총 {report.auto_actions.toLocaleString()}건</p>
+            </div>
+            {/* ③ 결과 — 외부 유행기에도 병동 위험 억제 유지 */}
+            <div className="bg-white rounded-xl border border-slate-200 p-5">
+              <p className="text-xs font-bold text-slate-500 mb-1">병동 감염위험 (결과)</p>
+              <p className="text-4xl font-black text-emerald-600">{(report.peak_poi * 100).toFixed(1)}<span className="text-base font-bold text-slate-400 ml-1">% 이하</span></p>
+              <p className="text-[11px] text-slate-500 mt-1">외부 유행기에도 CRITICAL {report.alert_events}건 — 선제 차단으로 확산 억제</p>
+            </div>
+          </div>
+          <p className="text-[11px] text-slate-400 mt-3">↳ 외부 지역 유행을 <b className="text-slate-600">{report.max_lead_days ?? "N"}일 앞서</b> 감지해 ThinQ가 환기·정화를 미리 가동 → 병동 내 전파를 사전 차단. 가전 제어는 <i>수단</i>, 차별점은 <b className="text-[#7a0024]">선행 예방</b>.</p>
+        </div>
+      ) : null}
 
       {/* 핵심 KPI 4 (실측 연동) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
