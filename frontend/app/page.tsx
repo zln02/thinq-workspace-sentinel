@@ -1,138 +1,127 @@
-// frontend/app/page.tsx
+// frontend/app/page.tsx — 통합 로그인 (다크 글래스 · 좌 3D / 우 폼 · 네뷸라 톤)
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ShieldAlert, ArrowRight, HeartPulse, Wrench, Briefcase, Smartphone,
-  Radio, Activity, User, Lock, ChevronDown,
-} from "lucide-react";
+import { ShieldCheck, ArrowRight, User, Lock, Building2, ChevronDown } from "lucide-react";
+import { HOSPITALS, ROLE_HOME, authenticate, setSession, bindRegion } from "@/lib/auth";
 
-// 역할 원클릭 진입(데모 동선) — 카드 클릭 시 role 세팅 후 해당 제품 라인으로 이동
-const ROLES = [
-  { id: "nurse", role: "NURSE", name: "김민수 간호사", label: "간호사 (ICN)", desc: "실시간 병동 감염 감시", href: "/dashboard", Icon: HeartPulse },
-  { id: "fm", role: "FM", name: "정욱현 시설관리자", label: "시설 관리자", desc: "ThinQ 가전 자동 방역", href: "/dashboard", Icon: Wrench },
-  { id: "director", role: "DIRECTOR", name: "박원장 병원장", label: "병원장", desc: "ESG·ROI 경영 리포트", href: "/dashboard", Icon: Briefcase },
-  { id: "guardian", role: null, name: "보호자", label: "보호자 앱", desc: "떨어져도 가족 안심", href: "/guardian/home", Icon: Smartphone },
-] as const;
-
-const STATS = [
-  { Icon: Activity, value: "12", unit: "병실", label: "실시간 감염 감시" },
-  { Icon: Radio, value: "201호", unit: "LIVE", label: "실센서 IoT 가동" },
-  { Icon: ShieldAlert, value: "5", unit: "Tier", label: "AI 위험 등급" },
-];
-
-export default function LandingPage() {
+export default function LoginPage() {
   const router = useRouter();
-  const [showLogin, setShowLogin] = useState(false);
+  const [hospitalId, setHospitalId] = useState(HOSPITALS[0].id);
   const [id, setId] = useState("");
-  const [password, setPassword] = useState("");
+  const [pw, setPw] = useState("");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  const enter = (r: (typeof ROLES)[number]) => {
-    if (r.role) {
-      localStorage.setItem("role", r.role);
-      localStorage.setItem("userName", r.name);
-    }
-    router.push(r.href);
-  };
-
-  // 데모 PW는 환경변수로 주입(NEXT_PUBLIC_DEMO_PW). 미설정 시 로컬 개발 폴백.
-  const DEMO_PW = process.env.NEXT_PUBLIC_DEMO_PW || "1234";
-
-  const handleLogin = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password !== DEMO_PW) { setError("비밀번호가 일치하지 않습니다."); return; }
-    const r = ROLES.find((x) => x.id === id);
-    if (r) enter(r);
-    else setError("존재하지 않는 계정입니다. (nurse, director, fm 중 입력)");
+    setError("");
+    const acc = authenticate(id, pw);
+    if (!acc) { setError("아이디 또는 비밀번호가 올바르지 않습니다."); return; }
+    const hospital = HOSPITALS.find((h) => h.id === hospitalId) ?? HOSPITALS[0];
+    setBusy(true);
+    setSession({
+      account: acc.role, role: acc.role, name: acc.name,
+      hospital: hospital.name, hospitalId: hospital.id, region: hospital.region,
+    });
+    if (acc.role !== "GUARDIAN") await bindRegion(hospital.region);
+    router.push(ROLE_HOME[acc.role]);
   };
 
   return (
-    <main className="min-h-screen bg-[#F3F7FB] text-slate-800 flex flex-col relative overflow-hidden font-sans">
-      {/* 배경 글로우 (은은하게) */}
-      <div className="pointer-events-none absolute -top-40 -right-40 w-[36rem] h-[36rem] rounded-full bg-[#A50034]/[0.06] blur-[120px]" />
-      <div className="pointer-events-none absolute -bottom-40 -left-40 w-[32rem] h-[32rem] rounded-full bg-blue-500/[0.05] blur-[120px]" />
+    <main className="min-h-screen flex items-center justify-center bg-[#05060c] p-4 sm:p-6 font-sans">
+      <div className="w-full max-w-5xl grid md:grid-cols-2 bg-[#0a0b14] rounded-3xl border border-white/10 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-500">
 
-      <div className="relative flex-1 flex flex-col items-center justify-center px-4 py-10 max-w-6xl mx-auto w-full">
-        {/* 히어로 */}
-        <div className="text-center mb-10 animate-in slide-in-from-bottom-4 duration-700">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#A50034]/10 border border-[#A50034]/30 text-[#A50034] text-xs font-bold mb-5">
-            <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#A50034] opacity-75" /><span className="relative inline-flex rounded-full h-2 w-2 bg-[#A50034]" /></span>
-            LG ThinQ · 스마트 요양병원 감염관리 플랫폼
+        {/* ───────── 좌: Spline 3D 파티클 패널 ───────── */}
+        <div className="relative hidden md:block min-h-[640px] bg-[#0a0b14]">
+          <iframe
+            src="https://my.spline.design/particlenebula-9bJdvFnWOh4OCliIF6lbKqxs/"
+            title="Sentinel" loading="lazy"
+            className="absolute inset-0 w-full h-full pointer-events-none"
+            style={{ border: 0 }}
+          />
+          <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#0a0b14] via-[#0a0b14]/70 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-7 flex items-center gap-2 text-[11px] text-white/70">
+            <span>LG ThinQ</span><span className="w-1 h-1 rounded-full bg-white/40" />
+            <span>질병청 UIS 연동</span><span className="w-1 h-1 rounded-full bg-white/40" />
+            <span>ISMS-P 대응</span>
           </div>
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <ShieldAlert size={44} className="text-[#A50034]" strokeWidth={1.6} />
-            <h1 className="text-4xl md:text-6xl font-black tracking-tight text-slate-900">
-              ThinQ Space <span className="text-[#A50034]">Sentinel</span>
-            </h1>
-          </div>
-          <p className="text-slate-600 text-base md:text-xl font-medium">
-            요양병원 <span className="text-slate-900 font-bold">공기감염 조기경보</span> + ThinQ <span className="text-slate-900 font-bold">자동 방역</span>
-          </p>
         </div>
 
-        {/* 핵심 지표 스트립 */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-3xl mb-10 animate-in fade-in duration-1000">
-          {STATS.map((s, i) => (
-            <div key={i} className="bg-white border border-[#D6E2EF] rounded-2xl p-4 flex items-center gap-3 shadow-sm">
-              <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-[#A50034] shrink-0"><s.Icon size={20} /></div>
-              <div className="min-w-0">
-                <p className="text-lg font-black leading-tight truncate text-slate-900">{s.value}<span className="text-xs font-medium text-slate-400 ml-1">{s.unit}</span></p>
-                <p className="text-[11px] text-slate-500 font-medium truncate">{s.label}</p>
-              </div>
+        {/* ───────── 우: 로그인 폼 (다크 글래스 · 네뷸라 톤) ───────── */}
+        <div className="relative p-8 sm:p-11 flex flex-col justify-center text-white">
+          <div className="pointer-events-none absolute -top-20 -right-20 w-72 h-72 rounded-full bg-violet-500/20 blur-[90px]" />
+
+          <div className="relative flex flex-col items-center text-center mb-7">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-violet-500/30 ring-1 ring-white/10 mb-3">
+              <ShieldCheck size={26} className="text-white" />
             </div>
-          ))}
-        </div>
-
-        {/* 역할 진입 카드 */}
-        <div className="w-full animate-in slide-in-from-bottom-8 duration-700">
-          <p className="text-center text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">역할을 선택해 입장</p>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {ROLES.map((r) => (
-              <button
-                key={r.id}
-                onClick={() => enter(r)}
-                className="group text-left bg-white border border-[#D6E2EF] rounded-2xl p-5 shadow-sm transition-all hover:-translate-y-1 hover:border-[#A50034]/50 hover:shadow-lg flex flex-col gap-3"
-              >
-                <div className="w-12 h-12 rounded-xl bg-slate-100 group-hover:bg-[#A50034] flex items-center justify-center text-slate-500 group-hover:text-white transition-colors"><r.Icon size={24} /></div>
-                <div>
-                  <h3 className="font-bold text-base text-slate-900">{r.label}</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">{r.desc}</p>
-                </div>
-                <span className="mt-auto inline-flex items-center gap-1 text-xs font-bold text-slate-400 group-hover:text-[#A50034] transition-colors">
-                  입장 <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
-                </span>
-              </button>
-            ))}
+            <h1 className="text-xl font-black tracking-tight">Workspace Sentinel</h1>
+            <p className="text-[13px] text-white/50 mt-1">요양병원 감염관리 통합 관제</p>
           </div>
-        </div>
 
-        {/* 직원 사번 로그인 (보조) */}
-        <div className="w-full max-w-sm mt-8">
-          <button onClick={() => setShowLogin((v) => !v)} className="mx-auto flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 transition-colors">
-            <Lock size={12} /> 사번으로 로그인 <ChevronDown size={14} className={`transition-transform ${showLogin ? "rotate-180" : ""}`} />
-          </button>
-          {showLogin && (
-            <form onSubmit={handleLogin} className="mt-4 bg-white border border-[#D6E2EF] rounded-2xl p-5 space-y-3 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                <input type="text" value={id} onChange={(e) => setId(e.target.value)} placeholder="nurse / director / fm" className="w-full bg-[#F3F7FB] border border-[#D6E2EF] text-slate-800 text-sm px-9 py-2.5 rounded-lg focus:outline-none focus:border-[#A50034]" required />
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="비밀번호 (1234)" className="w-full bg-[#F3F7FB] border border-[#D6E2EF] text-slate-800 text-sm px-9 py-2.5 rounded-lg focus:outline-none focus:border-[#A50034]" required />
-              </div>
-              {error && <p className="text-red-600 text-xs font-medium text-center">{error}</p>}
-              <button type="submit" className="w-full bg-[#A50034] hover:bg-[#7B0027] text-white text-sm font-bold py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors">로그인 <ArrowRight size={16} /></button>
-            </form>
-          )}
+          <form onSubmit={onSubmit} className="relative space-y-3.5">
+            <Field label="병원" icon={<Building2 size={16} />}>
+              <select
+                value={hospitalId} onChange={(e) => setHospitalId(e.target.value)}
+                className="w-full bg-white/[0.04] border border-white/10 text-white text-sm pl-9 pr-9 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-400/60 appearance-none transition [&>option]:bg-[#0a0b14]"
+              >
+                {HOSPITALS.map((h) => <option key={h.id} value={h.id}>{h.name} · {h.region}</option>)}
+              </select>
+              <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
+            </Field>
+
+            <Field label="아이디" icon={<User size={16} />}>
+              <input
+                value={id} onChange={(e) => setId(e.target.value)} autoComplete="username" placeholder="아이디" required
+                className="w-full bg-white/[0.04] border border-white/10 text-white placeholder:text-white/30 text-sm pl-9 pr-3 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-400/60 transition"
+              />
+            </Field>
+
+            <Field label="비밀번호" icon={<Lock size={16} />}>
+              <input
+                type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" placeholder="비밀번호" required
+                className="w-full bg-white/[0.04] border border-white/10 text-white placeholder:text-white/30 text-sm pl-9 pr-3 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-400/60 transition"
+              />
+            </Field>
+
+            {error && (
+              <p className="text-xs text-red-300 font-semibold bg-red-500/10 border border-red-500/25 rounded-lg px-3 py-2">{error}</p>
+            )}
+
+            <button
+              type="submit" disabled={busy}
+              className="w-full bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-400 hover:to-violet-500 active:scale-[0.99] disabled:opacity-60 text-white text-sm font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-violet-500/25 mt-1"
+            >
+              {busy ? "로그인 중…" : <>로그인 <ArrowRight size={16} /></>}
+            </button>
+          </form>
+
+          <div className="relative mt-6 pt-5 border-t border-white/10">
+            <p className="text-[11px] font-bold text-white/35 mb-2 text-center">데모 계정</p>
+            <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-[11px] text-white/45">
+              <span><b className="text-white/75">admin</b>/admin</span>
+              <span><b className="text-white/75">nurse</b>/1234</span>
+              <span><b className="text-white/75">fm</b>/1234</span>
+              <span><b className="text-white/75">director</b>/1234</span>
+              <span><b className="text-white/75">guardian</b>/1234</span>
+            </div>
+          </div>
         </div>
       </div>
-
-      <footer className="relative text-center text-[11px] text-slate-400 pb-6">
-        © 2026 LG DX School · ThinQ Workspace Sentinel — B2G 요양병원 감염관리 PoC
-      </footer>
     </main>
+  );
+}
+
+function Field({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="text-xs font-bold text-white/45 mb-1.5 block">{label}</label>
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 z-10">{icon}</span>
+        {children}
+      </div>
+    </div>
   );
 }

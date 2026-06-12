@@ -207,7 +207,7 @@
     <div class="card ctrl"><div class="ct" style="padding-bottom:6px">감염확률 산출 · Rudnick-Milton 재호흡 모델</div>
       <div class="fchain" id="fchain" style="padding:0 14px">센서 수신 대기 중…</div></div>
     <div class="card ctrl">
-      <div class="crow"><span class="badge">📍 지역<select id="regionSel" onchange="selectRegion()"><option>로딩…</option></select></span>
+      <div class="crow"><span class="badge">📍 광주광역시 <span style="color:#94a3b8;font-size:10px">· 병원 소재지 고정</span></span>
         <span class="gov idle" id="gov">대기</span></div>
       <div class="btns"><button onclick="ctl('on')">전원 ON</button><button onclick="ctl('off')">전원 OFF</button>
         <button onclick="ctl('rapid')">급속</button><button onclick="ctl('auto')">자동</button>
@@ -289,10 +289,21 @@ function setTier(t){const i=TIER[t]||TIER.MONITOR;
   document.getElementById('tierKo').textContent=i.ko;document.getElementById('tierDesc').textContent=i.d;
   const g=document.getElementById('gauge');g.style.setProperty('--gc',i.c);g.style.setProperty('--p',i.p);
   document.getElementById('achTarget').textContent='목표 ACH '+i.ach;renderScale(t||'MONITOR');renderOrch(t);}
-function renderOrch(t){document.getElementById('orchList').innerHTML=APPLIANCES.map(a=>{
+// 가전 오케스트레이션 — 백엔드 /control-plan(병원체+계절+tier 정책)이 단일 진실.
+// tier 오버라이드로 라이브/데모 모두 동일 로직. 네트워크 실패 시 로컬 폴백(renderOrchLocal).
+const ORCH_IC={AIR_PURIFIER:IC.purifier,AIR_CONDITIONER:IC.ac,VENTILATOR:IC.vent,HUMIDIFIER:IC.humid,DEHUMIDIFIER:IC.humid,BOILER:IC.boiler,ROBOT_CLEANER:IC.robot,STYLER:IC.styler};
+function renderOrchLocal(t){document.getElementById('orchList').innerHTML=APPLIANCES.map(a=>{
   const act=a.act(t);const isOn=!['대기','유지','정기','계절 연동'].includes(act);
   const cls=a.live?'live':(isOn?'on':'std');
   return `<div class="arow"><span class="ic">${a.ic}</span><span class="an"><b>${a.n}</b><small>${a.lever}</small></span><span class="ast ${cls}">${a.live?'● '+act:act}</span></div>`;}).join('');}
+let _orchSeq=0;
+async function renderOrch(t){const seq=++_orchSeq;
+  try{const r=await fetch(`/api/v1/sensor/control-plan?space_id=${SPACE}&tier=${encodeURIComponent(t||'MONITOR')}`);
+    const p=await r.json();if(seq!==_orchSeq)return; // 더 최신 요청이 있으면 폐기
+    if(!Array.isArray(p.applied))throw 0;
+    const row=(d,on)=>`<div class="arow"><span class="ic">${ORCH_IC[d.device]||'⚙'}</span><span class="an"><b>${d.name_kr}</b><small>${d.reason}</small></span><span class="ast ${on?'on':'std'}">${on?d.setting:'대기'}</span></div>`;
+    document.getElementById('orchList').innerHTML=p.applied.map(d=>row(d,true)).concat((p.skipped||[]).map(d=>row(d,false))).join('');
+  }catch(e){renderOrchLocal(t);} }
 function tickUpdated(){const u=document.getElementById('updated');if(_lastTs==null)return;
   const s=Math.round((Date.now()-_lastTs)/1000);u.textContent=(s<2?'방금':s+'초 전')+' 수신';u.style.color=s>10?'#c2410c':'#94a3b8';}
 setInterval(tickUpdated,1000);
@@ -451,7 +462,7 @@ async function initMap(){try{
   svg.selectAll('path').data(feat.features).join('path')
     .attr('d',path).attr('fill','#cbd5e1')
     .attr('data-name',d=>d.properties.name)
-    .on('click',(e,d)=>{document.getElementById('regionSel').value=findRegion(d.properties.name);selectRegion();
+    .on('click',(e,d)=>{ // 지역 고정(광주) — 클릭은 시각 하이라이트만, 지역 변경 불가
       svg.selectAll('path').classed('sel',false);d3.select(e.target).classed('sel',true);});
   await loadRegions();}catch(e){console.log('map',e);}}
 function findRegion(mapName){const k=norm(mapName);for(const r in _regionData){if(norm(r)===k)return r;}return mapName;}
@@ -459,13 +470,13 @@ function applyRegionColors(){d3.select('#korea').selectAll('path').attr('fill',f
   const k=norm(d.properties.name);let best=null;for(const r in _regionData){if(norm(r)===k){best=_regionData[r];break;}}
   return best?MAPCOL(best.peak_level,best.peak_score):'#e2e8f0';});}
 
-async function loadRegions(){try{const r=await fetch('/api/v1/external/regions');const j=await r.json();const sel=document.getElementById('regionSel');
+// 외부 감염신호 지역은 병원 소재지(광주)로 고정 — 키오스크 벽걸이에서 변경 불가
+const FIXED_REGION='광주광역시';
+async function loadRegions(){try{const r=await fetch('/api/v1/external/regions');const j=await r.json();
   if(j.available&&j.regions&&j.regions.length){_regionData={};j.regions.forEach(x=>{_regionData[x.region]=x;});
-    sel.innerHTML='<option value="">— 지역 선택 —</option>'+j.regions.map(x=>`<option value="${x.region}">${x.region} · 피크 ${x.peak_score}(${x.peak_level}) · ${x.lead_days!=null?x.lead_days+'일선행':'—'}</option>`).join('');
     applyRegionColors();}
-  else sel.innerHTML='<option value="">UIS 미연결</option>';}catch(e){document.getElementById('regionSel').innerHTML='<option>오류</option>';}}
-async function selectRegion(){const region=document.getElementById('regionSel').value;const el=document.getElementById('ext-sig');
-  if(!region){el.textContent='지역을 클릭하면 선제 경보 연동';return;}
+  await selectRegion();}catch(e){console.log('regions',e);}}
+async function selectRegion(){const region=FIXED_REGION;const el=document.getElementById('ext-sig');
   try{const r=await fetch('/api/v1/external/select-region',{method:'POST',headers:POST_HDR,body:JSON.stringify({region})});const j=await r.json();
     if(j.selected){const s=j.selected;const sig=(s.leading_signals||[]).slice(0,3).map(x=>`${x.layer} ${x.value}`).join(' · ');
       const lead=s.lead_days!=null?`<b style="color:#15803d">${s.lead_days}일 선행 포착</b>`:'';const bc=(TIER[j.boost_tier]||TIER.MONITOR);

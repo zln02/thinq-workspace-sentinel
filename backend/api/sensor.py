@@ -14,6 +14,7 @@
 """
 from __future__ import annotations
 
+import datetime
 import logging
 import time
 from typing import Optional
@@ -35,11 +36,29 @@ _ACTIVE_TIERS = {"ALERT", "HIGH_RISK", "CRITICAL"}
 _last_tier: dict[str, str] = {}
 _pending_approval: dict[str, dict] = {}
 # 역할분리: 카메라(노트북 YOLO)가 실측 재실 '인원수'를 주력 제공, 라파이/아두이노는 환경센서 전용.
-# 카메라 POST(occupancy 명시)마다 갱신 → occupancy 생략된 환경 POST(라파이)가 최근 인원수를 재사용.
-# 카메라 미가동 시엔 DEMO_OCCUPANCY 폴백(ingest_reading 참조).
-_last_occupancy: dict[str, int] = {}
 _space_uuid_cache: dict[str, object] = {}
 _coway_cache: dict[str, object] = {"t": 0.0, "data": None}
+
+# 공간별 직전 측정값 캐시 (carry-forward) — 카메라(occupancy)와 CO2 센서가 서로 다른
+# reading으로 따로 들어와도 직전 신선값으로 미측정 필드를 보충해, 한 피드가 다른 피드를
+# 덮어써 tier가 깜빡이는 걸 막는다. 단일 uvicorn 프로세스 기준 인메모리(기존 _last_tier와 동일 정책).
+_last_env: dict[str, dict] = {}   # space_id -> {field: (value, ts)}
+_ENV_CARRY_TTL = 300.0            # 초: 직전값 유효시간(5분). 넘으면 stale로 폐기.
+
+
+def _carry_forward(space_id: str, field: str, value, now: float):
+    """value가 있으면 캐시 갱신 후 그대로 반환. None이면 신선한 직전값으로 보충(없으면 None).
+
+    occupancy=0(빈 병실)은 None이 아니므로 실측으로 보존된다 — 카운트 0을 carry로 덮지 않음.
+    """
+    cache = _last_env.setdefault(space_id, {})
+    if value is not None:
+        cache[field] = (value, now)
+        return value
+    prev = cache.get(field)
+    if prev and (now - prev[1]) < _ENV_CARRY_TTL:
+        return prev[0]
+    return None
 
 # 시연 병동 파라미터 (Rudnick-Milton 입력)
 DEMO_OCCUPANCY = 10
@@ -252,16 +271,18 @@ async def ingest_reading(r: SensorReading):
         if pm25 is None:
             pm25 = aq.get("pm25")
 
+    # 1.5) carry-forward — 카메라(occupancy)와 CO2 센서가 따로 들어와도 합쳐지게,
+    #      직전 신선값으로 미측정 필드를 보충. occupancy=0(빈 병실)은 실측이라 그대로 보존.
+    now = time.time()
+    co2 = _carry_forward(r.space_id, "co2", co2, now)
+    pm25 = _carry_forward(r.space_id, "pm25", pm25, now)
+    occ_eff = _carry_forward(r.space_id, "occupancy", r.occupancy, now)
+
     # 2) Rudnick-Milton 재호흡률 → PoI → tier
-    #    재실 인원 해석(역할분리): 카메라가 occupancy를 명시하면 그 값을 채택+보존,
-    #    라파이 환경 POST(occupancy 생략)는 직전 카메라 인원수를 재사용 → tier 깜빡임 방지.
-    #    카메라가 한 번도 안 붙었으면 DEMO_OCCUPANCY 폴백. 0=빈 공간→PoI 0.
-    if r.occupancy is not None:
-        _last_occupancy[r.space_id] = r.occupancy
-        n_eff = r.occupancy
-    else:
-        n_eff = _last_occupancy.get(r.space_id, DEMO_OCCUPANCY)
-    tier, poi, f = compute_tier(co2, r.gas_raw, r.temp_c, r.humidity, occupancy=n_eff)
+    #    재실 인원: 카메라가 occupancy 명시 → 채택+보존, 환경 POST(생략) → 직전값 carry(위 1.5),
+    #    한 번도 안 붙었으면 DEMO_OCCUPANCY 폴백. 0=빈 공간→PoI 0. (carry_forward가 co2/pm25도 함께 보충)
+    n_eff = DEMO_OCCUPANCY if occ_eff is None else occ_eff
+    tier, poi, f = compute_tier(co2, r.gas_raw, r.temp_c, r.humidity, occupancy=occ_eff)
     # 외부신호 선제 boost — 선택 지역 감염병 확산이 심하면 센서 정상이어도 tier 상향(사전예방).
     # tier_source: 최종 tier가 센서발(sensor)인지 외부 조기경보발(external)인지 — 대시보드 인과 표시용.
     tier_source = "sensor"
@@ -468,6 +489,47 @@ def _sim_reading(space_name: str, space_type: str) -> dict:
     co2 = max(420, base_co2 + wave * 140)
     return {"gas_raw": round(gas, 0), "temp_c": round(temp, 1),
             "humidity": round(hum, 1), "co2_ppm": round(co2, 0), "pm25": round(15 + (seed % 25), 0)}
+
+
+def _season_now_kst() -> str:
+    """KST 현재 월 → 계절 (가전 정책 게이팅용)."""
+    m = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9))).month
+    if m in (12, 1, 2):
+        return "winter"
+    if m in (3, 4, 5):
+        return "spring"
+    if m in (6, 7, 8):
+        return "summer"
+    return "autumn"
+
+
+# 계절 기본 위협 병원체 (관리자가 pathogen 미지정 시 추론) — 데모/조회 기본값일 뿐, 실제 위협은 선택 가능
+_SEASON_DEFAULT_PATHOGEN = {"winter": "INFLUENZA", "spring": "RSV", "summer": "NOROVIRUS", "autumn": "COVID-19"}
+
+
+@router.get("/control-plan")
+async def control_plan(space_id: str = "ward_a", pathogen: str | None = None,
+                       season: str | None = None, tier: str | None = None):
+    """관리자 대시보드 흐름 viz(⑤): tier + 병원체 + 계절 → 가전 8종이 '어느 환경에
+    어떤 세팅으로 왜' 움직이는지 설명 반환.
+
+    tier 미지정 시 해당 공간 라이브값(_last_tier, 외부신호 boost 반영) 사용.
+    tier 지정 시 그 값으로 시뮬레이션 — 키오스크 데모 자동재생/관리자 what-if 용.
+    pathogen/season 미지정 시 KST 계절로 추론.
+    """
+    from backend.services.smart_protocol import explain_plan
+
+    if tier:
+        tier_source = "override"
+    else:
+        tier = _last_tier.get(space_id, "MONITOR")
+        tier_source = "live" if space_id in _last_tier else "default"
+    season = season or _season_now_kst()
+    pathogen = pathogen or _SEASON_DEFAULT_PATHOGEN.get(season, "COVID-19")
+    plan = explain_plan(pathogen, tier, season)
+    plan["space_id"] = space_id
+    plan["tier_source"] = tier_source
+    return plan
 
 
 @router.get("/spaces/overview")

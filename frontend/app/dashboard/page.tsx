@@ -14,6 +14,8 @@ import {
 } from 'recharts';
 import { FloorPlan, type SpaceCard } from "@/components/domain/FloorPlan";
 import { useLiveWard, useSpacesOverview, useReport, useExternalSignal } from "@/lib/useSentinel";
+import FlowPanel from "@/components/domain/FlowPanel";
+import { getSession, canAccess, clearSession } from "@/lib/auth";
 import { tierRank, autoResponse } from "@/lib/wardData";
 
 // ============================================================================
@@ -211,12 +213,13 @@ export default function DashboardPage() {
   const { data: live, connected: liveConnected } = useLiveWard("ward_a");
 
   useEffect(() => {
-    const savedRole = localStorage.getItem("role");
-    const savedName = localStorage.getItem("userName");
-    // 기본 진입은 간호사(ICN) 뷰 — 시연·영상에서 /dashboard 직접 접근 시 바로 운영 화면이 뜨도록
-    setRole(savedRole || "NURSE");
-    setUserName(savedName || "수간호사");
-    
+    // 권한 가드 — 미로그인/타권한 접근 시 로그인으로. SUPER 는 전체 허용.
+    const s = getSession();
+    if (!canAccess(s, ["NURSE", "FM", "DIRECTOR"])) { router.replace("/"); return; }
+    const viewRole = ["NURSE", "FM", "DIRECTOR"].includes(s!.role) ? s!.role : "NURSE";
+    setRole(viewRole);
+    setUserName(s!.name || "수간호사");
+
     const timer = setInterval(() => {
       const now = new Date();
       setTime(now.toLocaleString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', hour: '2-digit', minute: '2-digit', second: '2-digit' }));
@@ -224,7 +227,7 @@ export default function DashboardPage() {
     return () => clearInterval(timer);
   }, [router]);
 
-  const handleLogout = () => { localStorage.removeItem("role"); localStorage.removeItem("userName"); router.push("/"); };
+  const handleLogout = () => { clearSession(); router.push("/"); };
 
   if (!role) return null;
 
@@ -232,8 +235,8 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-[#F3F7FB] text-slate-700 flex flex-col font-sans">
       <header className="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-30 shadow-md">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg bg-[#A50034]/20 border border-[#A50034]/50 flex items-center justify-center text-[#A50034]"><ShieldAlert size={24} /></div>
-          <h1 className="text-xl font-bold tracking-wide text-slate-900">ThinQ Space <span className="text-[#A50034]">Sentinel</span></h1>
+          <div className="w-10 h-10 rounded-lg bg-[#7a0024] flex items-center justify-center text-white shadow-sm"><ShieldAlert size={22} /></div>
+          <h1 className="text-xl font-black tracking-tight text-slate-900">ThinQ Space <span className="text-[#7a0024]">Sentinel</span></h1>
         </div>
         
         <div className="flex items-center gap-8">
@@ -285,8 +288,12 @@ const LV_STYLE: Record<string, { dot: string; text: string; bg: string; label: s
 
 function ExternalForecastBanner() {
   const regions = useExternalSignal(60000);
+  const [myRegion, setMyRegion] = useState<string>("");
+  useEffect(() => { setMyRegion(getSession()?.region ?? ""); }, []);
   if (!regions.length) return null;
-  const top = [...regions].sort((a, b) => (b.live_score ?? 0) - (a.live_score ?? 0))[0];
+  // 로그인 병원의 지역 신호만 표시(지역 고정). 못 찾으면 전국 최고위험으로 폴백.
+  const top = regions.find((r) => r.region === myRegion)
+    ?? [...regions].sort((a, b) => (b.live_score ?? 0) - (a.live_score ?? 0))[0];
   const st = LV_STYLE[top.live_level] ?? LV_STYLE.GREEN;
   const disease = DISEASE_KR[top.disease] ?? top.disease;
   const peak = top.conf_peak_date ? `${Number(top.conf_peak_date.slice(5, 7))}월 ${Number(top.conf_peak_date.slice(8, 10))}일` : "-";
@@ -497,6 +504,9 @@ function FMView() {
         </div>
       </div>
 
+      {/* 자동 방역 의사결정 흐름 — 외부신호→센서→계산→결정→가전 (시설관리자: 가전 제어 근거) */}
+      <FlowPanel spaceId="ward_a" />
+
       <div className="grid grid-cols-2 gap-6">
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg flex flex-col h-[400px]">
           <h3 className="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2"><TrendingUp size={20} className="text-blue-600"/> 일별 자동 제어 건수 및 평균 감염 위험도</h3>
@@ -608,8 +618,25 @@ function FMView() {
 // ============================================================================
 // 💼 3. 병원장(DIRECTOR) 대시보드
 // ============================================================================
+// 병원장 뷰 tier 색/라벨 (배지용)
+const DIR_TIER: Record<string, { ko: string; cls: string }> = {
+  MONITOR: { ko: "정상", cls: "bg-emerald-100 text-emerald-700" },
+  CAUTION: { ko: "주의", cls: "bg-amber-100 text-amber-700" },
+  ALERT: { ko: "경계", cls: "bg-orange-100 text-orange-700" },
+  HIGH_RISK: { ko: "고위험", cls: "bg-red-100 text-red-700" },
+  CRITICAL: { ko: "위급", cls: "bg-red-200 text-red-900" },
+};
+// 법규 준수 자동 증빙 (요양병원 감염관리 의무 ↔ Sentinel 자동 생성 증빙)
+const COMPLIANCE = [
+  { law: "의료법 제36조", duty: "감염관리위원회 정기 보고", evidence: "제어 이력·알림 자동 PDF", org: "보건복지부" },
+  { law: "감염병예방법 제16조", duty: "감염병 발생 시 신고·관리", evidence: "tier 변화 → 보건소 자동 알림", org: "질병관리청" },
+  { law: "실내공기질관리법 제5조", duty: "CO₂·PM·HCHO 측정 의무", evidence: "센서 연속 측정 자동 보고", org: "환경부" },
+  { law: "요양병원 적정성평가", duty: "감염관리 영역 연 1회 평가", evidence: "자동 증빙 리포트 (수가 가산)", org: "심평원" },
+];
+
 function DirectorView() {
   const report = useReport(30);            // 최근 30일 실측 집계 (없으면 null → 로딩/시뮬)
+  const spaces = useSpacesOverview();      // 공간별 라이브 위험도
   const isReal = report?.source === "실측";
 
   const fmtKRW = (won: number) =>
@@ -700,6 +727,50 @@ function DirectorView() {
               <Line type="monotone" dataKey="ThinQ자동제어" name="ThinQ 자동제어 도입" stroke="#A50034" strokeWidth={3} dot={{ r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* 공간별 감염위험 현황 (라이브) + 법규 준수 자동 증빙 */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* 공간별 현황 */}
+        <div className="lg:col-span-3 bg-white border border-slate-200 rounded-2xl p-7 shadow-sm">
+          <h3 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2"><ActivitySquare size={20} className="text-blue-600" /> 공간별 감염위험 현황</h3>
+          <p className="text-sm text-slate-500 mb-5">전 병동 실시간 위험 등급 · Wells-Riley PoI</p>
+          <div className="grid grid-cols-2 gap-2.5">
+            {(spaces.length ? spaces : []).slice(0, 8).map((s) => {
+              const t = DIR_TIER[s.tier] ?? DIR_TIER.MONITOR;
+              return (
+                <div key={s.space_id} className="flex items-center justify-between border border-slate-100 rounded-xl px-4 py-3 bg-slate-50/60">
+                  <div className="min-w-0">
+                    <p className="font-bold text-slate-800 text-sm truncate">{s.space_name}</p>
+                    <p className="text-[11px] text-slate-400">PoI {s.poi != null ? (s.poi * 100).toFixed(1) + "%" : "—"} · CO₂ {s.co2_ppm ?? "—"}</p>
+                  </div>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold shrink-0 ${t.cls}`}>{t.ko}</span>
+                </div>
+              );
+            })}
+            {!spaces.length && <p className="col-span-2 text-sm text-slate-400 py-8 text-center">현황 불러오는 중…</p>}
+          </div>
+        </div>
+
+        {/* 법규 준수 자동 증빙 */}
+        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-7 shadow-sm">
+          <h3 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2"><CheckCircle2 size={20} className="text-emerald-600" /> 법규 준수 자동 증빙</h3>
+          <p className="text-sm text-slate-500 mb-5">
+            감염관리 의무 → Sentinel 자동 증빙 · 누적 {report ? report.readings.toLocaleString() : "—"}건 기록
+          </p>
+          <div className="space-y-2.5">
+            {COMPLIANCE.map((c) => (
+              <div key={c.law} className="flex items-start gap-3 border border-slate-100 rounded-xl px-4 py-2.5">
+                <CheckCircle2 size={16} className="text-emerald-500 mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-bold text-slate-800 text-[13px]">{c.law} <span className="font-normal text-slate-400">· {c.org}</span></p>
+                  <p className="text-[11px] text-slate-500">{c.duty}</p>
+                  <p className="text-[11px] text-emerald-700 font-semibold mt-0.5">→ {c.evidence}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
