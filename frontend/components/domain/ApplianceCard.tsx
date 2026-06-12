@@ -26,7 +26,7 @@ export default function ApplianceCard({
     >
       {/* 실행 중 점멸 */}
       {isExecuting && (
-        <span className="absolute left-2 top-2 w-2 h-2 rounded-full bg-[#A50034] animate-pulse" />
+        <span className="absolute left-2 top-2 w-2 h-2 rounded-full bg-[#7a0024] animate-pulse" />
       )}
 
       <div className="text-3xl mb-2">{icon}</div>

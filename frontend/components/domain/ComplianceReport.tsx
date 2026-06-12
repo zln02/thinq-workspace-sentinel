@@ -30,7 +30,7 @@ export default function ComplianceReport() {
       {/* 진행률 바 */}
       {loading && (
         <div className="w-full bg-gray-100 rounded-full h-2 mb-3">
-          <div className="bg-[#A50034] h-2 rounded-full animate-pulse w-3/4" />
+          <div className="bg-[#7a0024] h-2 rounded-full animate-pulse w-3/4" />
         </div>
       )}
 
@@ -44,7 +44,7 @@ export default function ComplianceReport() {
       <button
         onClick={handleDownload}
         disabled={loading}
-        className="w-full bg-[#A50034] text-white py-2 rounded-lg text-sm font-semibold hover:bg-[#7B0027] transition disabled:opacity-50"
+        className="w-full bg-[#7a0024] text-white py-2 rounded-lg text-sm font-semibold hover:bg-[#7B0027] transition disabled:opacity-50"
       >
         {loading ? "생성 중..." : "📄 감염관리 증빙 PDF 다운로드"}
       </button>

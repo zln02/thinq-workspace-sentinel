@@ -24,8 +24,8 @@ export default function UISTimeline() {
           <XAxis dataKey="week" tick={{ fontSize: 11 }} />
           <YAxis tick={{ fontSize: 11 }} />
           <Tooltip />
-          <ReferenceLine x="현재" stroke="#A50034" strokeDasharray="4 4" label={{ value: "현재", fontSize: 11 }} />
-          <Line type="monotone" dataKey="otc"    stroke="#A50034" strokeWidth={2} dot={false} name="💊 OTC" />
+          <ReferenceLine x="현재" stroke="#7a0024" strokeDasharray="4 4" label={{ value: "현재", fontSize: 11 }} />
+          <Line type="monotone" dataKey="otc"    stroke="#7a0024" strokeWidth={2} dot={false} name="💊 OTC" />
           <Line type="monotone" dataKey="kowas"  stroke="#EF6C00" strokeWidth={2} dot={false} name="🧪 KOWAS" />
           <Line type="monotone" dataKey="search" stroke="#F9A825" strokeWidth={2} dot={false} name="🔍 검색" />
         </LineChart>

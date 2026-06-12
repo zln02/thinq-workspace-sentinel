@@ -27,7 +27,7 @@ export default function AutoActionLog() {
         {LOGS.map((log, i) => (
           <div key={i} className="flex items-center gap-3 text-sm border-b pb-2 last:border-0">
             <span className="text-gray-400 w-12">{log.time}</span>
-            <span className="bg-[#FCE8EE] text-[#A50034] text-xs font-bold px-2 py-0.5 rounded">{log.tier}</span>
+            <span className="bg-[#FCE8EE] text-[#7a0024] text-xs font-bold px-2 py-0.5 rounded">{log.tier}</span>
             <span className="text-gray-500 w-16">{log.room}</span>
             <span className="flex-1 text-gray-700">{log.action}</span>
             <span className={`font-semibold ${RESULT_COLOR[log.result]}`}>{log.result}</span>

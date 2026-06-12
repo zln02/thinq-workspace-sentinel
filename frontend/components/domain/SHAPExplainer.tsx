@@ -23,7 +23,7 @@ export default function SHAPExplainer() {
           <Tooltip />
           <Bar dataKey="value" radius={4}>
             {DATA.map((entry, i) => (
-              <Cell key={i} fill={entry.positive ? "#A50034" : "#9B9B9B"} />
+              <Cell key={i} fill={entry.positive ? "#7a0024" : "#9B9B9B"} />
             ))}
           </Bar>
         </BarChart>

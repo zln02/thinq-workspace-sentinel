@@ -106,7 +106,7 @@ export function FloorPlan({ spaces }: { spaces: SpaceCard[] }) {
             </div>
 
             <div className="p-4 border-t border-[#D6E2EF] shrink-0">
-              <button onClick={() => setSelected(null)} className="w-full py-3 bg-[#A50034] text-white rounded-xl text-sm font-bold hover:bg-[#7B0027] transition">닫기</button>
+              <button onClick={() => setSelected(null)} className="w-full py-3 bg-[#7a0024] text-white rounded-xl text-sm font-bold hover:bg-[#7B0027] transition">닫기</button>
             </div>
           </div>
         </div>

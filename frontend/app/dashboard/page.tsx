@@ -258,7 +258,7 @@ export default function DashboardPage() {
 
           <div className="flex items-center gap-4 border-l border-slate-200 pl-8">
             <span className="text-slate-900 font-bold text-lg">{userName}</span>
-            <button onClick={handleLogout} className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-red-50 hover:text-[#A50034] text-slate-600 rounded-lg text-sm transition-colors border border-slate-200 hover:border-red-200">
+            <button onClick={handleLogout} className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-red-50 hover:text-[#7a0024] text-slate-600 rounded-lg text-sm transition-colors border border-slate-200 hover:border-red-200">
               <LogOut size={14} /> 로그아웃
             </button>
           </div>
@@ -308,7 +308,7 @@ function ExternalForecastBanner() {
       </div>
       <div className="hidden sm:block h-9 w-px bg-slate-200" />
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-slate-700 font-bold">📈 유행 피크 예측 {peak}{top.lead_days != null && top.lead_days > 0 ? <span className="text-[#A50034]"> · D-{top.lead_days} 선행 경보</span> : null}</p>
+        <p className="text-sm text-slate-700 font-bold">📈 유행 피크 예측 {peak}{top.lead_days != null && top.lead_days > 0 ? <span className="text-[#7a0024]"> · D-{top.lead_days} 선행 경보</span> : null}</p>
         <p className="text-xs text-slate-500 mt-0.5">예측 위험 도달 시 ThinQ가 전 병동 <b className="text-slate-700">선제 환기·정화 자동 강화</b> · 전국 {regions.length}개 지역 실시간 감시</p>
       </div>
       <span className="relative flex h-2.5 w-2.5 shrink-0">
@@ -352,19 +352,19 @@ function NurseView() {
 
       {/* 상단 KPI — 환경·감염·ThinQ 자동대응 중심 (백엔드 라이브) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white border border-[#D6E2EF] rounded-2xl p-5 shadow-sm flex items-center gap-4 border-t-[3px] border-t-blue-500">
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-[0_4px_12px_rgba(0,0,0,0.05)] flex items-center gap-4 border-t-[3px] border-t-blue-500">
           <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0"><Activity size={20} /></div>
           <div><p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">실시간 감시 공간</p><div className="text-2xl font-black text-slate-900">{spaces.length}<span className="text-xs text-slate-400 ml-1 font-normal">개</span></div></div>
         </div>
-        <div onClick={() => setModal("DANGER")} className="bg-white border border-[#D6E2EF] rounded-2xl p-5 shadow-sm flex items-center gap-4 cursor-pointer hover:bg-red-50/40 transition group border-t-[3px] border-t-[#A50034]">
-          <div className="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center text-[#A50034] shrink-0"><AlertTriangle size={20} /></div>
-          <div><p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-0.5 group-hover:text-[#A50034] transition-colors">주의·위험 공간</p><div className="text-2xl font-black text-slate-900">{atRisk.length}<span className="text-xs text-slate-400 ml-1 font-normal">개소</span></div></div>
+        <div onClick={() => setModal("DANGER")} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-[0_4px_12px_rgba(0,0,0,0.05)] flex items-center gap-4 cursor-pointer hover:bg-red-50/40 transition group border-t-[3px] border-t-[#7a0024]">
+          <div className="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center text-[#7a0024] shrink-0"><AlertTriangle size={20} /></div>
+          <div><p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-0.5 group-hover:text-[#7a0024] transition-colors">주의·위험 공간</p><div className="text-2xl font-black text-slate-900">{atRisk.length}<span className="text-xs text-slate-400 ml-1 font-normal">개소</span></div></div>
         </div>
-        <div className="bg-white border border-[#D6E2EF] rounded-2xl p-5 shadow-sm flex items-center gap-4 border-t-[3px] border-t-emerald-500">
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-[0_4px_12px_rgba(0,0,0,0.05)] flex items-center gap-4 border-t-[3px] border-t-emerald-500">
           <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0"><Radio size={20} /></div>
           <div><p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-0.5 flex items-center gap-1">201호 실센서 <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /></p><div className="text-xl font-black text-slate-900">{liveTier}</div></div>
         </div>
-        <div className="bg-white border border-[#D6E2EF] rounded-2xl p-5 shadow-sm flex items-center gap-4 border-t-[3px] border-t-emerald-500">
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-[0_4px_12px_rgba(0,0,0,0.05)] flex items-center gap-4 border-t-[3px] border-t-emerald-500">
           <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0"><Zap size={20} /></div>
           <div><p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">ThinQ 자동대응</p><div className="text-2xl font-black text-slate-900">{responding.length}<span className="text-xs text-slate-400 ml-1 font-normal">개소 가동</span></div></div>
         </div>
@@ -378,7 +378,7 @@ function NurseView() {
         </div>
 
         <div className="xl:col-span-1">
-          <div className="bg-white border border-[#D6E2EF] rounded-2xl p-5 shadow-sm h-full flex flex-col border-t-[3px] border-t-emerald-500">
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-[0_4px_12px_rgba(0,0,0,0.05)] h-full flex flex-col border-t-[3px] border-t-emerald-500">
             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 mb-1"><Zap className="text-emerald-600" size={18} /> ThinQ 자동대응 라이브</h3>
             <p className="text-[11px] text-slate-500 mb-4">위험 감지 시 가전이 자동 가동됩니다</p>
             <div className="space-y-3 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
@@ -388,10 +388,10 @@ function NurseView() {
                 const tier = s.snapshot.tier;
                 const isCrit = tierRank(tier) >= 4;
                 return (
-                  <div key={s.space_id} className={`rounded-xl border p-3 ${isCrit ? "bg-[#A50034]/[0.06] border-[#A50034]/30" : "bg-slate-50 border-slate-200"}`}>
+                  <div key={s.space_id} className={`rounded-xl border p-3 ${isCrit ? "bg-[#7a0024]/[0.06] border-[#7a0024]/30" : "bg-slate-50 border-slate-200"}`}>
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-black text-slate-900 text-sm truncate">{s.space_name}</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded shrink-0 ${isCrit ? "bg-[#A50034] text-white" : "bg-orange-100 text-orange-700"}`}>{tier}</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded shrink-0 ${isCrit ? "bg-[#7a0024] text-white" : "bg-orange-100 text-orange-700"}`}>{tier}</span>
                     </div>
                     <div className="space-y-1.5">
                       {autoResponse(tier).map((d, i) => (
@@ -411,7 +411,7 @@ function NurseView() {
       </div>
 
       {/* 하단: 수간호사 인수인계 (축소) */}
-      <div className="bg-white border border-[#D6E2EF] rounded-2xl p-6 shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
         <h3 className="text-base font-bold text-slate-900 mb-3 flex items-center gap-2"><FileText className="text-blue-600" size={18} /> 수간호사 인수인계</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
@@ -433,13 +433,13 @@ function NurseView() {
               const devs = autoResponse(tier);
               const isCrit = tierRank(tier) >= 3;
               return (
-                <div key={s.space_id} className={`p-5 border rounded-xl ${isCrit ? "border-[#A50034]/40 bg-red-50" : "border-orange-200 bg-orange-50"}`}>
+                <div key={s.space_id} className={`p-5 border rounded-xl ${isCrit ? "border-[#7a0024]/40 bg-red-50" : "border-orange-200 bg-orange-50"}`}>
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className={`text-xl font-bold ${isCrit ? "text-[#A50034]" : "text-orange-600"}`}>{s.space_name} <span className="text-sm font-normal">({tier})</span></h4>
+                      <h4 className={`text-xl font-bold ${isCrit ? "text-[#7a0024]" : "text-orange-600"}`}>{s.space_name} <span className="text-sm font-normal">({tier})</span></h4>
                       <p className="text-sm text-slate-600 mt-1">CO₂ {s.snapshot.co2 ?? "—"}ppm · 습도 {s.snapshot.rh != null ? s.snapshot.rh.toFixed(0) : "—"}% · 감염확률 {s.snapshot.poi != null ? (s.snapshot.poi * 100).toFixed(1) : "—"}%</p>
                     </div>
-                    <span className={`px-3 py-1.5 text-white text-xs font-bold rounded-full shadow-sm ${isCrit ? "bg-[#A50034]" : "bg-orange-600"}`}>{isCrit ? "즉각 조치" : "주의 관찰"}</span>
+                    <span className={`px-3 py-1.5 text-white text-xs font-bold rounded-full shadow-sm ${isCrit ? "bg-[#7a0024]" : "bg-orange-600"}`}>{isCrit ? "즉각 조치" : "주의 관찰"}</span>
                   </div>
                   {devs.length > 0 && (
                     <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-slate-200">
@@ -493,10 +493,10 @@ function FMView() {
           <p className="text-3xl font-black text-slate-900 pl-1">124<span className="text-sm font-normal ml-1 text-slate-500">건</span></p>
         </div>
         {/* 💡 필터 교체 요망 데이터 일치 */}
-        <div onClick={() => setFmModal("FILTER")} className="bg-white border border-[#A50034]/50 rounded-2xl p-6 shadow-lg flex flex-col justify-center cursor-pointer hover:bg-slate-100 transition group relative overflow-hidden">
-          <div className="absolute inset-0 bg-[#A50034]/5 group-hover:bg-[#A50034]/10 transition"></div>
-          <div className="flex items-center gap-4 mb-2 relative z-10"><div className="p-3 bg-red-900/20 rounded-xl text-[#A50034] group-hover:scale-110 transition"><Wrench size={20}/></div><p className="text-sm text-slate-400 font-medium group-hover:text-[#A50034] transition">필터 교체 요망</p></div>
-          <p className="text-3xl font-black text-[#A50034] pl-1 relative z-10">2<span className="text-sm font-normal ml-1 text-slate-500">건 필요</span></p>
+        <div onClick={() => setFmModal("FILTER")} className="bg-white border border-[#7a0024]/50 rounded-2xl p-6 shadow-lg flex flex-col justify-center cursor-pointer hover:bg-slate-100 transition group relative overflow-hidden">
+          <div className="absolute inset-0 bg-[#7a0024]/5 group-hover:bg-[#7a0024]/10 transition"></div>
+          <div className="flex items-center gap-4 mb-2 relative z-10"><div className="p-3 bg-red-900/20 rounded-xl text-[#7a0024] group-hover:scale-110 transition"><Wrench size={20}/></div><p className="text-sm text-slate-400 font-medium group-hover:text-[#7a0024] transition">필터 교체 요망</p></div>
+          <p className="text-3xl font-black text-[#7a0024] pl-1 relative z-10">2<span className="text-sm font-normal ml-1 text-slate-500">건 필요</span></p>
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg flex flex-col justify-center">
           <div className="flex items-center gap-4 mb-2"><div className="p-3 bg-orange-900/20 rounded-xl text-orange-400"><Activity size={20}/></div><p className="text-sm text-slate-400 font-medium">일일 전력 사용</p></div>
@@ -521,7 +521,7 @@ function FMView() {
                 <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '8px', border: 'none' }} />
                 <Legend wrapperStyle={{ paddingTop: '10px' }} />
                 <Bar yAxisId="right" dataKey="제어건수" name="가전 제어 건수 (건)" fill="#3B82F6" barSize={30} radius={[4,4,0,0]} />
-                <Line yAxisId="left" type="monotone" dataKey="평균위험도" name="평균 위험도 (%)" stroke="#A50034" strokeWidth={3} dot={{ r: 4 }} />
+                <Line yAxisId="left" type="monotone" dataKey="평균위험도" name="평균 위험도 (%)" stroke="#7a0024" strokeWidth={3} dot={{ r: 4 }} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
@@ -600,9 +600,9 @@ function FMView() {
       {fmModal === "FILTER" && (
         <Modal title="🛠️ 기기 필터 교체 대상" onClose={() => setFmModal(null)}>
            <div className="space-y-4">
-            <div className="p-5 border border-[#A50034]/50 bg-red-900/10 rounded-xl flex items-center justify-between">
+            <div className="p-5 border border-[#7a0024]/50 bg-red-900/10 rounded-xl flex items-center justify-between">
               <div><h4 className="text-lg font-bold text-red-400 flex items-center gap-2"><AlertCircle size={18}/> 202호 공기청정기</h4><p className="text-sm text-slate-600 mt-2">헤파필터 수명 5% 잔여 (교체 시급)</p></div>
-              <button className="px-4 py-2 bg-[#A50034] text-white text-sm font-bold rounded-lg hover:bg-red-700 shadow-lg">작업 완료 처리</button>
+              <button className="px-4 py-2 bg-[#7a0024] text-white text-sm font-bold rounded-lg hover:bg-red-700 shadow-lg">작업 완료 처리</button>
             </div>
             <div className="p-5 border border-orange-900/50 bg-orange-900/10 rounded-xl flex items-center justify-between">
               <div><h4 className="text-lg font-bold text-orange-400 flex items-center gap-2"><AlertCircle size={18}/> 104호 시스템에어컨</h4><p className="text-sm text-slate-600 mt-2">프리필터 먼지 누적 (청소/교체 권장)</p></div>
@@ -694,7 +694,7 @@ function DirectorView() {
         </div>
         <button
           onClick={handlePrintReport}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all shadow-sm border bg-[#A50034] hover:bg-red-700 text-white border-[#A50034] print:hidden"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-all shadow-sm border bg-[#7a0024] hover:bg-red-700 text-white border-[#7a0024] print:hidden"
         >
           <DownloadCloud size={18} /> 성과 리포트 인쇄·PDF
         </button>
@@ -703,7 +703,7 @@ function DirectorView() {
       {/* 핵심 KPI 4 (실측 연동) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         {KPIS.map((k, i) => (
-          <div key={i} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col gap-3">
+          <div key={i} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)] flex flex-col gap-3">
             <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold"><k.Icon size={16} className={k.iconCls} /> {k.label}</div>
             <div className="text-4xl font-black text-slate-900">{k.value}<span className="text-lg font-medium text-slate-400 ml-1">{k.unit}</span></div>
             <p className={`text-[11px] font-bold px-2.5 py-1 rounded inline-block w-fit ${k.noteCls}`}>{k.note}</p>
@@ -712,7 +712,7 @@ function DirectorView() {
       </div>
 
       {/* 비용 비교 차트 — 주차별 실측 자동대응 기반(ThinQ 절감 추정) */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm flex flex-col h-[420px]">
+      <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-[0_4px_12px_rgba(0,0,0,0.05)] flex flex-col h-[420px]">
         <h3 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2"><TrendingDown size={20} className="text-emerald-600" /> 수동 방역 vs ThinQ 자동제어 유지비용</h3>
         <p className="text-sm text-slate-500 mb-6">주차별 자동대응 실측 기반 절감 추정 (단위: 만원/주)</p>
         <div className="flex-1 w-full">
@@ -724,7 +724,7 @@ function DirectorView() {
               <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E5E7EB', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} />
               <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }} />
               <Line type="monotone" dataKey="수동방역비용" name="기존 수동 방역·인력(추정)" stroke="#F59E0B" strokeWidth={3} dot={{ r: 4 }} />
-              <Line type="monotone" dataKey="ThinQ자동제어" name="ThinQ 자동제어 도입" stroke="#A50034" strokeWidth={3} dot={{ r: 4 }} />
+              <Line type="monotone" dataKey="ThinQ자동제어" name="ThinQ 자동제어 도입" stroke="#7a0024" strokeWidth={3} dot={{ r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -733,7 +733,7 @@ function DirectorView() {
       {/* 공간별 감염위험 현황 (라이브) + 법규 준수 자동 증빙 */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* 공간별 현황 */}
-        <div className="lg:col-span-3 bg-white border border-slate-200 rounded-2xl p-7 shadow-sm">
+        <div className="lg:col-span-3 bg-white border border-slate-200 rounded-2xl p-7 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
           <h3 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2"><ActivitySquare size={20} className="text-blue-600" /> 공간별 감염위험 현황</h3>
           <p className="text-sm text-slate-500 mb-5">전 병동 실시간 위험 등급 · Wells-Riley PoI</p>
           <div className="grid grid-cols-2 gap-2.5">
@@ -754,7 +754,7 @@ function DirectorView() {
         </div>
 
         {/* 법규 준수 자동 증빙 */}
-        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-7 shadow-sm">
+        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl p-7 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
           <h3 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2"><CheckCircle2 size={20} className="text-emerald-600" /> 법규 준수 자동 증빙</h3>
           <p className="text-sm text-slate-500 mb-5">
             감염관리 의무 → Sentinel 자동 증빙 · 누적 {report ? report.readings.toLocaleString() : "—"}건 기록

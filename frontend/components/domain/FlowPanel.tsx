@@ -55,7 +55,7 @@ export default function FlowPanel({ spaceId = "ward_a" }: { spaceId?: string }) 
     <section className="bg-slate-50 border border-slate-200 rounded-2xl p-5 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-bold text-slate-700 flex items-center gap-2">
-          <Wind size={18} className="text-[#A50034]" /> 자동 방역 의사결정 흐름
+          <Wind size={18} className="text-[#7a0024]" /> 자동 방역 의사결정 흐름
           <span className="text-xs font-normal text-slate-400">외부신호 → 센서 → 계산 → 결정 → 가전</span>
         </h2>
         <span className={`text-xs font-semibold flex items-center gap-1 ${connected ? "text-emerald-600" : "text-slate-400"}`}>
@@ -91,7 +91,7 @@ export default function FlowPanel({ spaceId = "ward_a" }: { spaceId?: string }) 
           <div className="flex items-center flex-wrap gap-1 text-xs text-slate-600">
             <span>재호흡률 <b>{pct(reb, 2)}</b></span>
             <ChevronRight size={12} className="text-slate-300" />
-            <span>PoI <b className="text-[#A50034]">{pct(poi, 1)}</b></span>
+            <span>PoI <b className="text-[#7a0024]">{pct(poi, 1)}</b></span>
           </div>
           <div className="mt-2">{tierBadge(tier)}</div>
         </Stage>
@@ -133,7 +133,7 @@ export default function FlowPanel({ spaceId = "ward_a" }: { spaceId?: string }) 
       </div>
 
       {plan?.rationale && (
-        <p className="text-xs text-slate-500 mt-3 pl-1 border-l-2 border-[#A50034]/40 ml-1">
+        <p className="text-xs text-slate-500 mt-3 pl-1 border-l-2 border-[#7a0024]/40 ml-1">
           근거: {plan.rationale}
         </p>
       )}
