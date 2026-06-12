@@ -14,6 +14,13 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ko">
+      <head>
+        {/* Material Symbols — Stitch v2 디자인(사이드바·로그인) 아이콘 */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body className={`${inter.className} bg-slate-50 dark:bg-[#0B1120] text-slate-900 dark:text-slate-200 flex min-h-screen transition-colors duration-300`}>
         <ThemeProvider>
           {/* 💡 사이드바 메뉴(LayoutNav)를 완전히 삭제하고 전체 화면을 사용합니다! */}
