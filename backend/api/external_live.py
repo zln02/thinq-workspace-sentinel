@@ -60,6 +60,20 @@ def external_boost_tier() -> str:
     return _selected.get("boost_tier", "MONITOR")
 
 
+def external_boost_info() -> dict:
+    """sensor/overview 가 호출 — boost tier + 발령 지역/등급(공간 카드 라벨용).
+
+    tier_source 표시에 쓰임: 공간 tier가 이 boost로 상향되면 '외부 조기경보 발(發)'.
+    """
+    info = _selected.get("info") or {}
+    return {
+        "tier": _selected.get("boost_tier", "MONITOR"),
+        "region": _selected.get("region"),
+        "mode": _selected.get("mode"),
+        "level": info.get("basis_level") or info.get("live_level"),
+    }
+
+
 async def _uis_pool():
     from backend.api.main import state
 
@@ -214,6 +228,16 @@ async def select_region(sel: RegionSel):
     info["trend_reason"] = trend_reason
     _selected.update(region=sel.region, boost_tier=boost, mode=mode, info=info)
     return {"ok": True, "selected": info, "boost_tier": boost, "mode": mode, "trend": trend["trend"]}
+
+
+@router.post("/clear-region", dependencies=[Depends(require_api_key)])
+async def clear_region():
+    """외부 boost 해제 — 시연 토글 OFF / 평상시 복귀(선택 지역·boost 초기화).
+
+    select-region 이 메모리에 남겨둔 boost를 비워 전 공간이 센서 실측 tier로 돌아감.
+    """
+    _selected.update(region=None, boost_tier="MONITOR", mode=None, info=None)
+    return {"ok": True, "boost_tier": "MONITOR", "region": None}
 
 
 @router.get("/selected")

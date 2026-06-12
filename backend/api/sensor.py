@@ -262,14 +262,20 @@ async def ingest_reading(r: SensorReading):
     else:
         n_eff = _last_occupancy.get(r.space_id, DEMO_OCCUPANCY)
     tier, poi, f = compute_tier(co2, r.gas_raw, r.temp_c, r.humidity, occupancy=n_eff)
-    # 외부신호 선제 boost — 선택 지역 감염병 확산이 심하면 센서 정상이어도 tier 상향(사전예방)
+    # 외부신호 선제 boost — 선택 지역 감염병 확산이 심하면 센서 정상이어도 tier 상향(사전예방).
+    # tier_source: 최종 tier가 센서발(sensor)인지 외부 조기경보발(external)인지 — 대시보드 인과 표시용.
+    tier_source = "sensor"
     ext_boost = "MONITOR"
+    ext_region = None
     try:
-        from backend.api.external_live import external_boost_tier
+        from backend.api.external_live import external_boost_info
 
-        ext_boost = external_boost_tier()
+        bi = external_boost_info()
+        ext_boost = bi.get("tier", "MONITOR")
+        ext_region = bi.get("region")
         if _TIER_RANK.get(ext_boost, 0) > _TIER_RANK.get(tier, 0):
             tier = ext_boost
+            tier_source = "external"
     except Exception:  # noqa: BLE001
         pass
     exceed = iaq_exceedances(co2=co2, pm25=pm25)
@@ -328,6 +334,8 @@ async def ingest_reading(r: SensorReading):
     payload = {
         "space_id": r.space_id,
         "tier": tier,
+        "tier_source": tier_source,        # sensor=실내센서 감지 / external=외부 조기경보 상향
+        "boost_region": ext_region,        # external일 때 발령 지역(예: 부산광역시)
         "prev_tier": prev,
         "poi": poi,
         "rebreathed_fraction": f,
@@ -470,9 +478,12 @@ async def spaces_overview():
     """
     from backend.api.main import state
 
+    boost_region = None
     try:
-        from backend.api.external_live import external_boost_tier
-        boost = external_boost_tier()
+        from backend.api.external_live import external_boost_info
+        bi = external_boost_info()
+        boost = bi.get("tier", "MONITOR")
+        boost_region = bi.get("region")
     except Exception:  # noqa: BLE001
         boost = "MONITOR"
 
@@ -500,15 +511,17 @@ async def spaces_overview():
                 vals = _sim_reading(s["space_name"], s["space_type"])
                 source = "시뮬"
             tier, poi, _f = compute_tier(vals["co2_ppm"], vals["gas_raw"], vals["temp_c"], vals["humidity"])
+            tier_source = "sensor"
             if _TIER_RANK.get(boost, 0) > _TIER_RANK.get(tier, 0):
                 tier = boost
+                tier_source = "external"          # 이 공간 tier는 외부 조기경보발(發) 상향
             out.append({
                 "space_id": str(s["id"]),
                 "space_name": s["space_name"], "space_type": s["space_type"],
                 "area_m2": s["area_m2"], "max_occupancy": s["max_occupancy"],
-                "tier": tier, "poi": poi, "source": source, **vals,
+                "tier": tier, "tier_source": tier_source, "poi": poi, "source": source, **vals,
             })
-    return {"spaces": out, "boost": boost, "count": len(out)}
+    return {"spaces": out, "boost": boost, "boost_region": boost_region, "count": len(out)}
 
 
 @router.get("/kpi")
