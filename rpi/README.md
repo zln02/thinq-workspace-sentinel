@@ -4,7 +4,7 @@
 
 ```
 [아두이노] --시리얼--> [라파이 bridge.py] --HTTP--> [GCP :8003] --> tier 계산 --> [코웨이 제어]
-                              └ chromium --kiosk --> 대시보드(:8003/dashboard) 풀스크린
+                              └ chromium --kiosk --> Next 대시보드(:3001/sentinel) 풀스크린
 ```
 
 ## 구성요소
@@ -36,7 +36,7 @@ SERIAL_PORT=/dev/ttyACM0
 BAUD=9600
 SPACE_ID=ward_a          # 병동 식별자 (다병동 시연 시 단말마다 다르게)
 ```
-키오스크 URL은 `SENTINEL_DASHBOARD` 환경변수로 override (기본 `http://100.96.227.23:8003/dashboard`).
+키오스크 URL은 `SENTINEL_DASHBOARD` 환경변수로 override (기본 `http://100.96.227.23:3001/sentinel`). 레거시 단독 HTML(`:8003/dashboard`)은 Next FM 뷰로 흡수·제거됨.
 
 ## 운영 점검
 ```bash
