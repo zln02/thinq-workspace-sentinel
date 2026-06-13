@@ -11,6 +11,7 @@
 """
 from __future__ import annotations
 
+import logging
 import os
 import pathlib as _pl
 from contextlib import asynccontextmanager
@@ -40,11 +41,24 @@ from pipeline.simulator.runner import SCENARIO_SEASON, run
 DB_DSN = os.getenv("DATABASE_URL", "postgresql://sentinel@localhost:55432/sentinel_dev")
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6380/0")
 
+logger = logging.getLogger(__name__)
 state: dict = {}
+
+
+def _warn_insecure_defaults() -> None:
+    """운영 시크릿 미설정 경고 — 데모는 기본값으로 동작하나, B2G/ISMS-P 배포 전엔 반드시 설정.
+
+    데모를 깨뜨리지 않도록 차단이 아닌 '가시성'만 제공(미설정이면 로그에 명확히 남김).
+    """
+    if not os.getenv("SENTINEL_API_KEY"):
+        logger.warning("[보안] SENTINEL_API_KEY 미설정 — POST API가 인증 없이 열려 있음(데모 모드). 운영 배포 전 설정 필수.")
+    if not os.getenv("ADMIN_CONTROL_PW"):
+        logger.warning("[보안] ADMIN_CONTROL_PW 미설정 — 제어모드 전환 비번이 기본값('admin'). 운영 배포 전 설정 필수.")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    _warn_insecure_defaults()
     state["db"] = await asyncpg.create_pool(DB_DSN, min_size=4, max_size=12)
     state["redis"] = redis.from_url(REDIS_URL, decode_responses=True)
     # 코웨이 실기기 어댑터 (COWAY_USERNAME 설정 시에만 활성, 미설정/미설치면 None)
