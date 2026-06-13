@@ -17,8 +17,8 @@ LG DX School 5기 · 5분 대기조 · 2026.05.19 ~ 2026.06.25
 | 정욱현 | [@ughyeon123-source](https://github.com/ughyeon123-source) | DevOps / QA | `infra/`, `.github/`, `tests/`, `migrations/` |
 
 > 모듈별 책임은 [`docs/roles/Role_*.pptx`](docs/roles/) 7슬라이드 가이드 참고.
-> 통합 개발 가이드는 [`docs/dev/Master_Dev_Guide.pdf`](docs/dev/Master_Dev_Guide.pdf) 16페이지.
-> 역할별 플레이북 (W3~W6 로드맵 + 핫픽스 가이드): [`docs/dev/Backend_Playbook.md`](docs/dev/Backend_Playbook.md) — 박진
+> 통합 개발 가이드는 [`docs/dev/개발가이드_마스터.pdf`](docs/dev/개발가이드_마스터.pdf) 16페이지.
+> 역할별 플레이북 (W3~W6 로드맵 + 핫픽스 가이드): [`docs/dev/백엔드_플레이북.md`](docs/dev/백엔드_플레이북.md) — 박진
 
 ---
 
@@ -26,7 +26,7 @@ LG DX School 5기 · 5분 대기조 · 2026.05.19 ~ 2026.06.25
 
 **우리 팀은 다 같이 공부하면서 만드는 중이에요.** 모르는 게 정상이고 막히는 게 당연해요.
 
-📖 **[`docs/dev/Friendly_Onboarding.pdf`](docs/dev/Friendly_Onboarding.pdf)** (9페이지 · 비개발자 친화 입문서)
+📖 **[`docs/dev/온보딩_입문서.pdf`](docs/dev/온보딩_입문서.pdf)** (9페이지 · 비개발자 친화 입문서)
 - 영어 단어 30개+ 풀이 (repo, branch, PR, Docker, API… 다 한글 비유로)
 - 첫날 시간표 (10/30/60분 단위) + "이러면 OK" 신호
 - 막힘 처방전 7가지 + 누구한테 물어볼지 라우팅
@@ -55,9 +55,9 @@ cd frontend && npm install && npm run dev
 # → http://localhost:3000
 
 # 5. 본인 역할 PPT 7슬 읽기
-#    Role_Backend.pptx   ← 박진
-#    Role_Frontend.pptx  ← 윤재영
-#    Role_DevOps.pptx    ← 정욱현
+#    역할_백엔드.pptx   ← 박진
+#    역할_프론트엔드.pptx  ← 윤재영
+#    역할_데브옵스.pptx    ← 정욱현
 #    Role_ML / Pipeline  ← 박진영(PM)
 ```
 
@@ -78,7 +78,7 @@ gh pr create -B develop                       # 템플릿 자동 로드
 | `develop` 과 충돌 | `git rebase develop` (merge 아님) → 충돌 해결 → `git push --force-with-lease` |
 | `.env` 실수 푸시 | secret-scan 잡이 차단함. 그래도 노출되면 즉시 박진영(@zln02)에게 |
 
-> 더 자세한 셋업/트러블슈팅은 [`docs/dev/Master_Dev_Guide.pdf`](docs/dev/Master_Dev_Guide.pdf) §8 참고.
+> 더 자세한 셋업/트러블슈팅은 [`docs/dev/개발가이드_마스터.pdf`](docs/dev/개발가이드_마스터.pdf) §8 참고.
 > 시연·심사기준·6주 WBS는 같은 PDF §2, §5, §6 참고.
 
 ---
