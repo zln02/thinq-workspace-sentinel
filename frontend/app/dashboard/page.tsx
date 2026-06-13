@@ -362,6 +362,54 @@ function ExternalControlMap() {
   );
 }
 
+// 간호 조치 가이드 — 위험 등급별 ICN(감염관리간호사) 권장 행동. 위험공간 실시간 연동.
+const NURSING_ACTIONS: Record<string, string[]> = {
+  CAUTION: ["병실 환기 상태 확인", "손위생·고빈도 접촉면 소독 강조"],
+  ALERT: ["해당 병실 즉시 환기 확인", "재실자·보호자 마스크 안내", "공용공간 밀집 완화", "회진 시 우선 점검"],
+  HIGH_RISK: ["의료진 N95 착용", "접촉 최소화·동선 분리", "유증상자 선별 확인", "보호자 면회 제한 검토"],
+  CRITICAL: ["즉시 격리/코호트 분리 검토", "감염관리팀·당직의 보고", "공용공간 이용 중단 검토", "접촉자 추적 시작"],
+};
+
+function NursingActionGuide({ atRisk }: { atRisk: SpaceCard[] }) {
+  const items = atRisk.slice(0, 4);   // 최고위험 우선 상위 4
+  return (
+    <div className="bg-amber-50/40 border border-amber-200 border-l-4 border-l-amber-400 rounded-2xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+      <h3 className="text-base font-bold text-slate-900 mb-1 flex items-center gap-2">
+        <span className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center"><FileText className="text-amber-600" size={15} /></span>
+        간호 조치 가이드 <span className="text-xs font-normal text-slate-500">· 위험 등급별 권장 감염관리 행동</span>
+      </h3>
+      {items.length === 0 ? (
+        <div className="flex items-center gap-2 text-sm text-slate-500 py-4">
+          <CheckCircle2 className="text-emerald-500" size={18} /> 전 병동 안정 — 정규 감염관리 수칙(손위생·정기 환기·표면 소독) 유지
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+          {items.map((s) => {
+            const tier = s.snapshot.tier;
+            const acts = NURSING_ACTIONS[tier] ?? NURSING_ACTIONS.CAUTION;
+            const isCrit = tierRank(tier) >= 3;
+            return (
+              <div key={s.space_id} className={`rounded-xl border p-4 ${isCrit ? "bg-red-50 border-red-200" : "bg-white border-slate-200"}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-bold text-slate-900 text-sm">{s.space_name}</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isCrit ? "bg-[#7a0024] text-white" : "bg-orange-100 text-orange-700"}`}>{tier}</span>
+                </div>
+                <ul className="space-y-1">
+                  {acts.map((a, i) => (
+                    <li key={i} className="flex items-start gap-1.5 text-[13px] text-slate-700">
+                      <span className={`mt-0.5 shrink-0 ${isCrit ? "text-[#7a0024]" : "text-amber-600"}`}>✓</span>{a}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ============================================================================
 // 👩‍⚕️ 1. 간호사(ICN) 대시보드
 // ============================================================================
@@ -394,9 +442,6 @@ function NurseView() {
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* 외부 감염병 조기경보 — 외부 예측 → 선제 예방 차별점 */}
       <ExternalForecastBanner />
-
-      {/* 외부 경보 → 가전 차등제어 상관 (반박 방어: "항상 최대" 아님) */}
-      <ExternalControlMap />
 
       {/* 상단 KPI — 환경·감염·ThinQ 자동대응 중심 (백엔드 라이브) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -465,20 +510,8 @@ function NurseView() {
         </div>
       </div>
 
-      {/* 하단: 수간호사 인수인계 (축소) */}
-      <div className="bg-amber-50/40 border border-amber-200 border-l-4 border-l-amber-400 rounded-2xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
-        <h3 className="text-base font-bold text-slate-900 mb-3 flex items-center gap-2"><span className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center"><FileText className="text-amber-600" size={15} /></span> 수간호사 인수인계</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-            <p className="text-xs text-slate-500 mb-1">오늘 08:00 작성</p>
-            <p className="text-sm text-red-700 font-medium leading-relaxed">🚨 환경 악화 공간 ThinQ 환기 자동가동 중. 오전 회진 시 확인 요망.</p>
-          </div>
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-            <p className="text-xs text-slate-500 mb-1">오늘 07:30 작성</p>
-            <p className="text-sm text-slate-700 leading-relaxed">공용식당 식사시간 밀집 모니터링 — 환기 강화 권고.</p>
-          </div>
-        </div>
-      </div>
+      {/* 하단: 간호 조치 가이드 — 위험 등급별 '간호사가 할 행동' (실시간 위험공간 연동) */}
+      <NursingActionGuide atRisk={atRisk} />
 
       {modal === "DANGER" && (
         <Modal title="🚨 주의·위험 공간 + ThinQ 자동대응 현황" onClose={() => setModal(null)}>
@@ -728,6 +761,9 @@ function FMView() {
 
       {/* 자동 방역 의사결정 흐름 */}
       <FlowPanel spaceId="ward_a" />
+
+      {/* 외부 경보 → 가전 차등제어 상관 (가전 제어 정책 — 시설관리자 영역) */}
+      <ExternalControlMap />
 
       {/* 일별 추이 차트 (시연) */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)] h-[360px] flex flex-col">
