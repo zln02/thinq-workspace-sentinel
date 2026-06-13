@@ -134,12 +134,6 @@ def _serve_html(filename: str):
     return HTMLResponse(html, headers=_NOCACHE)
 
 
-@app.get("/dashboard")
-async def dashboard():
-    """라파이 크로미움 키오스크용 실시간 대시보드(단일 HTML, same-origin SSE)."""
-    return _serve_html("dashboard.html")
-
-
 @app.get("/wardmap")
 async def wardmap():
     """병동 3D(아이소메트릭) 위험 맵 — 공간별 감염위험 입체 시각화."""
