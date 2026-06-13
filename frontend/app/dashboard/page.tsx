@@ -124,14 +124,18 @@ const NAV: { role: string; label: string; desc: string; icon: string; href?: str
   { role: "GUARDIAN", label: "보호자 앱", desc: "가족 안심", icon: "family_home", href: "/guardian" },
 ];
 
-function DashSidebar({ role, account, userName, onSelect, onLogout }: {
+function DashSidebar({ role, account, userName, onSelect, onLogout, open, onClose }: {
   role: string; account: string | null; userName: string | null;
   onSelect: (r: string, href?: string) => void; onLogout: () => void;
+  open: boolean; onClose: () => void;
 }) {
   const isSuper = account === "SUPER";
   const items = isSuper ? NAV : NAV.filter((n) => n.role === role);
   return (
-    <nav className="hidden md:flex flex-col fixed left-0 top-0 h-screen w-64 bg-white border-r border-slate-200 z-40">
+    <>
+    {/* 모바일 드로어 백드롭 */}
+    {open && <div className="fixed inset-0 bg-black/40 z-40 md:hidden" onClick={onClose} />}
+    <nav className={`flex flex-col fixed left-0 top-0 h-screen w-64 bg-white border-r border-slate-200 z-50 transition-transform duration-300 md:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}>
       <div className="px-6 py-5 border-b border-slate-200 flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-[#7a0024] text-white flex items-center justify-center shadow-sm"><span className="material-symbols-outlined fill">coronavirus</span></div>
         <div>
@@ -144,7 +148,7 @@ function DashSidebar({ role, account, userName, onSelect, onLogout }: {
         {items.map((n) => {
           const active = role === n.role && !n.href;
           return (
-            <button key={n.role} onClick={() => onSelect(n.role, n.href)}
+            <button key={n.role} onClick={() => { onSelect(n.role, n.href); onClose(); }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all ${active ? "bg-[#fff0f0] text-[#7a0024] font-bold" : "text-slate-500 hover:bg-slate-50 hover:translate-x-0.5"}`}>
               <span className={`material-symbols-outlined ${active ? "fill" : ""}`}>{n.icon}</span>
               <div className="flex-1 min-w-0">
@@ -169,6 +173,7 @@ function DashSidebar({ role, account, userName, onSelect, onLogout }: {
         </button>
       </div>
     </nav>
+    </>
   );
 }
 
@@ -181,6 +186,7 @@ export default function DashboardPage() {
   const [account, setAccount] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [time, setTime] = useState<string>("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);   // 모바일 드로어
   // 201호 실센서 SSE — 헤더 전역 LIVE 인디케이터용(영상에서 실데이터 가동 상시 노출)
   const { data: live, connected: liveConnected } = useLiveWard("ward_a");
 
@@ -212,12 +218,16 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#F3F7FB] text-slate-700 flex font-sans">
-      <DashSidebar role={role} account={account} userName={userName} onSelect={selectView} onLogout={handleLogout} />
+      <DashSidebar role={role} account={account} userName={userName} onSelect={selectView} onLogout={handleLogout} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="flex-1 md:ml-64 flex flex-col min-h-screen min-w-0">
         {/* 슬림 톱바 */}
         <header className="bg-white border-b border-slate-200 px-5 sm:px-6 h-16 flex justify-between items-center sticky top-0 z-30 shadow-sm">
           <div className="flex items-center gap-3 min-w-0">
+            <button onClick={() => setSidebarOpen(true)} aria-label="메뉴 열기"
+              className="md:hidden -ml-1 w-9 h-9 flex items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100">
+              <span className="material-symbols-outlined">menu</span>
+            </button>
             <span className="material-symbols-outlined text-[#7a0024]">{meta.icon}</span>
             <h2 className="text-lg font-bold text-slate-900 truncate">{meta.label}</h2>
           </div>
@@ -796,6 +806,24 @@ const COMPLIANCE = [
   { law: "요양병원 적정성평가", duty: "감염관리 영역 연 1회 평가", evidence: "자동 증빙 리포트 (수가 가산)", org: "심평원" },
 ];
 
+// 숫자 카운팅업 애니메이션 (RAF, 무의존) — KPI 진입 시 0→목표값 ease-out
+function CountUp({ end, fmt, ms = 900 }: { end: number; fmt?: (n: number) => string; ms?: number }) {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    let raf = 0; let start = 0;
+    const tick = (now: number) => {
+      if (!start) start = now;
+      const p = Math.min((now - start) / ms, 1);
+      setV(end * (1 - Math.pow(1 - p, 3)));   // ease-out cubic
+      if (p < 1) raf = requestAnimationFrame(tick);
+      else setV(end);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [end, ms]);
+  return <>{fmt ? fmt(v) : Math.round(v).toLocaleString()}</>;
+}
+
 // 타이핑 효과 — 텍스트를 글자 단위로 드러냄(AI 브리핑 생성 느낌)
 function useTypewriter(text: string, charMs = 16) {
   const [n, setN] = useState(0);
@@ -870,19 +898,20 @@ function DirectorView() {
 
   // 병원장(구매 결정자) 핵심 KPI — 전부 백엔드 실측 집계 연동.
   // 효능 단정·과장 회피: 유휴(MONITOR)에도 강건한 '활동·기록·최고위험' 지표만 노출.
+  const intFmt = (n: number) => Math.round(n).toLocaleString();
   const KPIS = [
     { Icon: Zap, iconCls: "text-amber-600", noteCls: "text-amber-700 bg-amber-50",
-      label: "자동 선제대응", value: report ? report.auto_actions.toLocaleString() : "—", unit: "건",
+      label: "자동 선제대응", num: report ? report.auto_actions : null, fmt: intFmt, unit: "건",
       note: `외부발 ${(report?.preemptive_actions ?? 0).toLocaleString()} + 센서발 ${(report?.sensor_actions ?? 0).toLocaleString()} · 최근 ${report?.period.days ?? 30}일` },
     { Icon: ActivitySquare, iconCls: "text-blue-600", noteCls: "text-blue-700 bg-blue-50",
-      label: "연속 모니터링 기록", value: report ? report.readings.toLocaleString() : "—", unit: "건",
+      label: "연속 모니터링 기록", num: report ? report.readings : null, fmt: intFmt, unit: "건",
       note: `감염관리 증빙 자동 로깅 · ${report?.spaces_monitored ?? 0}개 공간` },
     { Icon: TrendingDown, iconCls: "text-emerald-600", noteCls: "text-emerald-700 bg-emerald-50",
-      label: "방역비용 절감(추정)", value: report ? fmtKRW(report.est_cost_saved_krw) : "—",
+      label: "방역비용 절감(추정)", num: report ? report.est_cost_saved_krw : null, fmt: fmtKRW,
       unit: report && report.est_cost_saved_krw >= 10000 ? "만원" : "천원",
       note: "추정 — 자동대응 1건당 인건·에너지 절감" },
     { Icon: ShieldAlert, iconCls: "text-purple-600", noteCls: "text-purple-700 bg-purple-50",
-      label: "기간 최고 감염위험", value: report ? (report.peak_poi * 100).toFixed(1) : "—", unit: "%",
+      label: "기간 최고 감염위험", num: report ? report.peak_poi * 100 : null, fmt: (n: number) => n.toFixed(1), unit: "%",
       note: `Wells-Riley PoI 최고치 · CRITICAL 도달 ${report?.alert_events ?? 0}건` },
   ];
 
@@ -950,7 +979,7 @@ function DirectorView() {
         {KPIS.map((k, i) => (
           <div key={i} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)] flex flex-col gap-3">
             <div className="flex items-center gap-2 text-slate-500 text-sm font-semibold"><k.Icon size={16} className={k.iconCls} /> {k.label}</div>
-            <div className="text-4xl font-black text-slate-900">{k.value}<span className="text-lg font-medium text-slate-400 ml-1">{k.unit}</span></div>
+            <div className="text-4xl font-black text-slate-900">{k.num == null ? "—" : <CountUp end={k.num} fmt={k.fmt} />}<span className="text-lg font-medium text-slate-400 ml-1">{k.unit}</span></div>
             <p className={`text-[11px] font-bold px-2.5 py-1 rounded inline-block w-fit ${k.noteCls}`}>{k.note}</p>
           </div>
         ))}
