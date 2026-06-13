@@ -24,6 +24,6 @@ proba = model.predict_proba(features)
 
 ## SHAP / GAM 미사용
 
-핸드오프 (`docs/dev/handoff_2026-06-02.md` §1) 참고:
+핸드오프 (`docs/archive/handoff_2026-06-02.md` §1) 참고:
 - 설계서의 SHAP/GAM 은 코드 실재 X
 - 정답: **XGBoost feature_importances_ (gain) + Granger 인과검정 + TFT (PoC)**
