@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { HOSPITALS, ROLE_HOME, authenticate, setSession, bindRegion } from "@/lib/auth";
+import ParticlesBg from "@/components/ParticlesBg";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -33,21 +34,9 @@ export default function LoginPage() {
     <main className="bg-[#0a0508] h-screen w-screen overflow-hidden flex">
       {/* 배경: 하이테크 관제 센터 + 그리드/스캔 오버레이 */}
       <div className="w-full h-full relative flex items-center justify-center p-6 sm:p-12 overflow-hidden">
-        {/* 배경: Spline 3D 맵 — 자동 회전(90s/바퀴) + 워터마크 가림. iframe은 클릭 비활성(데코 전용) */}
-        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-          {/* 정적 스케일(회전 시 코너 클리핑 방지) → 그 안에서 회전 */}
-          <div className="absolute inset-0 scale-[2.1]">
-            <div className="absolute inset-0 animate-spin [animation-duration:90s] will-change-transform">
-              <iframe
-                src="https://my.spline.design/cascadeinteractivemap-QcQ8qFkPFEslxwAmhVJFUtuV/"
-                title="ThinQ Sentinel 3D 관제 맵"
-                loading="lazy"
-                className="absolute inset-0 w-full h-full border-0"
-              />
-              {/* Spline 워터마크(우하단) 가림 — 회전 래퍼 안이라 함께 돌며 코너 추적, 가장자리 페이드 */}
-              <div className="absolute bottom-0 right-0 w-56 h-16 bg-[radial-gradient(ellipse_at_bottom_right,#0a0508_50%,transparent_78%)]" />
-            </div>
-          </div>
+        {/* 배경: tsParticles NET (노드 연결망) — 감염 확산/역학 네트워크 관제 컨셉. Canvas라 WebGL 경고 없음 */}
+        <div className="absolute inset-0 z-0 pointer-events-auto">
+          <ParticlesBg />
         </div>
         {/* 가독성 오버레이 — Spline 은은히 비치게 + 그리드/스캔. 클릭은 맵으로 통과(인터랙티브 유지) */}
         <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/45 to-[#7a0024]/25 pointer-events-none z-0" />
