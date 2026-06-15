@@ -681,19 +681,25 @@ async def spaces_overview():
         )
         for s in spaces:
             r = await con.fetchrow(
-                "SELECT co2_ppm, pm25_ugm3, temperature, humidity, gas_raw, time "
+                "SELECT co2_ppm, pm25_ugm3, temperature, humidity, gas_raw, occupancy, time "
                 "FROM sentinel.sensor_readings WHERE space_id=$1 AND time > NOW() - INTERVAL '2 min' "
                 "ORDER BY time DESC LIMIT 1",
                 s["id"],
             )
             if r:
                 vals = {"gas_raw": r["gas_raw"], "temp_c": r["temperature"],
-                        "humidity": r["humidity"], "co2_ppm": r["co2_ppm"], "pm25": r["pm25_ugm3"]}
+                        "humidity": r["humidity"], "co2_ppm": r["co2_ppm"], "pm25": r["pm25_ugm3"],
+                        "occupancy": r["occupancy"]}
                 source = "실센서"
             else:
                 vals = _sim_reading(s["space_name"], s["space_type"])
                 source = "시뮬"
-            tier, poi, _f = compute_tier(vals["co2_ppm"], vals["gas_raw"], vals["temp_c"], vals["humidity"])
+            # 실재실(카메라/센서 적재값)로 tier 계산 — /reading 의 실제 의사결정과 정합.
+            # 빈 병실(occupancy 0)이면 PoI 0 → 정상(MONITOR). 미측정(None)이면 내부 DEMO 폴백(시뮬 공간).
+            tier, poi, _f = compute_tier(
+                vals["co2_ppm"], vals["gas_raw"], vals["temp_c"], vals["humidity"],
+                occupancy=vals.get("occupancy"),
+            )
             tier_source = "sensor"
             if _TIER_RANK.get(boost, 0) > _TIER_RANK.get(tier, 0):
                 tier = boost
