@@ -1,25 +1,42 @@
-/** @type {import('next').NextConfig} */
-// 배포(nginx /sentinel → :3001)는 basePath 필요 — NEXT_BASE_PATH 를 빌드시 주입.
-// 미설정(로컬 dev)이면 basePath 없음. systemd: Environment=NEXT_BASE_PATH=/sentinel
-const basePath = process.env.NEXT_BASE_PATH || "";
+import { PHASE_PRODUCTION_BUILD, PHASE_PRODUCTION_SERVER } from "next/constants";
 
-const nextConfig = {
-  reactStrictMode: true,
-  ...(basePath ? { basePath } : {}),
-  // 클라이언트가 basePath를 알아 fetch 경로에 붙이도록 노출
-  env: { NEXT_PUBLIC_BASE_PATH: basePath },
-  async rewrites() {
-    return [
-      {
-        source: "/api/sentinel/:path*",
-        destination: "http://127.0.0.1:8003/api/v1/:path*",
-      },
-      {
-        source: "/api/sentinel/stream/:path*",
-        destination: "http://127.0.0.1:8003/api/v1/stream/:path*",
-      },
-    ];
-  },
+/**
+ * 배포는 nginx `/sentinel` → :3001 이므로 basePath 가 필수다.
+ * basePath 누락 빌드 = HTML 이 `/_next/` 를 참조 → nginx 가 못 찾음 → CSS/JS 404(무스타일).
+ *
+ * 방탄 규칙:
+ *   - NEXT_BASE_PATH 가 '명시'되면 그 값을 사용(빈문자 "" 로 루트 배포도 명시 가능).
+ *   - 미설정이면 프로덕션(build/start)에서 `/sentinel` 로 자동 고정.
+ *     → `npm run build` 든 `npx next build` 든 prod 빌드는 항상 basePath 가 붙는다.
+ *   - dev(next dev)는 루트("")라 로컬 개발 영향 없음.
+ *
+ * @type {(phase: string) => import('next').NextConfig}
+ */
+export default (phase) => {
+  const isProd = phase === PHASE_PRODUCTION_BUILD || phase === PHASE_PRODUCTION_SERVER;
+  const basePath =
+    process.env.NEXT_BASE_PATH !== undefined
+      ? process.env.NEXT_BASE_PATH
+      : isProd
+        ? "/sentinel"
+        : "";
+
+  return {
+    reactStrictMode: true,
+    ...(basePath ? { basePath } : {}),
+    // 클라이언트가 basePath를 알아 fetch 경로에 붙이도록 노출
+    env: { NEXT_PUBLIC_BASE_PATH: basePath },
+    async rewrites() {
+      return [
+        {
+          source: "/api/sentinel/:path*",
+          destination: "http://127.0.0.1:8003/api/v1/:path*",
+        },
+        {
+          source: "/api/sentinel/stream/:path*",
+          destination: "http://127.0.0.1:8003/api/v1/stream/:path*",
+        },
+      ];
+    },
+  };
 };
-
-export default nextConfig;

@@ -1,11 +1,11 @@
 export type Tier = "MONITOR" | "CAUTION" | "ALERT" | "HIGH_RISK" | "CRITICAL";
 
 export const TIER_META: Record<Tier, { label: string; bg: string; text: string; emoji: string }> = {
-  MONITOR:    { label: "Monitor",   bg: "bg-tier-monitor",   text: "text-white", emoji: "🟢" },
-  CAUTION:    { label: "Caution",   bg: "bg-tier-caution",   text: "text-slate-900", emoji: "🟡" },
-  ALERT:      { label: "Alert",     bg: "bg-tier-alert",     text: "text-white", emoji: "🟠" },
-  HIGH_RISK:  { label: "High Risk", bg: "bg-tier-high",      text: "text-white", emoji: "🔴" },
-  CRITICAL:   { label: "Critical",  bg: "bg-tier-critical",  text: "text-white", emoji: "⚫" },
+  MONITOR:    { label: "정상",   bg: "bg-tier-monitor",   text: "text-white", emoji: "🟢" },
+  CAUTION:    { label: "주의",   bg: "bg-tier-caution",   text: "text-slate-900", emoji: "🟡" },
+  ALERT:      { label: "경계",   bg: "bg-tier-alert",     text: "text-white", emoji: "🟠" },
+  HIGH_RISK:  { label: "위험",   bg: "bg-tier-high",      text: "text-white", emoji: "🔴" },
+  CRITICAL:   { label: "심각",   bg: "bg-tier-critical",  text: "text-white", emoji: "⚫" },
 };
 
 export interface Snapshot {

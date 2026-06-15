@@ -11,9 +11,9 @@ export const RANK: Record<Tier, number> = {
 export const TIER_HEX: Record<Tier, { c: string; bg: string; ko: string }> = {
   MONITOR:   { c: "#1a7a45", bg: "#eaf7ef", ko: "정상" },
   CAUTION:   { c: "#b45309", bg: "#fdf6e8", ko: "주의" },
-  ALERT:     { c: "#c2410c", bg: "#fdefe6", ko: "경보" },
-  HIGH_RISK: { c: "#dc2626", bg: "#fdeced", ko: "고위험" },
-  CRITICAL:  { c: "#9f1239", bg: "#fbe9ee", ko: "위급" },
+  ALERT:     { c: "#c2410c", bg: "#fdefe6", ko: "경계" },
+  HIGH_RISK: { c: "#dc2626", bg: "#fdeced", ko: "위험" },
+  CRITICAL:  { c: "#9f1239", bg: "#fbe9ee", ko: "심각" },
 };
 
 export interface Appliance {

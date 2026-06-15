@@ -78,7 +78,7 @@ function FMFloorPlan({ spaces }: { spaces: SpaceOverview[] }) {
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div>
                 <p className="text-sm text-slate-400">현재 위험 등급</p>
-                <p className="font-bold text-slate-900">{DIR_TIER[sel.tier]?.ko ?? sel.tier} · PoI {sel.poi != null ? (sel.poi * 100).toFixed(1) : "—"}%</p>
+                <p className="font-bold text-slate-900">{tierKo(sel.tier)} · PoI {sel.poi != null ? (sel.poi * 100).toFixed(1) : "—"}%</p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-slate-400">병원체 · 계절</p>
@@ -243,7 +243,7 @@ export default function DashboardPage() {
                 {liveConnected && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />}
                 <span className={`relative inline-flex rounded-full h-2 w-2 ${liveConnected ? "bg-emerald-500" : "bg-slate-400"}`} />
               </span>
-              201호 {liveConnected ? `LIVE · ${live?.tier ?? "···"}` : "연결중"}
+              201호 {liveConnected ? `LIVE · ${live?.tier ? tierKo(live.tier) : "···"}` : "연결중"}
             </div>
             <span className="hidden md:flex items-center gap-1.5 text-slate-500 text-sm font-medium">
               <span className="material-symbols-outlined text-[18px] text-slate-400">schedule</span>{time}
@@ -392,7 +392,7 @@ function NursingActionGuide({ atRisk }: { atRisk: SpaceCard[] }) {
               <div key={s.space_id} className={`rounded-xl border p-4 ${isCrit ? "bg-red-50 border-red-200" : "bg-white border-slate-200"}`}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-bold text-slate-900 text-sm">{s.space_name}</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isCrit ? "bg-[#7a0024] text-white" : "bg-orange-100 text-orange-700"}`}>{tier}</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isCrit ? "bg-[#7a0024] text-white" : "bg-orange-100 text-orange-700"}`}>{tierKo(tier)}</span>
                 </div>
                 <ul className="space-y-1">
                   {acts.map((a, i) => (
@@ -484,7 +484,7 @@ function NurseView() {
                   <div key={s.space_id} className={`rounded-xl border p-3 ${isCrit ? "bg-[#7a0024]/[0.06] border-[#7a0024]/30" : "bg-slate-50 border-slate-200"}`}>
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-black text-slate-900 text-sm truncate">{s.space_name}</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded shrink-0 ${isCrit ? "bg-[#7a0024] text-white" : "bg-orange-100 text-orange-700"}`}>{tier}</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded shrink-0 ${isCrit ? "bg-[#7a0024] text-white" : "bg-orange-100 text-orange-700"}`}>{tierKo(tier)}</span>
                     </div>
                     {/* 위험단계 출처 — 외부 조기경보로 선제 상향된 공간을 명시(센서 정상이어도 외부발 가동) */}
                     <span className={`inline-flex items-center gap-1 mb-2 px-1.5 py-0.5 rounded text-[9px] font-bold ${
@@ -524,7 +524,7 @@ function NurseView() {
                 <div key={s.space_id} className={`p-5 border rounded-xl ${isCrit ? "border-[#7a0024]/40 bg-red-50" : "border-orange-200 bg-orange-50"}`}>
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className={`text-xl font-bold ${isCrit ? "text-[#7a0024]" : "text-orange-600"}`}>{s.space_name} <span className="text-sm font-normal">({tier})</span></h4>
+                      <h4 className={`text-xl font-bold ${isCrit ? "text-[#7a0024]" : "text-orange-600"}`}>{s.space_name} <span className="text-sm font-normal">({tierKo(tier)})</span></h4>
                       <p className="text-sm text-slate-600 mt-1">CO₂ {s.snapshot.co2 ?? "—"}ppm · 습도 {s.snapshot.rh != null ? s.snapshot.rh.toFixed(0) : "—"}% · 감염확률 {s.snapshot.poi != null ? (s.snapshot.poi * 100).toFixed(1) : "—"}%</p>
                     </div>
                     <span className={`px-3 py-1.5 text-white text-xs font-bold rounded-full shadow-sm ${isCrit ? "bg-[#7a0024]" : "bg-orange-600"}`}>{isCrit ? "즉각 조치" : "주의 관찰"}</span>
@@ -729,8 +729,8 @@ function FMView() {
 
         {approvalNeeded && (
           <div className="mb-5 p-4 rounded-xl bg-red-50 border border-red-200 flex items-center justify-between">
-            <p className="text-sm text-red-700 font-bold flex items-center gap-2"><AlertTriangle size={16} /> 고위험(CRITICAL) 제어 승인 대기 중</p>
-            <button onClick={approve} disabled={busy !== null} className="px-4 py-2 rounded-lg bg-[#7a0024] text-white text-sm font-bold hover:bg-[#92002c] active:scale-95 disabled:opacity-50">⚠ 고위험 제어 승인</button>
+            <p className="text-sm text-red-700 font-bold flex items-center gap-2"><AlertTriangle size={16} /> 심각 단계 제어 승인 대기 중</p>
+            <button onClick={approve} disabled={busy !== null} className="px-4 py-2 rounded-lg bg-[#7a0024] text-white text-sm font-bold hover:bg-[#92002c] active:scale-95 disabled:opacity-50">⚠ 심각 단계 제어 승인</button>
           </div>
         )}
 
@@ -835,9 +835,11 @@ const DIR_TIER: Record<string, { ko: string; cls: string }> = {
   MONITOR: { ko: "정상", cls: "bg-emerald-100 text-emerald-700" },
   CAUTION: { ko: "주의", cls: "bg-amber-100 text-amber-700" },
   ALERT: { ko: "경계", cls: "bg-orange-100 text-orange-700" },
-  HIGH_RISK: { ko: "고위험", cls: "bg-red-100 text-red-700" },
-  CRITICAL: { ko: "위급", cls: "bg-red-200 text-red-900" },
+  HIGH_RISK: { ko: "위험", cls: "bg-red-100 text-red-700" },
+  CRITICAL: { ko: "심각", cls: "bg-red-200 text-red-900" },
 };
+// 티어 → 한글 표시(중앙 단일 소스). 모든 tier 렌더는 이걸 거쳐 raw 영문 노출 방지.
+const tierKo = (t?: string | null): string => (t ? (DIR_TIER[t]?.ko ?? t) : "—");
 // 법규 준수 자동 증빙 (요양병원 감염관리 의무 ↔ Sentinel 자동 생성 증빙)
 const COMPLIANCE = [
   { law: "의료법 제36조", duty: "감염관리위원회 정기 보고", evidence: "제어 이력·알림 자동 PDF", org: "보건복지부" },
