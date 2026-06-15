@@ -5,7 +5,7 @@ import { useState } from "react";
 import { RoomCard } from "./RoomCard";
 import { X, UserCircle, AlertCircle, CheckCircle2, Wind, Radio, Activity } from "lucide-react";
 import { RoomFloorPlan } from "./RoomFloorPlan";
-import type { Tier } from "@/lib/appliances";
+import { TIER_HEX, type Tier } from "@/lib/appliances";
 import { patientsForSpace } from "@/lib/wardData";
 
 // NurseView가 백엔드 overview(+201호 SSE)를 병합해 내려주는 공간 카드
@@ -66,7 +66,7 @@ export function FloorPlan({ spaces }: { spaces: SpaceCard[] }) {
                   { k: "온도", v: snap.temp_c != null ? `${snap.temp_c.toFixed(1)}` : "—", u: "°C" },
                   { k: "습도", v: snap.rh != null ? `${snap.rh.toFixed(0)}` : "—", u: "%" },
                   { k: "PM2.5", v: snap.pm25 != null ? `${snap.pm25}` : "—", u: "㎍" },
-                  { k: "등급", v: snap.tier, u: "" },
+                  { k: "등급", v: TIER_HEX[snap.tier as Tier]?.ko ?? snap.tier, u: "" },
                 ].map((m, i) => (
                   <div key={i} className="bg-[#F3F7FB] rounded-xl p-3 text-center border border-[#D6E2EF]">
                     <p className="text-[10px] text-slate-500 mb-0.5">{m.k}</p>

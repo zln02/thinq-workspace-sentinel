@@ -7,11 +7,11 @@ type TierType = "MONITOR" | "CAUTION" | "ALERT" | "HIGH_RISK" | "CRITICAL";
 // 라이트 관제맵: 흰 카드 + 명확한 보더 + tier 색 왼쪽 액센트(border-l-4).
 // 위험 단계(HIGH_RISK/CRITICAL)는 배경 틴트로 한눈에 띄게.
 const THEME_MAP: Record<TierType, { accent: string; cardBg: string; dot: string; badge: string; label: string }> = {
-  MONITOR:   { accent: "border-l-emerald-400", cardBg: "bg-white",    dot: "bg-emerald-500", badge: "bg-emerald-50 text-emerald-700", label: "Monitor" },
-  CAUTION:   { accent: "border-l-amber-400",   cardBg: "bg-white",    dot: "bg-amber-500",   badge: "bg-amber-50 text-amber-700",   label: "Caution" },
-  ALERT:     { accent: "border-l-orange-500",  cardBg: "bg-orange-50/60", dot: "bg-orange-500", badge: "bg-orange-100 text-orange-700", label: "Alert" },
-  HIGH_RISK: { accent: "border-l-[#7a0024]",   cardBg: "bg-red-50",   dot: "bg-[#7a0024]",   badge: "bg-red-100 text-[#7a0024]",    label: "High Risk" },
-  CRITICAL:  { accent: "border-l-red-600",     cardBg: "bg-red-100/70", dot: "bg-red-600",   badge: "bg-red-600 text-white",        label: "Critical" },
+  MONITOR:   { accent: "border-l-emerald-400", cardBg: "bg-white",    dot: "bg-emerald-500", badge: "bg-emerald-50 text-emerald-700", label: "정상" },
+  CAUTION:   { accent: "border-l-amber-400",   cardBg: "bg-white",    dot: "bg-amber-500",   badge: "bg-amber-50 text-amber-700",   label: "주의" },
+  ALERT:     { accent: "border-l-orange-500",  cardBg: "bg-orange-50/60", dot: "bg-orange-500", badge: "bg-orange-100 text-orange-700", label: "경계" },
+  HIGH_RISK: { accent: "border-l-[#7a0024]",   cardBg: "bg-red-50",   dot: "bg-[#7a0024]",   badge: "bg-red-100 text-[#7a0024]",    label: "위험" },
+  CRITICAL:  { accent: "border-l-red-600",     cardBg: "bg-red-100/70", dot: "bg-red-600",   badge: "bg-red-600 text-white",        label: "심각" },
 };
 
 export function RoomCard({ roomCode, capacity, occ, snapshot, onClick }: any) {
