@@ -284,7 +284,8 @@ function ExternalForecastBanner() {
     ?? [...regions].sort((a, b) => (b.live_score ?? 0) - (a.live_score ?? 0))[0];
   const st = LV_STYLE[top.live_level] ?? LV_STYLE.GREEN;
   const disease = DISEASE_KR[top.disease] ?? top.disease;
-  const peak = top.conf_peak_date ? `${Number(top.conf_peak_date.slice(5, 7))}월 ${Number(top.conf_peak_date.slice(8, 10))}일` : "-";
+  // 확진 피크일(과거) — 연도 포함 표기로 '미래 예측' 오인 방지. 예: '25.12.8
+  const peak = top.conf_peak_date ? `'${top.conf_peak_date.slice(2, 4)}.${Number(top.conf_peak_date.slice(5, 7))}.${Number(top.conf_peak_date.slice(8, 10))}` : "-";
   // 외부 boost 발령 중 여부 — 발령 중이면 배너를 빨강 톤으로 전환하고 "선제 상향 중" 명시.
   const boostOn = !!boost && !!boost.boost_tier && boost.boost_tier !== "MONITOR";
   return (
@@ -303,8 +304,8 @@ function ExternalForecastBanner() {
         <div className="flex flex-col md:flex-row md:items-center gap-5 md:gap-8 xl:border-l xl:border-slate-100 xl:pl-8 shrink-0">
           <div>
             <div className="flex items-center gap-2.5 mb-1">
-              <span className="text-lg font-black text-red-600">유행 피크 예측 {peak}</span>
-              {top.lead_days != null && top.lead_days > 0 && <span className="px-2.5 py-0.5 bg-red-100 text-red-700 rounded-lg text-[10px] font-black whitespace-nowrap">D-{top.lead_days} 선행 경보</span>}
+              <span className="text-lg font-black text-slate-700">확진 피크 {peak}</span>
+              {top.lead_days != null && top.lead_days > 0 && <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-black whitespace-nowrap">조기경보 {top.lead_days}일 선행 포착</span>}
             </div>
             <p className="text-sm text-slate-500 font-medium">{boostOn
               ? <>외부 조기경보 발령 → 전 병동 <span className="text-red-700 font-bold">선제 위험상향({boost?.boost_tier}) 자동 가동 중</span></>
@@ -313,7 +314,7 @@ function ExternalForecastBanner() {
           {/* 시연 토글 — 외부 조기경보 발령 재현(replay) ⇄ 해제 */}
           <button onClick={() => (boostOn ? clearRegion() : selectRegion(top.region, "replay"))}
             className={`shrink-0 flex items-center gap-2.5 px-6 py-3.5 rounded-2xl font-black text-white transition-all shadow-xl ${boostOn ? "bg-slate-700 hover:bg-slate-800 shadow-slate-200" : "bg-red-600 hover:bg-red-700 shadow-red-200"}`}>
-            <span>{boostOn ? "선제 발령 해제" : "선제 시나리오 발령"}</span>
+            <span>{boostOn ? "외부 경보 해제" : "외부 유행 경보 발령"}</span>
             <span className={`w-2 h-2 rounded-full bg-white ${boostOn ? "" : "animate-ping"}`} />
           </button>
         </div>
