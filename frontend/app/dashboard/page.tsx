@@ -573,7 +573,7 @@ function RoomEnvChart({ spaceId, spaceName }: { spaceId: string; spaceName?: str
             <XAxis dataKey="t" stroke="#94A3B8" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} minTickGap={28} />
             <YAxis yAxisId="temp" stroke="#ef4444" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} domain={[16, 32]} width={34} />
             <YAxis yAxisId="rh" orientation="right" stroke="#3b82f6" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} domain={[20, 80]} width={34} />
-            <YAxis yAxisId="co2" hide domain={[350, 1600]} />
+            <YAxis yAxisId="co2" hide domain={[350, (max: number) => Math.max(1200, Math.ceil((max + 200) / 100) * 100)]} />
             <Tooltip contentStyle={{ borderRadius: 10, border: "1px solid #E5E7EB" }} />
             <ReferenceLine yAxisId="rh" y={60} stroke="#93c5fd" strokeDasharray="4 4" />
             <ReferenceLine yAxisId="rh" y={40} stroke="#93c5fd" strokeDasharray="4 4" />
