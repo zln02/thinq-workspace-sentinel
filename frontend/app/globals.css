@@ -205,3 +205,27 @@ body {
   transform: translateY(-2px);
   box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 }
+
+/* ── 관제 대시보드 다크 모드 (.dash-dark 스코프 — 토글로 적용) ──────────────
+   흔한 Tailwind 표면/텍스트/보더 색을 일괄 오버라이드. 강조색(#7a0024·#005c55·
+   emerald 등)은 그대로 유지. 보호자 앱 등 다른 페이지엔 영향 없음(스코프 격리). */
+.dash-dark { background: #0e1316; }
+.dash-dark .clinical-card { background: #171f24; border-color: #2a343b; box-shadow: 0 4px 10px -2px rgb(0 0 0 / 0.5); }
+.dash-dark .bg-white { background-color: #171f24 !important; }
+.dash-dark .bg-\[\#F3F7FB\] { background-color: #0e1316 !important; }
+.dash-dark .bg-slate-50,
+.dash-dark .bg-slate-50\/30,
+.dash-dark .bg-slate-50\/40,
+.dash-dark .bg-slate-50\/50 { background-color: #1c252b !important; }
+.dash-dark .bg-slate-100 { background-color: #242e35 !important; }
+.dash-dark .text-slate-900 { color: #e9eef1 !important; }
+.dash-dark .text-slate-800 { color: #dde4e8 !important; }
+.dash-dark .text-slate-700 { color: #c7d0d6 !important; }
+.dash-dark .text-slate-600 { color: #aab6bd !important; }
+.dash-dark .text-slate-500 { color: #8d99a1 !important; }
+.dash-dark .text-slate-400 { color: #6f7b83 !important; }
+.dash-dark .border-slate-100 { border-color: #232c33 !important; }
+.dash-dark .border-slate-200 { border-color: #2a343b !important; }
+.dash-dark .border-slate-300 { border-color: #313c44 !important; }
+.dash-dark select,
+.dash-dark input { background-color: #1c252b !important; color: #e9eef1 !important; }

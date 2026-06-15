@@ -187,6 +187,7 @@ export default function DashboardPage() {
   const [userName, setUserName] = useState<string | null>(null);
   const [time, setTime] = useState<string>("");
   const [sidebarOpen, setSidebarOpen] = useState(false);   // 모바일 드로어
+  const [dark, setDark] = useState(false);                 // 다크/화이트 모드 (localStorage 영속)
   // 201호 실센서 SSE — 헤더 전역 LIVE 인디케이터용(영상에서 실데이터 가동 상시 노출)
   const { data: live, connected: liveConnected } = useLiveWard("ward_a");
 
@@ -198,6 +199,7 @@ export default function DashboardPage() {
     setRole(viewRole);
     setAccount(s!.account);
     setUserName(s!.name || "수간호사");
+    setDark(localStorage.getItem("dash-theme") === "dark");
 
     const timer = setInterval(() => {
       const now = new Date();
@@ -207,6 +209,7 @@ export default function DashboardPage() {
   }, [router]);
 
   const handleLogout = () => { clearSession(); router.push("/"); };
+  const toggleDark = () => setDark((d) => { const nd = !d; localStorage.setItem("dash-theme", nd ? "dark" : "light"); return nd; });
   const selectView = (r: string, href?: string) => {
     if (href) { router.push(href); return; }
     localStorage.setItem("role", r); // SUPER 뷰 전환 (account 유지)
@@ -217,7 +220,7 @@ export default function DashboardPage() {
   const meta = ROLE_META[role] ?? ROLE_META.NURSE;
 
   return (
-    <div className="min-h-screen bg-[#F3F7FB] text-slate-700 flex font-sans">
+    <div className={`min-h-screen bg-[#F3F7FB] text-slate-700 flex font-sans ${dark ? "dash-dark" : ""}`}>
       <DashSidebar role={role} account={account} userName={userName} onSelect={selectView} onLogout={handleLogout} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="flex-1 md:ml-64 flex flex-col min-h-screen min-w-0">
@@ -245,6 +248,10 @@ export default function DashboardPage() {
               </span>
               201호 {liveConnected ? `LIVE · ${live?.tier ? tierKo(live.tier) : "···"}` : "연결중"}
             </div>
+            <button onClick={toggleDark} aria-label="테마 전환"
+              className="w-9 h-9 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-[#005c55] transition-colors">
+              <span className="material-symbols-outlined text-[20px]">{dark ? "light_mode" : "dark_mode"}</span>
+            </button>
             <span className="hidden md:flex items-center gap-1.5 text-slate-500 text-sm font-medium">
               <span className="material-symbols-outlined text-[18px] text-slate-400">schedule</span>{time}
             </span>
@@ -822,6 +829,29 @@ function FMView() {
               <Btn a="ac_off" label="전원 OFF" kind="d" />
             </div>
           </div>
+          {/* 미연동 가전 — Smart Protocol 자동제어 대상(현재 어댑터 미연동, OFF) */}
+          {[
+            { name: "환기청정기", icon: "mode_fan", note: "급·배기 환기율 제어 (Wells-Riley Q·ACH)" },
+            { name: "가습기", icon: "humidity_high", note: "인플루엔자·RSV 목표습도 50% (비말 안정성↓)" },
+            { name: "제습기", icon: "humidity_low", note: "노로·곰팡이·욕창 억제 45%" },
+            { name: "보일러", icon: "mode_heat", note: "겨울 저체온·인플루엔자 시즌 난방 22℃" },
+            { name: "로봇청소기", icon: "cleaning_services", note: "표면 살균 (노로·CDI)" },
+            { name: "스타일러", icon: "checkroom", note: "의류·린넨 살균 (옴·요양보호사 출퇴근)" },
+          ].map((d) => (
+            <div key={d.name} className="border border-slate-200 rounded-xl p-5 bg-slate-50/30">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="p-2 rounded-lg bg-slate-100 text-slate-400 shrink-0"><span className="material-symbols-outlined text-[18px]">{d.icon}</span></div>
+                  <div className="min-w-0"><p className="font-bold text-slate-900">{d.name}</p><p className="text-xs text-slate-400 truncate">어댑터 미연동 (데모) · {d.note}</p></div>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-1 rounded bg-slate-100 text-slate-500 border border-slate-200 shrink-0">OFF</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button disabled className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-400 cursor-not-allowed">전원 ON</button>
+                <span className="text-[11px] text-slate-400">연동 시 위험등급 따라 자동 제어</span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
