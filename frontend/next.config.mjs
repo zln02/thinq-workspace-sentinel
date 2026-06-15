@@ -1,4 +1,6 @@
-import { PHASE_PRODUCTION_BUILD, PHASE_PRODUCTION_SERVER } from "next/constants";
+// next/constants 는 Next14에서 ESM import 해석이 안 됨(ERR_MODULE_NOT_FOUND) → phase 문자열 직접 비교.
+const PHASE_PRODUCTION_BUILD = "phase-production-build";
+const PHASE_PRODUCTION_SERVER = "phase-production-server";
 
 /**
  * 배포는 nginx `/sentinel` → :3001 이므로 basePath 가 필수다.
