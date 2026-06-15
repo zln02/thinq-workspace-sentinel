@@ -69,6 +69,29 @@ def _carry_forward(space_id: str, field: str, value, now: float):
         return prev[0]
     return None
 
+
+_OCC_HOLD_TTL = 10.0  # 초: 카메라가 사람을 놓쳐 0을 쏠 때 직전 인원을 이 시간 동안 유지(깜빡임 흡수)
+_occ_last_nonzero: dict[str, tuple[int, float]] = {}
+
+
+def _smooth_occupancy(space_id: str, value, now: float):
+    """카메라 재실(occupancy) 디바운스 — YOLO가 프레임마다 사람을 놓쳐 0↔N 깜빡이면
+    등급이 정상↔심각으로 튄다. 최근 _OCC_HOLD_TTL 안에 비영(非零)이 있었으면 0을 무시하고
+    직전 인원을 유지. 진짜 비면 TTL 경과 후 0 수용(약간의 하강 지연만 발생).
+
+    None(환경 POST)은 그대로 통과 → carry_forward가 처리.
+    """
+    if value is None:
+        return None
+    if value > 0:
+        _occ_last_nonzero[space_id] = (value, now)
+        return value
+    prev = _occ_last_nonzero.get(space_id)  # value == 0
+    if prev and (now - prev[1]) < _OCC_HOLD_TTL:
+        return prev[0]
+    return 0
+
+
 # 시연 병동 파라미터 (Rudnick-Milton 입력)
 DEMO_OCCUPANCY = 10
 DEMO_INFECTORS = 1
@@ -299,7 +322,9 @@ async def ingest_reading(r: SensorReading):
     now = time.time()
     co2 = _carry_forward(r.space_id, "co2", co2, now)
     pm25 = _carry_forward(r.space_id, "pm25", pm25, now)
-    occ_eff = _carry_forward(r.space_id, "occupancy", r.occupancy, now)
+    # 카메라 0 깜빡임 디바운스 후 carry-forward (환경 POST의 None은 그대로 통과)
+    occ_in = _smooth_occupancy(r.space_id, r.occupancy, now)
+    occ_eff = _carry_forward(r.space_id, "occupancy", occ_in, now)
 
     # 2) Rudnick-Milton 재호흡률 → PoI → tier
     #    재실 인원: 카메라가 occupancy 명시 → 채택+보존, 환경 POST(생략) → 직전값 carry(위 1.5),
