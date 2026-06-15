@@ -116,11 +116,13 @@ const ROLE_META: Record<string, { label: string; icon: string }> = {
   NURSE: { label: "간호사 관제", icon: "monitor_heart" },
   FM: { label: "시설·가전 제어", icon: "account_tree" },
   DIRECTOR: { label: "경영 리포트", icon: "analytics" },
+  ANALYTICS: { label: "추이 분석", icon: "monitoring" },
 };
 const NAV: { role: string; label: string; desc: string; icon: string; href?: string }[] = [
   { role: "NURSE", label: "간호사 관제", desc: "실시간 병동 감시", icon: "monitor_heart" },
   { role: "FM", label: "시설·가전 제어", desc: "ThinQ 자동 방역", icon: "account_tree" },
   { role: "DIRECTOR", label: "경영 리포트", desc: "ESG·ROI 증빙", icon: "analytics" },
+  { role: "ANALYTICS", label: "추이 분석", desc: "위험·환경 그래프", icon: "monitoring" },
   { role: "GUARDIAN", label: "보호자 앱", desc: "가족 안심", icon: "family_home", href: "/guardian" },
 ];
 
@@ -130,7 +132,7 @@ function DashSidebar({ role, account, userName, onSelect, onLogout, open, onClos
   open: boolean; onClose: () => void;
 }) {
   const isSuper = account === "SUPER";
-  const items = isSuper ? NAV : NAV.filter((n) => n.role === role);
+  const items = isSuper ? NAV : NAV.filter((n) => n.role === role || n.role === "ANALYTICS");
   return (
     <>
     {/* 모바일 드로어 백드롭 */}
@@ -262,6 +264,7 @@ export default function DashboardPage() {
           {role === "NURSE" && <NurseView />}
           {role === "FM" && <FMView />}
           {role === "DIRECTOR" && <DirectorView />}
+          {role === "ANALYTICS" && <AnalyticsView />}
         </div>
       </div>
     </div>
@@ -418,8 +421,9 @@ function NursingActionGuide({ atRisk }: { atRisk: SpaceCard[] }) {
 // 👩‍⚕️ 1. 간호사(ICN) 대시보드
 // ============================================================================
 function NurseView() {
-  const [modal, setModal] = useState<"DANGER" | null>(null);
-  // 백엔드 overview(전 공간) + 201호 SSE 병합 → 환경 관제·자동대응이 라이브로 움직임
+  // 백엔드 overview(전 공간) + 201호 SSE 병합 → 병동 관제맵이 라이브로 움직임.
+  // 간호사 뷰는 케어 중심 — 외부경보 배너 + 병동 관제맵 + 간호 조치 가이드만.
+  // (가전·위험확률그래프 등 분석은 별도 '추이 분석' 탭, 가전 제어는 '시설·가전' 탭)
   const ov = useSpacesOverview(5000);
   const { data: live } = useLiveWard("ward_a");
   const spaces: SpaceCard[] = ov.map((s) => {
@@ -429,50 +433,17 @@ function NurseView() {
       : { tier: s.tier, poi: s.poi, co2: s.co2_ppm, temp_c: s.temp_c, rh: s.humidity, pm25: s.pm25 };
     return { space_id: s.space_id, space_name: s.space_name, space_type: s.space_type, max_occupancy: s.max_occupancy, isLive, occ: isLive ? (live?.occupancy ?? null) : null, snapshot };
   });
-  // 공간별 tier 출처(센서발/외부 조기경보발) — "이 병동이 왜 위험단계인가"를 카드에 표시.
-  const srcMap = new Map(ov.map((s) => [s.space_id, s.tier_source]));
   const atRisk = spaces
     .filter((s) => tierRank(s.snapshot.tier) >= 1) // CAUTION+
     .sort((a, b) => tierRank(b.snapshot.tier) - tierRank(a.snapshot.tier));
-  const responding = spaces
-    .filter((s) => tierRank(s.snapshot.tier) >= 2) // ALERT+ → ThinQ 자동대응
-    .sort((a, b) => tierRank(b.snapshot.tier) - tierRank(a.snapshot.tier));
-
-  const devIcon = (t: string) =>
-    t === "vent" ? <Activity size={13} /> : t === "ac" ? <Thermometer size={13} /> : <Wind size={13} />;
-  const liveTier = spaces.find((s) => s.isLive)?.snapshot.tier ?? "···";
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* 외부 감염병 조기경보 — 외부 예측 → 선제 예방 차별점 */}
       <ExternalForecastBanner />
 
-      {/* 상단 KPI — Clinical Clarity */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="clinical-card p-6 flex items-center gap-5">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><Activity size={26} /></div>
-          <div><p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">실시간 감시 공간</p><p className="text-2xl font-black text-slate-800">{spaces.length}<span className="text-sm font-bold text-slate-400 ml-1">개소</span></p></div>
-        </div>
-        <div onClick={() => setModal("DANGER")} className="clinical-card room-card p-6 flex items-center gap-5 cursor-pointer">
-          <div className="w-14 h-14 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center shrink-0"><AlertTriangle size={26} /></div>
-          <div><p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">주의·위험 공간</p><p className="text-2xl font-black text-slate-800">{atRisk.length}<span className="text-sm font-bold text-slate-400 ml-1">개소</span></p></div>
-        </div>
-        <div className="clinical-card p-6 flex items-center gap-5 border-l-4 border-l-[#005c55]">
-          <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-[#005c55] flex items-center justify-center shrink-0"><Radio size={26} /></div>
-          <div><p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">201호 실센서</p><div className="flex items-center gap-2"><span className="text-xl font-black text-slate-800">{liveTier}</span><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" /></div></div>
-        </div>
-        <div className="clinical-card p-6 flex items-center gap-5">
-          <div className="w-14 h-14 rounded-2xl bg-[#005c55]/10 text-[#005c55] flex items-center justify-center shrink-0"><Zap size={26} /></div>
-          <div><p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">ThinQ 자동대응</p><p className="text-2xl font-black text-slate-800">{responding.length}<span className="text-sm font-bold text-slate-400 ml-1">개소 가동</span></p></div>
-        </div>
-      </div>
-
-      {/* 감염병 위험 확률 그래프 — 실알고리즘(Rudnick-Milton) + 논문 출처. 시연 핵심 */}
-      <RiskChart spaceId="ward_a" spaceName="201호 다인실" />
-
-      {/* 메인: 병동 환경 관제맵 + ThinQ 자동대응 라이브 */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-        <section className="xl:col-span-3 clinical-card p-8">
+      {/* 병동 환경 실시간 관제맵 (전폭) */}
+      <section className="clinical-card p-8">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shrink-0"><Wind size={26} /></div>
@@ -490,84 +461,9 @@ function NurseView() {
           <FloorPlan spaces={spaces} />
         </section>
 
-        <aside className="xl:col-span-1">
-          <div className="clinical-card overflow-hidden flex flex-col border-t-8 border-t-[#005c55] h-full">
-            <div className="p-6 bg-slate-50/50 border-b border-slate-100">
-              <div className="flex items-center gap-3 text-[#005c55] mb-2">
-                <div className="w-10 h-10 bg-[#005c55] text-white rounded-xl flex items-center justify-center shrink-0"><Zap size={22} /></div>
-                <h3 className="font-black text-lg">ThinQ 자동대응 LIVE</h3>
-              </div>
-              <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">위험 감지 시 AI가 가전 자동 가동</p>
-            </div>
-            <div className="p-5 space-y-3 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-              {responding.length === 0 ? (
-                <div className="text-center py-12 text-slate-400 text-sm"><CheckCircle2 className="mx-auto mb-2 text-emerald-500" size={28} />전 공간 안정<br />자동대응 대기중</div>
-              ) : responding.map((s) => {
-                const tier = s.snapshot.tier;
-                const isCrit = tierRank(tier) >= 4;
-                return (
-                  <div key={s.space_id} className={`rounded-3xl border p-5 ${isCrit ? "border-red-200 bg-red-50/30" : "border-slate-100 bg-white"}`}>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="font-black text-slate-800 truncate">{s.space_name}</span>
-                      <span className={`status-badge ${isCrit ? "status-danger" : "status-caution"}`}>{tierKo(tier)} 대응 중</span>
-                    </div>
-                    {/* 위험단계 출처 — 외부 조기경보로 선제 상향된 공간 명시 */}
-                    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold mb-3 ${
-                      srcMap.get(s.space_id) === "external"
-                        ? "bg-red-50 text-red-600 border border-red-100"
-                        : "bg-slate-50 text-slate-500 border border-slate-200"}`}>
-                      <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />{srcMap.get(s.space_id) === "external" ? "외부 조기경보 상향" : "실내센서 감지"}
-                    </div>
-                    <div className="space-y-2">
-                      {autoResponse(tier).map((d, i) => (
-                        <div key={i} className="flex items-center justify-between p-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <span className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">{devIcon(d.type)}</span>
-                            <span className="text-sm font-black text-slate-700 truncate">{d.name}</span>
-                          </div>
-                          <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-black shrink-0">{d.mode}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </aside>
-      </div>
-
-      {/* 하단: 간호 조치 가이드 — 위험 등급별 '간호사가 할 행동' (실시간 위험공간 연동) */}
+      {/* 간호 조치 가이드 — 위험 등급별 '간호사가 할 행동' (실시간 위험공간 연동) */}
       <NursingActionGuide atRisk={atRisk} />
 
-      {modal === "DANGER" && (
-        <Modal title="🚨 주의·위험 공간 + ThinQ 자동대응 현황" onClose={() => setModal(null)}>
-          <div className="space-y-3">
-            {atRisk.map((s) => {
-              const tier = s.snapshot.tier;
-              const devs = autoResponse(tier);
-              const isCrit = tierRank(tier) >= 3;
-              return (
-                <div key={s.space_id} className={`p-5 border rounded-xl ${isCrit ? "border-[#7a0024]/40 bg-red-50" : "border-orange-200 bg-orange-50"}`}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className={`text-xl font-bold ${isCrit ? "text-[#7a0024]" : "text-orange-600"}`}>{s.space_name} <span className="text-sm font-normal">({tierKo(tier)})</span></h4>
-                      <p className="text-sm text-slate-600 mt-1">CO₂ {s.snapshot.co2 ?? "—"}ppm · 습도 {s.snapshot.rh != null ? s.snapshot.rh.toFixed(0) : "—"}% · 감염확률 {s.snapshot.poi != null ? (s.snapshot.poi * 100).toFixed(1) : "—"}%</p>
-                    </div>
-                    <span className={`px-3 py-1.5 text-white text-xs font-bold rounded-full shadow-sm ${isCrit ? "bg-[#7a0024]" : "bg-orange-600"}`}>{isCrit ? "즉각 조치" : "주의 관찰"}</span>
-                  </div>
-                  {devs.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-slate-200">
-                      <span className="text-[11px] text-emerald-700 font-bold flex items-center gap-1"><Zap size={12} /> ThinQ 자동가동:</span>
-                      {devs.map((d, i) => (<span key={i} className="text-[11px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded">{d.name} · {d.mode}</span>))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </Modal>
-      )}
     </div>
   );
 }
@@ -657,6 +553,26 @@ function RiskChart({ spaceId = "ward_a", spaceName }: { spaceId?: string; spaceN
         모델: Wells-Riley(Rudnick-Milton CO₂ 재호흡) · PoI = 1−exp(−f·(I/n)·q·t)<br />
         출처: Rudnick SN, Milton DK (2003) &ldquo;Risk of indoor airborne infection transmission estimated from carbon dioxide concentration&rdquo;, <i>Indoor Air</i> 13(3):237–245.
       </p>
+    </div>
+  );
+}
+
+// ============================================================================
+// 📈 추이 분석 — 그래프 전용 탭 (위험확률·환경 시계열·의사결정 흐름)
+// ============================================================================
+function AnalyticsView() {
+  return (
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="border-b border-slate-200 pb-4">
+        <h2 className="text-2xl font-black text-slate-900 tracking-tight">추이 분석</h2>
+        <p className="text-sm text-slate-500 mt-1">201호 실센서 기반 · 감염위험·환경 시계열 + 자동방역 의사결정 흐름 (실측 Rudnick-Milton 알고리즘)</p>
+      </div>
+      {/* 감염병 위험 확률(PoI) 추이 */}
+      <RiskChart spaceId="ward_a" spaceName="201호 다인실" />
+      {/* 온·습도·CO₂ 환경 시계열 */}
+      <RoomEnvChart spaceId="ward_a" spaceName="201호 다인실" />
+      {/* 자동 방역 의사결정 흐름 (계산식 검증 포함) */}
+      <FlowPanel spaceId="ward_a" />
     </div>
   );
 }
