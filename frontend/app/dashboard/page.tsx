@@ -287,44 +287,37 @@ function ExternalForecastBanner() {
   const peak = top.conf_peak_date ? `${Number(top.conf_peak_date.slice(5, 7))}월 ${Number(top.conf_peak_date.slice(8, 10))}일` : "-";
   // 외부 boost 발령 중 여부 — 발령 중이면 배너를 빨강 톤으로 전환하고 "선제 상향 중" 명시.
   const boostOn = !!boost && !!boost.boost_tier && boost.boost_tier !== "MONITOR";
-  const boostRegion = boost?.region ?? top.region;
-  const wrapCls = boostOn ? "border-l-red-500 bg-red-50/30" : "border-l-emerald-500 bg-emerald-50/20";
   return (
-    <div className={`clinical-card border-l-[6px] p-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 ${wrapCls}`}>
-      <div className="flex items-center gap-3 shrink-0">
-        <span className="text-2xl">🦠</span>
-        <div>
-          <p className="text-[11px] font-bold text-slate-500">외부 감염병 조기경보 · {meta.source ?? "질병관리청·UIS"}{meta.as_of ? ` · 기준 ${meta.as_of}` : ""}</p>
-          <p className={`text-sm font-black ${boostOn ? "text-[#7a0024]" : st.text}`}>{top.region} {disease} <span>{st.label}({top.live_score ?? "—"})</span></p>
+    <div className="clinical-card overflow-hidden flex relative">
+      <div className={`w-2 shrink-0 ${boostOn ? "bg-red-500" : "bg-emerald-500"}`} />
+      <div className="flex-1 p-6 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+        <div className="flex items-start gap-5 min-w-0">
+          <div className={`p-3.5 rounded-2xl text-white shrink-0 shadow-lg ${boostOn ? "bg-red-500 shadow-red-200" : "bg-emerald-500 shadow-emerald-200"}`}>
+            <AlertCircle size={28} />
+          </div>
+          <div className="min-w-0">
+            <p className={`text-[11px] font-black uppercase tracking-widest mb-1.5 ${boostOn ? "text-red-800" : "text-emerald-800"}`}>외부 감염병 조기경보 · {meta.source ?? "KDCA·UIS"} 연동</p>
+            <h3 className={`text-2xl md:text-3xl font-black ${boostOn ? "text-red-950" : "text-emerald-950"}`}>{top.region} {disease} <span className={`underline decoration-4 underline-offset-[6px] ${boostOn ? "text-red-600" : "text-emerald-600"}`}>{st.label}({top.live_score ?? "—"})</span></h3>
+          </div>
+        </div>
+        <div className="flex flex-col md:flex-row md:items-center gap-5 md:gap-8 xl:border-l xl:border-slate-100 xl:pl-8 shrink-0">
+          <div>
+            <div className="flex items-center gap-2.5 mb-1">
+              <span className="text-lg font-black text-red-600">유행 피크 예측 {peak}</span>
+              {top.lead_days != null && top.lead_days > 0 && <span className="px-2.5 py-0.5 bg-red-100 text-red-700 rounded-lg text-[10px] font-black whitespace-nowrap">D-{top.lead_days} 선행 경보</span>}
+            </div>
+            <p className="text-sm text-slate-500 font-medium">{boostOn
+              ? <>외부 조기경보 발령 → 전 병동 <span className="text-red-700 font-bold">선제 위험상향({boost?.boost_tier}) 자동 가동 중</span></>
+              : <>위험 도달 시 전 병동 <span className="text-red-700 font-bold">선제 환기·정화 강화</span> 자동 가동</>}</p>
+          </div>
+          {/* 시연 토글 — 외부 조기경보 발령 재현(replay) ⇄ 해제 */}
+          <button onClick={() => (boostOn ? clearRegion() : selectRegion(top.region, "replay"))}
+            className={`shrink-0 flex items-center gap-2.5 px-6 py-3.5 rounded-2xl font-black text-white transition-all shadow-xl ${boostOn ? "bg-slate-700 hover:bg-slate-800 shadow-slate-200" : "bg-red-600 hover:bg-red-700 shadow-red-200"}`}>
+            <span>{boostOn ? "선제 발령 해제" : "선제 시나리오 발령"}</span>
+            <span className={`w-2 h-2 rounded-full bg-white ${boostOn ? "" : "animate-ping"}`} />
+          </button>
         </div>
       </div>
-      <div className="hidden sm:block h-9 w-px bg-slate-200" />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm text-slate-700 font-bold">📈 유행 피크 예측 {peak}{top.lead_days != null && top.lead_days > 0 ? <span className="text-[#7a0024]"> · D-{top.lead_days} 선행 경보</span> : null}</p>
-        {boostOn
-          ? <p className="text-xs text-[#7a0024] font-bold mt-0.5">🔴 외부 조기경보 발령 → 전 병동 <b>선제 위험상향({boost?.boost_tier}) 자동 가동 중</b> · {boostRegion}발</p>
-          : <p className="text-xs text-slate-500 mt-0.5">예측 위험 도달 시 ThinQ가 전 병동 <b className="text-slate-700">선제 환기·정화 자동 강화</b> · 전국 {regions.length}개 지역 실시간 감시</p>}
-        {/* 다층 외부 데이터 출처 — "우리가 빌려오는 데이터의 풍부함" 부각 */}
-        <div className="flex flex-wrap items-center gap-1 mt-1.5">
-          <span className="text-[10px] font-bold text-slate-400 mr-0.5">수집원</span>
-          {["질병청 확진", "하수 KOWAS", "검색 데이터랩", "약국 OTC", "기온 KMA"].map((s) => (
-            <span key={s} className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white/70 text-slate-600 border border-slate-300/60">{s}</span>
-          ))}
-        </div>
-      </div>
-      {/* 시연 토글 — 외부 조기경보 발령 재현(replay) ⇄ 해제. 외부데이터→실내 인과를 라이브로 시연 */}
-      <button
-        onClick={() => (boostOn ? clearRegion() : selectRegion(top.region, "replay"))}
-        className={`shrink-0 px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${
-          boostOn ? "bg-[#7a0024] text-white border-[#7a0024] hover:bg-[#5e001b]"
-                  : "bg-white text-[#7a0024] border-[#7a0024]/40 hover:border-[#7a0024]"}`}
-      >
-        {boostOn ? "■ 선제 발령 해제" : "▶ 선제 시나리오 발령"}
-      </button>
-      <span className="relative flex h-2.5 w-2.5 shrink-0">
-        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${boostOn ? "bg-red-500" : st.dot} opacity-60`} />
-        <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${boostOn ? "bg-red-500" : st.dot}`} />
-      </span>
     </div>
   );
 }
