@@ -13,7 +13,7 @@ import {
   ResponsiveContainer, BarChart, LineChart, ReferenceLine
 } from 'recharts';
 import { FloorPlan, type SpaceCard } from "@/components/domain/FloorPlan";
-import { useLiveWard, useSpacesOverview, useReport, useExternalSignal, useExternalMeta, useCowayStatus, useAcStatus, useControlPlan, sendControl, sendApprove, selectRegion, clearRegion, useBoostState, setControlMode, useControlMode, useSensorSeries, type SpaceOverview, type DirectorReport } from "@/lib/useSentinel";
+import { useLiveWard, useSpacesOverview, useReport, useExternalSignal, useExternalMeta, useCowayStatus, useAcStatus, useControlPlan, sendControl, sendApprove, selectRegion, clearRegion, useBoostState, setControlMode, useControlMode, useSensorSeries, useRiskSeries, type SpaceOverview, type DirectorReport } from "@/lib/useSentinel";
 import FlowPanel from "@/components/domain/FlowPanel";
 import { getSession, canAccess, clearSession } from "@/lib/auth";
 import { tierRank, autoResponse } from "@/lib/wardData";
@@ -460,6 +460,9 @@ function NurseView() {
         </div>
       </div>
 
+      {/* 감염병 위험 확률 그래프 — 실알고리즘(Rudnick-Milton) + 논문 출처. 시연 핵심 */}
+      <RiskChart spaceId="ward_a" spaceName="201호 다인실" />
+
       {/* 메인: 병동 환경 관제맵 + ThinQ 자동대응 라이브 */}
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
         <section className="xl:col-span-3 clinical-card p-8">
@@ -602,6 +605,51 @@ function RoomEnvChart({ spaceId, spaceName }: { spaceId: string; spaceName?: str
           </LineChart>
         </ResponsiveContainer>
       </div>
+    </div>
+  );
+}
+
+// 감염병 위험 확률(PoI) 추이 — Rudnick-Milton CO₂ 재호흡 모델 실산출값. 논문 출처 명기.
+const TIER_KO5 = ["", "정상", "주의", "경계", "위험", "심각"];
+function RiskChart({ spaceId = "ward_a", spaceName }: { spaceId?: string; spaceName?: string }) {
+  const { source, points } = useRiskSeries(spaceId, 5000);
+  const isReal = source === "실측";
+  const latest = points.length ? points[points.length - 1] : null;
+  const curTier = latest ? latest.tier : 1;
+  const badgeCls = curTier >= 4 ? "status-danger" : curTier >= 2 ? "status-caution" : "status-normal";
+  return (
+    <div className="clinical-card p-6 flex flex-col">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+        <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
+          <span className="w-8 h-8 rounded-xl bg-[#005c55]/10 flex items-center justify-center"><Activity size={16} className="text-[#005c55]" /></span>
+          {spaceName ?? "201호"} 감염병 위험 확률 추이
+        </h3>
+        <div className="flex items-center gap-2">
+          {latest && <span className="text-xl font-black text-[#005c55]">{latest.poi.toFixed(1)}<span className="text-xs font-normal text-slate-400 ml-0.5">%</span></span>}
+          <span className={`status-badge ${badgeCls}`}>{TIER_KO5[curTier] ?? "정상"}</span>
+          <span className={`text-[11px] font-bold px-2 py-1 rounded-full ${isReal ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>{isReal ? "● 실측 알고리즘" : "○ 시뮬"}</span>
+        </div>
+      </div>
+      <p className="text-xs text-slate-400 mb-3">CO₂ 재호흡 기반 감염확률(PoI) · 최근 30분 · 임계 초과 시 ThinQ 자동 가동 → 확률 저감</p>
+      <div className="h-[220px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={points} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+            <XAxis dataKey="t" stroke="#94A3B8" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} minTickGap={28} />
+            <YAxis stroke="#94A3B8" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} width={36} unit="%"
+              domain={[0, (max: number) => Math.max(10, Math.ceil((max + 5) / 5) * 5)]} />
+            <Tooltip contentStyle={{ borderRadius: 10, border: "1px solid #E5E7EB" }} formatter={(v: number) => [`${v}%`, "감염확률"]} />
+            <ReferenceLine y={5} stroke="#fb923c" strokeDasharray="4 4" />
+            <ReferenceLine y={15} stroke="#ef4444" strokeDasharray="4 4" />
+            <ReferenceLine y={30} stroke="#b91c1c" strokeDasharray="4 4" label={{ value: "심각 30%", fontSize: 9, fill: "#b91c1c", position: "insideTopRight" }} />
+            <Line type="monotone" dataKey="poi" name="감염확률(%)" stroke="#005c55" strokeWidth={2.5} dot={false} isAnimationActive={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+      <p className="text-[10px] text-slate-400 mt-2 leading-relaxed border-t border-slate-100 pt-2">
+        모델: Wells-Riley(Rudnick-Milton CO₂ 재호흡) · PoI = 1−exp(−f·(I/n)·q·t)<br />
+        출처: Rudnick SN, Milton DK (2003) &ldquo;Risk of indoor airborne infection transmission estimated from carbon dioxide concentration&rdquo;, <i>Indoor Air</i> 13(3):237–245.
+      </p>
     </div>
   );
 }

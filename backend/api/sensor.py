@@ -577,6 +577,51 @@ async def sensor_series(space_id: str = "ward_a", minutes: int = 30, points: int
     return {"space_id": space_id, "source": "시뮬", "points": sim}
 
 
+@router.get("/risk-series")
+async def risk_series(space_id: str = "ward_a", minutes: int = 30):
+    """감염위험 확률(PoI) 시계열 — Rudnick-Milton CO2 재호흡 모델 산출값(rehva_results).
+
+    간호사 위험확률 그래프용. 실측 PoI(0~1)를 분단위 평균으로 % 환산.
+    근거: Rudnick SN & Milton DK (2003), Indoor Air 13(3):237-245.
+    """
+    from backend.api.main import state
+
+    out = []
+    pool = state.get("db")
+    if pool:
+        try:
+            async with pool.acquire() as con:
+                if "-" in space_id and len(space_id) >= 32:
+                    space_uuid = space_id
+                else:
+                    _, space_uuid = await _resolve_space(con, space_id)
+                rows = await con.fetch(
+                    "SELECT date_trunc('minute', calculated_at) AS t, AVG(poi) poi, MAX(risk_tier) tier "
+                    "FROM sentinel.rehva_results "
+                    f"WHERE space_id=$1 AND calculated_at > NOW() - INTERVAL '{int(minutes)} min' "
+                    "GROUP BY 1 ORDER BY 1",
+                    space_uuid,
+                )
+                out = [{
+                    "t": r["t"].strftime("%H:%M"),
+                    "poi": round((r["poi"] or 0.0) * 100, 2),       # 감염확률 %
+                    "tier": int(r["tier"]) if r["tier"] is not None else 1,
+                } for r in rows]
+        except Exception as e:  # noqa: BLE001
+            logger.warning("risk-series 조회 실패: %s", e)
+    if len(out) >= 5:
+        return {"space_id": space_id, "source": "실측", "points": out}
+    # 시뮬 폴백 — 결정적 완만 곡선(데모, 라벨 명시)
+    base = sum(ord(c) for c in space_id) % 5
+    n = min(int(minutes), 30)
+    sim = [{
+        "t": f"-{n - i}m",
+        "poi": round(max(0.0, base + 4 * (math.sin(i / 5.0) + 1)), 2),
+        "tier": 1,
+    } for i in range(n)]
+    return {"space_id": space_id, "source": "시뮬", "points": sim}
+
+
 @router.get("/coway-status")
 async def coway_status():
     """코웨이 실시간 상태(전원/풍량/모드/추정전력) + 공기질 실측(PM2.5/CO2/AQI)."""

@@ -382,6 +382,24 @@ export function useSensorSeries(spaceId: string, intervalMs = 5000) {
   return data;
 }
 
+export type RiskPoint = { t: string; poi: number; tier: number };
+/** 감염위험 확률(PoI) 시계열 폴링 — Rudnick-Milton 산출값. 위험확률 그래프용. */
+export function useRiskSeries(spaceId: string, intervalMs = 5000) {
+  const [data, setData] = useState<{ source: string; points: RiskPoint[] }>({ source: "", points: [] });
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      fetch(`${API_BASE}/api/sentinel/sensor/risk-series?space_id=${encodeURIComponent(spaceId)}&minutes=30`)
+        .then((r) => r.json())
+        .then((j) => { if (alive && Array.isArray(j.points)) setData({ source: j.source, points: j.points }); })
+        .catch(() => {});
+    load();
+    const t = setInterval(load, intervalMs);
+    return () => { alive = false; clearInterval(t); };
+  }, [spaceId, intervalMs]);
+  return data;
+}
+
 /** 현재 제어 모드(auto/manual) 폴링. */
 export function useControlMode(spaceId: string, intervalMs = 6000) {
   const [mode, setMode] = useState<"auto" | "manual">("auto");
