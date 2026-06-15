@@ -545,7 +545,7 @@ function NurseView() {
   );
 }
 
-// 호실별 실시간 환경 시계열 — FM 콘솔에 흡수. 현재 온·습도 라이브(CO2 센서 교체 중→복구 시 라인 추가).
+// 호실별 실시간 환경 시계열 — FM 콘솔에 흡수. 온·습도·CO₂ 라이브(MH-Z19C 실측).
 function RoomEnvChart({ spaceId, spaceName }: { spaceId: string; spaceName?: string }) {
   const { source, points } = useSensorSeries(spaceId, 5000);
   const isReal = source === "실측";
@@ -556,15 +556,16 @@ function RoomEnvChart({ spaceId, spaceName }: { spaceId: string; spaceName?: str
       <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
         <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
           <span className="w-7 h-7 rounded-lg bg-cyan-100 flex items-center justify-center"><Activity size={15} className="text-cyan-600" /></span>
-          {spaceName ?? "선택 공간"} 실시간 환경 — 온·습도
+          {spaceName ?? "선택 공간"} 실시간 환경 — 온·습도·CO₂
         </h3>
         <div className="flex items-center gap-2">
           {latest?.temp != null && <span className="text-sm font-black text-red-500">{latest.temp}<span className="text-xs font-normal text-slate-400 ml-0.5">°C</span></span>}
           {latest?.rh != null && <span className="text-sm font-black text-blue-500">{latest.rh}<span className="text-xs font-normal text-slate-400 ml-0.5">%</span></span>}
+          {latest?.co2 != null && <span className="text-sm font-black text-teal-600">{latest.co2}<span className="text-xs font-normal text-slate-400 ml-0.5">ppm</span></span>}
           <span className={`text-[11px] font-bold px-2 py-1 rounded-full ${isReal ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>{isReal ? "● 실측 라이브" : "○ 시뮬(센서 미가동)"}</span>
         </div>
       </div>
-      <p className="text-xs text-slate-400 mb-3">최근 30분 · 분단위 · 적정 습도 40–60%(ASHRAE){hasCo2 ? "" : " · CO₂ 센서 교체 중"}</p>
+      <p className="text-xs text-slate-400 mb-3">최근 30분 · 분단위 · 적정 습도 40–60%(ASHRAE){hasCo2 ? " · CO₂ 800ppm↑ 환기 권고" : " · CO₂ 센서 워밍업 중"}</p>
       <div className="flex-1 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={points} margin={{ top: 8, right: 4, left: -18, bottom: 0 }}>
@@ -572,11 +573,14 @@ function RoomEnvChart({ spaceId, spaceName }: { spaceId: string; spaceName?: str
             <XAxis dataKey="t" stroke="#94A3B8" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} minTickGap={28} />
             <YAxis yAxisId="temp" stroke="#ef4444" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} domain={[16, 32]} width={34} />
             <YAxis yAxisId="rh" orientation="right" stroke="#3b82f6" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} domain={[20, 80]} width={34} />
+            <YAxis yAxisId="co2" hide domain={[350, 1600]} />
             <Tooltip contentStyle={{ borderRadius: 10, border: "1px solid #E5E7EB" }} />
             <ReferenceLine yAxisId="rh" y={60} stroke="#93c5fd" strokeDasharray="4 4" />
             <ReferenceLine yAxisId="rh" y={40} stroke="#93c5fd" strokeDasharray="4 4" />
+            {hasCo2 && <ReferenceLine yAxisId="co2" y={800} stroke="#5eead4" strokeDasharray="4 4" />}
             <Line yAxisId="temp" type="monotone" dataKey="temp" name="온도(°C)" stroke="#ef4444" strokeWidth={2.5} dot={false} isAnimationActive={false} />
             <Line yAxisId="rh" type="monotone" dataKey="rh" name="습도(%)" stroke="#3b82f6" strokeWidth={2.5} dot={false} isAnimationActive={false} />
+            {hasCo2 && <Line yAxisId="co2" type="monotone" dataKey="co2" name="CO₂(ppm)" stroke="#0d9488" strokeWidth={2.5} dot={false} isAnimationActive={false} connectNulls />}
             <Legend wrapperStyle={{ fontSize: 11 }} />
           </LineChart>
         </ResponsiveContainer>
