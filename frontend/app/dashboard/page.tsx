@@ -288,9 +288,9 @@ function ExternalForecastBanner() {
   // 외부 boost 발령 중 여부 — 발령 중이면 배너를 빨강 톤으로 전환하고 "선제 상향 중" 명시.
   const boostOn = !!boost && !!boost.boost_tier && boost.boost_tier !== "MONITOR";
   const boostRegion = boost?.region ?? top.region;
-  const wrapCls = boostOn ? "bg-red-50 border-red-300 ring-1 ring-[#7a0024]/30" : st.bg;
+  const wrapCls = boostOn ? "border-l-red-500 bg-red-50/30" : "border-l-emerald-500 bg-emerald-50/20";
   return (
-    <div className={`rounded-2xl border p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 ${wrapCls}`}>
+    <div className={`clinical-card border-l-[6px] p-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 ${wrapCls}`}>
       <div className="flex items-center gap-3 shrink-0">
         <span className="text-2xl">🦠</span>
         <div>
@@ -373,11 +373,14 @@ const NURSING_ACTIONS: Record<string, string[]> = {
 function NursingActionGuide({ atRisk }: { atRisk: SpaceCard[] }) {
   const items = atRisk.slice(0, 4);   // 최고위험 우선 상위 4
   return (
-    <div className="bg-amber-50/40 border border-amber-200 border-l-4 border-l-amber-400 rounded-2xl p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
-      <h3 className="text-base font-bold text-slate-900 mb-1 flex items-center gap-2">
-        <span className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center"><FileText className="text-amber-600" size={15} /></span>
-        간호 조치 가이드 <span className="text-xs font-normal text-slate-500">· 위험 등급별 권장 감염관리 행동</span>
-      </h3>
+    <div className="clinical-card p-8 border-l-[10px] border-l-[#005c55]/20">
+      <div className="flex items-center gap-4 mb-6">
+        <div className="w-12 h-12 bg-[#005c55] text-white rounded-2xl flex items-center justify-center shadow-lg shadow-[#005c55]/20 shrink-0"><FileText size={24} /></div>
+        <div>
+          <h3 className="text-xl font-black text-slate-800">간호 조치 가이드</h3>
+          <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">위험 등급별 권장 감염관리 대응 프로세스</p>
+        </div>
+      </div>
       {items.length === 0 ? (
         <div className="flex items-center gap-2 text-sm text-slate-500 py-4">
           <CheckCircle2 className="text-emerald-500" size={18} /> 전 병동 안정 — 정규 감염관리 수칙(손위생·정기 환기·표면 소독) 유지
@@ -392,12 +395,12 @@ function NursingActionGuide({ atRisk }: { atRisk: SpaceCard[] }) {
               <div key={s.space_id} className={`rounded-xl border p-4 ${isCrit ? "bg-red-50 border-red-200" : "bg-white border-slate-200"}`}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-bold text-slate-900 text-sm">{s.space_name}</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isCrit ? "bg-[#7a0024] text-white" : "bg-orange-100 text-orange-700"}`}>{tierKo(tier)}</span>
+                  <span className={`status-badge ${isCrit ? "status-danger" : "status-caution"}`}>{tierKo(tier)}</span>
                 </div>
                 <ul className="space-y-1">
                   {acts.map((a, i) => (
                     <li key={i} className="flex items-start gap-1.5 text-[13px] text-slate-700">
-                      <span className={`mt-0.5 shrink-0 ${isCrit ? "text-[#7a0024]" : "text-amber-600"}`}>✓</span>{a}
+                      <span className={`mt-0.5 shrink-0 ${isCrit ? "text-red-500" : "text-[#005c55]"}`}>✓</span>{a}
                     </li>
                   ))}
                 </ul>
@@ -439,66 +442,86 @@ function NurseView() {
   const liveTier = spaces.find((s) => s.isLive)?.snapshot.tier ?? "···";
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-in fade-in duration-500">
       {/* 외부 감염병 조기경보 — 외부 예측 → 선제 예방 차별점 */}
       <ExternalForecastBanner />
 
-      {/* 상단 KPI — 환경·감염·ThinQ 자동대응 중심 (백엔드 라이브) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-[0_4px_12px_rgba(0,0,0,0.05)] flex items-center gap-4 border-t-[3px] border-t-blue-500">
-          <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0"><Activity size={20} /></div>
-          <div><p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">실시간 감시 공간</p><div className="text-2xl font-black text-slate-900">{spaces.length}<span className="text-xs text-slate-400 ml-1 font-normal">개</span></div></div>
+      {/* 상단 KPI — Clinical Clarity */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="clinical-card p-6 flex items-center gap-5">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><Activity size={26} /></div>
+          <div><p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">실시간 감시 공간</p><p className="text-2xl font-black text-slate-800">{spaces.length}<span className="text-sm font-bold text-slate-400 ml-1">개소</span></p></div>
         </div>
-        <div onClick={() => setModal("DANGER")} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-[0_4px_12px_rgba(0,0,0,0.05)] flex items-center gap-4 cursor-pointer hover:bg-red-50/40 transition group border-t-[3px] border-t-[#7a0024]">
-          <div className="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center text-[#7a0024] shrink-0"><AlertTriangle size={20} /></div>
-          <div><p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-0.5 group-hover:text-[#7a0024] transition-colors">주의·위험 공간</p><div className="text-2xl font-black text-slate-900">{atRisk.length}<span className="text-xs text-slate-400 ml-1 font-normal">개소</span></div></div>
+        <div onClick={() => setModal("DANGER")} className="clinical-card room-card p-6 flex items-center gap-5 cursor-pointer">
+          <div className="w-14 h-14 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center shrink-0"><AlertTriangle size={26} /></div>
+          <div><p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">주의·위험 공간</p><p className="text-2xl font-black text-slate-800">{atRisk.length}<span className="text-sm font-bold text-slate-400 ml-1">개소</span></p></div>
         </div>
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-[0_4px_12px_rgba(0,0,0,0.05)] flex items-center gap-4 border-t-[3px] border-t-emerald-500">
-          <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0"><Radio size={20} /></div>
-          <div><p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-0.5 flex items-center gap-1">201호 실센서 <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /></p><div className="text-xl font-black text-slate-900">{liveTier}</div></div>
+        <div className="clinical-card p-6 flex items-center gap-5 border-l-4 border-l-[#005c55]">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-[#005c55] flex items-center justify-center shrink-0"><Radio size={26} /></div>
+          <div><p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">201호 실센서</p><div className="flex items-center gap-2"><span className="text-xl font-black text-slate-800">{liveTier}</span><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" /></div></div>
         </div>
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-[0_4px_12px_rgba(0,0,0,0.05)] flex items-center gap-4 border-t-[3px] border-t-emerald-500">
-          <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0"><Zap size={20} /></div>
-          <div><p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">ThinQ 자동대응</p><div className="text-2xl font-black text-slate-900">{responding.length}<span className="text-xs text-slate-400 ml-1 font-normal">개소 가동</span></div></div>
+        <div className="clinical-card p-6 flex items-center gap-5">
+          <div className="w-14 h-14 rounded-2xl bg-[#005c55]/10 text-[#005c55] flex items-center justify-center shrink-0"><Zap size={26} /></div>
+          <div><p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">ThinQ 자동대응</p><p className="text-2xl font-black text-slate-800">{responding.length}<span className="text-sm font-bold text-slate-400 ml-1">개소 가동</span></p></div>
         </div>
       </div>
 
       {/* 메인: 병동 환경 관제맵 + ThinQ 자동대응 라이브 */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-        <div className="xl:col-span-3 bg-blue-50/30 border border-blue-200 border-l-4 border-l-blue-500 rounded-2xl p-4 space-y-3">
-          <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2"><span className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center"><Wind className="text-blue-600" size={18} /></span> 병동 환경 관제맵 <span className="text-xs font-normal text-slate-500">· 백엔드 라이브 · CO₂ → AI 5-Tier</span></h3>
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+        <section className="xl:col-span-3 clinical-card p-8">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shrink-0"><Wind size={26} /></div>
+              <div>
+                <h3 className="text-xl font-black text-slate-800">병동 환경 실시간 관제맵</h3>
+                <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">AI 5-Tier 분석 · CO₂ → 감염확률 · 실시간 갱신</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-6 text-[11px] font-black uppercase tracking-widest">
+              <div className="flex items-center gap-2"><span className="w-3.5 h-3.5 rounded bg-emerald-400" /><span className="text-emerald-700">정상</span></div>
+              <div className="flex items-center gap-2"><span className="w-3.5 h-3.5 rounded bg-orange-400" /><span className="text-orange-700">주의</span></div>
+              <div className="flex items-center gap-2"><span className="w-3.5 h-3.5 rounded bg-red-500" /><span className="text-red-700">위험</span></div>
+            </div>
+          </div>
           <FloorPlan spaces={spaces} />
-        </div>
+        </section>
 
-        <div className="xl:col-span-1">
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-[0_4px_12px_rgba(0,0,0,0.05)] h-full flex flex-col border-t-[3px] border-t-emerald-500">
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 mb-1"><Zap className="text-emerald-600" size={18} /> ThinQ 자동대응 라이브</h3>
-            <p className="text-[11px] text-slate-500 mb-4">위험 감지 시 가전이 자동 가동됩니다</p>
-            <div className="space-y-3 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <aside className="xl:col-span-1">
+          <div className="clinical-card overflow-hidden flex flex-col border-t-8 border-t-[#005c55] h-full">
+            <div className="p-6 bg-slate-50/50 border-b border-slate-100">
+              <div className="flex items-center gap-3 text-[#005c55] mb-2">
+                <div className="w-10 h-10 bg-[#005c55] text-white rounded-xl flex items-center justify-center shrink-0"><Zap size={22} /></div>
+                <h3 className="font-black text-lg">ThinQ 자동대응 LIVE</h3>
+              </div>
+              <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">위험 감지 시 AI가 가전 자동 가동</p>
+            </div>
+            <div className="p-5 space-y-3 flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {responding.length === 0 ? (
-                <div className="text-center py-12 text-slate-500 text-sm"><CheckCircle2 className="mx-auto mb-2 text-emerald-500" size={28} />전 공간 안정<br />자동대응 대기중</div>
+                <div className="text-center py-12 text-slate-400 text-sm"><CheckCircle2 className="mx-auto mb-2 text-emerald-500" size={28} />전 공간 안정<br />자동대응 대기중</div>
               ) : responding.map((s) => {
                 const tier = s.snapshot.tier;
                 const isCrit = tierRank(tier) >= 4;
                 return (
-                  <div key={s.space_id} className={`rounded-xl border p-3 ${isCrit ? "bg-[#7a0024]/[0.06] border-[#7a0024]/30" : "bg-slate-50 border-slate-200"}`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-black text-slate-900 text-sm truncate">{s.space_name}</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded shrink-0 ${isCrit ? "bg-[#7a0024] text-white" : "bg-orange-100 text-orange-700"}`}>{tierKo(tier)}</span>
+                  <div key={s.space_id} className={`rounded-3xl border p-5 ${isCrit ? "border-red-200 bg-red-50/30" : "border-slate-100 bg-white"}`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="font-black text-slate-800 truncate">{s.space_name}</span>
+                      <span className={`status-badge ${isCrit ? "status-danger" : "status-caution"}`}>{tierKo(tier)} 대응 중</span>
                     </div>
-                    {/* 위험단계 출처 — 외부 조기경보로 선제 상향된 공간을 명시(센서 정상이어도 외부발 가동) */}
-                    <span className={`inline-flex items-center gap-1 mb-2 px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                    {/* 위험단계 출처 — 외부 조기경보로 선제 상향된 공간 명시 */}
+                    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold mb-3 ${
                       srcMap.get(s.space_id) === "external"
-                        ? "bg-[#7a0024]/10 text-[#7a0024] border border-[#7a0024]/30"
-                        : "bg-slate-100 text-slate-500 border border-slate-200"}`}>
-                      {srcMap.get(s.space_id) === "external" ? "🦠 외부 조기경보 상향" : "📟 실내센서 감지"}
-                    </span>
-                    <div className="space-y-1.5">
+                        ? "bg-red-50 text-red-600 border border-red-100"
+                        : "bg-slate-50 text-slate-500 border border-slate-200"}`}>
+                      <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />{srcMap.get(s.space_id) === "external" ? "외부 조기경보 상향" : "실내센서 감지"}
+                    </div>
+                    <div className="space-y-2">
                       {autoResponse(tier).map((d, i) => (
-                        <div key={i} className="flex items-center gap-2 text-xs bg-white border border-slate-200 rounded-lg px-2 py-1.5">
-                          <span className="text-emerald-600 shrink-0">{devIcon(d.type)}</span>
-                          <span className="text-slate-600 flex-1 truncate">{d.name}</span>
-                          <span className="text-emerald-700 font-bold shrink-0">{d.mode}</span>
+                        <div key={i} className="flex items-center justify-between p-3 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <span className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">{devIcon(d.type)}</span>
+                            <span className="text-sm font-black text-slate-700 truncate">{d.name}</span>
+                          </div>
+                          <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-black shrink-0">{d.mode}</span>
                         </div>
                       ))}
                     </div>
@@ -507,7 +530,7 @@ function NurseView() {
               })}
             </div>
           </div>
-        </div>
+        </aside>
       </div>
 
       {/* 하단: 간호 조치 가이드 — 위험 등급별 '간호사가 할 행동' (실시간 위험공간 연동) */}
