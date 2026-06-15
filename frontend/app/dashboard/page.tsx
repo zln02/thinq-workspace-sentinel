@@ -137,10 +137,10 @@ function DashSidebar({ role, account, userName, onSelect, onLogout, open, onClos
     {open && <div className="fixed inset-0 bg-black/40 z-40 md:hidden" onClick={onClose} />}
     <nav className={`flex flex-col fixed left-0 top-0 h-screen w-64 bg-white border-r border-slate-200 z-50 transition-transform duration-300 md:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}>
       <div className="px-6 py-5 border-b border-slate-200 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-[#7a0024] text-white flex items-center justify-center shadow-sm"><span className="material-symbols-outlined fill">coronavirus</span></div>
+        <div className="w-10 h-10 rounded-xl bg-[#005c55] text-white flex items-center justify-center shadow-sm"><span className="material-symbols-outlined fill">coronavirus</span></div>
         <div>
-          <h1 className="text-base font-black text-[#7a0024] leading-tight">ThinQ Sentinel</h1>
-          <p className="text-[11px] text-slate-400">감염관리 통합 관제</p>
+          <h1 className="text-base font-black text-[#005c55] leading-tight">ThinQ Sentinel</h1>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Medical Control</p>
         </div>
       </div>
       <div className="flex-1 p-3 space-y-1 overflow-y-auto">
@@ -149,13 +149,13 @@ function DashSidebar({ role, account, userName, onSelect, onLogout, open, onClos
           const active = role === n.role && !n.href;
           return (
             <button key={n.role} onClick={() => { onSelect(n.role, n.href); onClose(); }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all ${active ? "bg-[#fff0f0] text-[#7a0024] font-bold" : "text-slate-500 hover:bg-slate-50 hover:translate-x-0.5"}`}>
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-all ${active ? "bg-[#005c55] text-white font-bold shadow-md shadow-[#005c55]/20" : "text-slate-500 hover:bg-slate-50 hover:translate-x-0.5"}`}>
               <span className={`material-symbols-outlined ${active ? "fill" : ""}`}>{n.icon}</span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm leading-tight">{n.label}</p>
-                <p className="text-[11px] text-slate-400 font-normal truncate">{n.desc}</p>
+                <p className={`text-[11px] font-normal truncate ${active ? "text-white/70" : "text-slate-400"}`}>{n.desc}</p>
               </div>
-              {active && <span className="w-1.5 h-1.5 rounded-full bg-[#7a0024]" />}
+              {active && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
             </button>
           );
         })}
@@ -228,7 +228,7 @@ export default function DashboardPage() {
               className="md:hidden -ml-1 w-9 h-9 flex items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100">
               <span className="material-symbols-outlined">menu</span>
             </button>
-            <span className="material-symbols-outlined text-[#7a0024]">{meta.icon}</span>
+            <span className="material-symbols-outlined text-[#005c55]">{meta.icon}</span>
             <h2 className="text-lg font-bold text-slate-900 truncate">{meta.label}</h2>
           </div>
 
