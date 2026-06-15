@@ -48,7 +48,7 @@ export function useLiveWard(spaceId = "ward_a") {
           prev ?? {
             space_id: sp.space_id, tier: sp.tier, poi: sp.poi,
             co2_ppm: sp.co2_ppm, pm25: sp.pm25, temp_c: sp.temp_c, humidity: sp.humidity,
-            gas_raw: sp.gas_raw, occupancy: null, governance: "none", approval_required: false,
+            gas_raw: sp.gas_raw, occupancy: sp.occupancy ?? null, governance: "none", approval_required: false,
           }
         );
         setLastTs((prev) => prev ?? Date.now());
@@ -91,6 +91,7 @@ export type SpaceOverview = {
   humidity: number | null;
   co2_ppm: number | null;
   pm25: number | null;
+  occupancy?: number | null;  // 실측 재실(카메라 cam-laptop). 0=빈 병실, null=미측정
 };
 
 /** 전 공간 위험도(다병동 그리드·집계용) 폴링. */
