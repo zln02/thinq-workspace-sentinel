@@ -17,4 +17,6 @@ ENV PYTHONPATH=/app
 
 EXPOSE 8003
 
-CMD ["uvicorn", "backend.api.main:app", "--host", "0.0.0.0", "--port", "8003"]
+# PORT 는 호스트(Koyeb/Render 등)가 주입 — 미설정 시 8003 (로컬/도커 호환).
+# shell 형식 CMD 라야 ${PORT} 변수 치환이 동작한다.
+CMD uvicorn backend.api.main:app --host 0.0.0.0 --port ${PORT:-8003}
