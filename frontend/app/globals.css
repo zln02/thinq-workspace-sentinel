@@ -122,6 +122,7 @@ body {
   }
   .kpi-value {
     @apply text-3xl font-black text-slate-900;
+    font-variant-numeric: tabular-nums;   /* 라이브 갱신 시 자릿수 폭 고정(떨림 방지) */
   }
 }
 

@@ -17,6 +17,7 @@ import { useLiveWard, useSpacesOverview, useReport, useExternalSignal, useExtern
 import FlowPanel from "@/components/domain/FlowPanel";
 import { getSession, canAccess, clearSession } from "@/lib/auth";
 import { tierRank, autoResponse } from "@/lib/wardData";
+import { tierMeta, TIER_META, TIER_ORDER, type Tier } from "@/lib/tier";
 
 // ============================================================================
 // 🧱 재사용 컴포넌트: 모달 껍데기 (스크롤바 숨김 적용)
@@ -240,7 +241,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3 sm:gap-4">
             {role === "DIRECTOR" && (
               <div className="hidden lg:flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full text-emerald-700 text-xs font-bold">
-                <span className="material-symbols-outlined text-[16px]">verified</span> 법정 컴플라이언스 100%
+                <span className="material-symbols-outlined text-[16px]">verified</span> 감염관리 의무 자동 증빙
               </div>
             )}
             <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border ${liveConnected ? "bg-emerald-50 border-emerald-300 text-emerald-700" : "bg-slate-100 border-slate-300 text-slate-500"}`}>
@@ -418,6 +419,90 @@ function NursingActionGuide({ atRisk }: { atRisk: SpaceCard[] }) {
 }
 
 // ============================================================================
+// 🧭 병동 전체 상태 요약 밴드 — "5초 안에 이상 유무·위치" (역피라미드 글랜스)
+//   · 최악 티어 색/아이콘으로 전체 상태 1줄 요약 + 티어별 카운트(중복 인코딩)
+//   · 정상은 조용하게(ISA-101), 위험↑만 색을 '소비'
+// ============================================================================
+function WardStatusBand({ spaces }: { spaces: SpaceCard[] }) {
+  if (!spaces.length) return null;
+  // 티어별 카운트
+  const counts: Record<string, number> = {};
+  for (const s of spaces) counts[s.snapshot.tier] = (counts[s.snapshot.tier] ?? 0) + 1;
+  // 최악 티어(전체 상태 대표색)
+  const worst = spaces.reduce((w, s) => (tierRank(s.snapshot.tier) > tierRank(w) ? s.snapshot.tier : w), "MONITOR");
+  const wm = tierMeta(worst);
+  const allNormal = tierRank(worst) === 0;
+  const WIcon = wm.Icon;
+  // 주의(CAUTION)+ 위험공간 수
+  const atRiskN = spaces.filter((s) => tierRank(s.snapshot.tier) >= 1).length;
+  return (
+    <section
+      className="clinical-card overflow-hidden flex items-stretch"
+      style={{ borderLeft: `8px solid ${wm.border}` }}
+      aria-label={`병동 전체 상태 ${wm.label}`}
+    >
+      {/* 좌: 전체 상태 대표 */}
+      <div className="flex items-center gap-4 p-5 pr-6 min-w-0">
+        <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
+          style={{ background: wm.bgSoft, color: wm.fg }}>
+          <WIcon size={28} />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">병동 전체 상태 · 실시간</p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-black tracking-tight" style={{ color: wm.fg }}>
+              {allNormal ? "전체 정상" : `${wm.label} 우선대응`}
+            </span>
+            <span className="text-sm font-bold text-slate-400 tabular-nums">
+              {allNormal ? `${spaces.length}개 공간 안정` : `위험공간 ${atRiskN}/${spaces.length}`}
+            </span>
+          </div>
+        </div>
+      </div>
+      {/* 우: 티어별 카운트 칩(중복 인코딩: 색+아이콘+숫자) */}
+      <div className="ml-auto hidden sm:flex items-center gap-1.5 pr-5 pl-4 flex-wrap justify-end">
+        {TIER_ORDER.map((k) => {
+          const m = TIER_META[k];
+          const n = counts[k] ?? 0;
+          const I = m.Icon;
+          const on = n > 0;
+          return (
+            <div key={k}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border transition-all ${on ? "shadow-sm" : "opacity-35"}`}
+              style={on ? { background: m.bgSoft, borderColor: m.border, color: m.fg } : { borderColor: "#e2e8f0", color: "#94a3b8" }}
+              title={`${m.label} ${n}개`}
+            >
+              <I size={15} />
+              <span className="text-[11px] font-bold">{m.label}</span>
+              <span className="text-base font-black tabular-nums leading-none">{n}</span>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+// 5단계 위험 범례 — 단일 소스(색+아이콘+라벨 중복 인코딩)
+function TierLegend() {
+  return (
+    <div className="flex items-center gap-x-4 gap-y-1.5 flex-wrap">
+      {TIER_ORDER.map((k) => {
+        const m = TIER_META[k];
+        const I = m.Icon;
+        return (
+          <div key={k} className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded" style={{ background: m.border }} />
+            <I size={13} style={{ color: m.fg }} />
+            <span className="text-[11px] font-bold" style={{ color: m.fg }}>{m.label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ============================================================================
 // 👩‍⚕️ 1. 간호사(ICN) 대시보드
 // ============================================================================
 function NurseView() {
@@ -439,6 +524,9 @@ function NurseView() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
+      {/* 병동 전체 상태 요약 — 5초 글랜스(가장 먼저) */}
+      <WardStatusBand spaces={spaces} />
+
       {/* 외부 감염병 조기경보 — 외부 예측 → 선제 예방 차별점 */}
       <ExternalForecastBanner />
 
@@ -452,11 +540,7 @@ function NurseView() {
                 <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">AI 5-Tier 분석 · CO₂ → 감염확률 · 실시간 갱신</p>
               </div>
             </div>
-            <div className="flex items-center gap-6 text-[11px] font-black uppercase tracking-widest">
-              <div className="flex items-center gap-2"><span className="w-3.5 h-3.5 rounded bg-emerald-400" /><span className="text-emerald-700">정상</span></div>
-              <div className="flex items-center gap-2"><span className="w-3.5 h-3.5 rounded bg-orange-400" /><span className="text-orange-700">주의</span></div>
-              <div className="flex items-center gap-2"><span className="w-3.5 h-3.5 rounded bg-red-500" /><span className="text-red-700">위험</span></div>
-            </div>
+            <TierLegend />
           </div>
           <FloorPlan spaces={spaces} />
         </section>
@@ -580,6 +664,32 @@ function AnalyticsView() {
 // ============================================================================
 // 🔧 2. 시설관리자(FM) 대시보드
 // ============================================================================
+// FM 가전 — 감염병 전파 저감 근거 분류 (논문·가이드라인 기반, 2026-06 리서치)
+// cat: core=근거 강함 / support=근거 보통 / hygiene=감염관리 근거 없음(위생·편의)
+type FmCat = "core" | "support" | "hygiene";
+const FM_CAT_META: Record<FmCat, { ko: string; short: string; badge: string }> = {
+  core:    { ko: "핵심 · 근거 강함",     short: "강함",     badge: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+  support: { ko: "보조 · 근거 보통",     short: "보통",     badge: "bg-amber-100 text-amber-700 border-amber-200" },
+  hygiene: { ko: "위생·편의 · 감염근거 없음", short: "근거 없음", badge: "bg-slate-100 text-slate-500 border-slate-200" },
+};
+// 어댑터 미연동(현재 실제 제어 불가) 가전 — 근거순 정렬. UV-C는 근거 강하나 미보유 → '추가 권장'.
+const FM_DEMO_DEVICES: { name: string; icon: string; cat: FmCat; evidence: string }[] = [
+  { name: "환기청정기", icon: "mode_fan", cat: "core",
+    evidence: "환기량(ACH)↑ → 감염확률↓ (Wells-Riley). 결핵 모델 감염확률 12ACH 39% → 고환기 11%(Escombe 2007). 격리병실 12·일반병동 6 ACH 권고(CDC/ASHRAE 170·WHO)." },
+  { name: "UV-C 살균기 (상부공간 UVGI)", icon: "wb_sunny", cat: "core",
+    evidence: "상부공간 UVGI 결핵 전파 ~70~80%↓ (Escombe 2009·Mphaphlele 2015, 대조시험)·≈10~24 ACH 등가. 표면 UV로봇 다제내성균 획득 30%↓(Anderson, Lancet 2017; C.diff 제외)." },
+  { name: "가습기", icon: "humidity_high", cat: "support",
+    evidence: "RH 40~60% 유지 시 인플루엔자 감염력 ~3/4↓(Noti 2013)·고습에서 전파 차단(Lowen 2007). 챔버·동물 근거 풍부, 인체 RCT는 부족." },
+  { name: "제습기", icon: "humidity_low", cat: "support",
+    evidence: "RH 60% 초과 시 곰팡이·집먼지진드기 급증 → 실내 40~60% 유지(EPA). 표면 바이러스·욕창 억제 보조. 감염 직접 RCT는 부족." },
+  { name: "보일러", icon: "mode_heat", cat: "hygiene",
+    evidence: "겨울 저체온·인플루엔자 시즌 실온 22℃ 유지(쾌적·건강). 감염 직접 차단 근거는 아님." },
+  { name: "로봇청소기", icon: "cleaning_services", cat: "hygiene",
+    evidence: "감염 감소 RCT/관찰연구 없음. 바닥은 저접촉 표면·매개물 전파 <1만분의1(CDC). 진공 재부유 역효과 가능(Knibbs 2013). 청결·편의용." },
+  { name: "스타일러", icon: "checkroom", cat: "hygiene",
+    evidence: "위생코스 ~60℃는 멸균(121℃/30분)에 미달 → 바이러스 살균 부족. 독립 동료심사 없음. 탈취·알레르겐 저감용." },
+];
+
 function FMView() {
   const spaces = useSpacesOverview(5000);
   const coway = useCowayStatus(8000);
@@ -588,6 +698,8 @@ function FMView() {
   const { data: live } = useLiveWard("ward_a");
   const [busy, setBusy] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  // 가전 필터 — 기본 '실연동만'(현재 실제 제어 가능한 가전만). 나머지는 근거 카테고리로 분류.
+  const [appFilter, setAppFilter] = useState<"live" | "core" | "support" | "hygiene" | "all">("live");
 
   // 제어 대상 호실 선택 (기본: 201호 실센서). 실센서 공간은 제어키 "ward_a"(브릿지 적재 키)로 매핑.
   const [selId, setSelId] = useState<string>("");
@@ -662,6 +774,13 @@ function FMView() {
     </button>
   );
 
+  // 필터 매칭: 'live'=실제 연동된 가전만, 'all'=전체, 그 외=근거 카테고리
+  const showDev = (cat: FmCat, connected: boolean) =>
+    appFilter === "all" ? true : appFilter === "live" ? connected : appFilter === cat;
+  const EvBadge = ({ cat }: { cat: FmCat }) => (
+    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${FM_CAT_META[cat].badge}`}>{FM_CAT_META[cat].short}</span>
+  );
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* KPI — 실데이터 */}
@@ -702,15 +821,16 @@ function FMView() {
             <span className={`text-xs font-bold px-3 py-1 rounded-full ${governance === "auto" ? "bg-emerald-50 text-emerald-700" : approvalNeeded ? "bg-red-50 text-red-700" : "bg-slate-100 text-slate-500"}`}>거버넌스: {govLabel[governance] ?? governance}</span>
           </div>
         </div>
-        {/* 제어 대상 호실 선택 */}
-        <div className="flex items-center gap-2 mb-4 mt-2">
+        {/* 제어 대상 호실 선택 — 실센서·실가전 보유 공간(201호)만 제어 가능 */}
+        <div className="flex flex-wrap items-center gap-2 mb-4 mt-2">
           <span className="text-xs font-bold text-slate-500">제어 대상</span>
           <select
             value={selId} onChange={(e) => setSelId(e.target.value)}
             className="text-sm font-bold border border-slate-300 rounded-lg px-3 py-1.5 bg-white text-slate-800 cursor-pointer focus:outline-none focus:border-[#7a0024]"
           >
-            {spaces.map((s) => <option key={s.space_id} value={s.space_id}>{s.space_name}{s.source === "실센서" ? " · 실센서" : ""}</option>)}
+            {spaces.filter((s) => s.source === "실센서").map((s) => <option key={s.space_id} value={s.space_id}>{s.space_name} · 실센서</option>)}
           </select>
+          <span className="text-[11px] text-slate-400 font-bold">· 타 호실은 센서·가전 미설치로 제어 불가</span>
           {mode === "manual" && <span className="text-[11px] text-amber-600 font-bold">· 수동 모드 — 자동 제어 보류 중</span>}
         </div>
         <p className="text-xs text-slate-400 mb-5">{sel?.space_name ?? "201호"} · 실제 LG ThinQ/SmartThings 가전을 직접 제어합니다</p>
@@ -722,12 +842,31 @@ function FMView() {
           </div>
         )}
 
+        {/* 가전 필터 — 실연동 / 감염 저감 근거 카테고리 */}
+        <div className="flex flex-wrap items-center gap-1.5 mb-4">
+          <span className="text-xs font-bold text-slate-500 mr-1">필터</span>
+          {([
+            ["live", "실연동만"], ["core", "핵심 (근거 강함)"], ["support", "보조 (근거 보통)"],
+            ["hygiene", "위생·편의 (근거 없음)"], ["all", "전체"],
+          ] as const).map(([k, label]) => (
+            <button key={k} onClick={() => setAppFilter(k)}
+              className={`text-[11px] font-bold px-2.5 py-1 rounded-full border transition ${
+                appFilter === k ? "bg-[#7a0024] text-white border-[#7a0024]" : "bg-white text-slate-500 border-slate-200 hover:border-[#7a0024]"}`}>
+              {label}
+            </button>
+          ))}
+          {appFilter === "live" && <span className="text-[11px] text-slate-400">· 현재 실제 제어 가능한 가전만 표시</span>}
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {showDev("support", cowayAvail) && (
           <div className="border border-slate-200 rounded-xl p-5 bg-slate-50/50">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2"><div className="p-2 rounded-lg bg-blue-50 text-blue-600"><Wind size={18} /></div><div><p className="font-bold text-slate-900">코웨이 공기청정기</p><p className="text-xs text-slate-400">{cowayAvail ? (cowayOn ? `${cowayMode}${cowayPower != null ? ` · ${cowayPower}W` : ""}` : "전원 대기") : "어댑터 미연동 (데모)"}</p></div></div>
               <span className={`text-[10px] font-bold px-2 py-1 rounded ${cowayOn ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-500 border border-slate-200"}`}>{cowayOn ? "가동중" : "OFF"}</span>
             </div>
+            <div className="flex items-center gap-1.5 mb-2"><EvBadge cat="support" /><span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-600 text-white">실연동</span></div>
+            <p className="text-[11px] text-slate-500 leading-snug mb-3">HEPA 0.3µm 99.97% 포집 · 실내 에어로졸 70~99%↓(~5~10 eACH, EPA/CDC). 감염 직접 감소는 시사적 — 환기 보조수단.</p>
             <div className="flex flex-wrap gap-2">
               <Btn a="on" label="전원 ON" kind="n" />
               <Btn a="off" label="전원 OFF" kind="d" />
@@ -735,39 +874,42 @@ function FMView() {
               <Btn a="auto" label="자동" kind="d" />
             </div>
           </div>
+          )}
+          {showDev("support", acAvail) && (
           <div className="border border-slate-200 rounded-xl p-5 bg-slate-50/50">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2"><div className="p-2 rounded-lg bg-orange-50 text-orange-600"><Thermometer size={18} /></div><div><p className="font-bold text-slate-900">시스템 에어컨</p><p className="text-xs text-slate-400">{acAvail ? (acOn ? `${a?.mode ?? "냉방"} ${a?.set_temp ?? ""}℃ · 실내 ${a?.room_temp ?? "—"}℃` : "전원 대기") : "어댑터 미연동 (데모)"}</p></div></div>
               <span className={`text-[10px] font-bold px-2 py-1 rounded ${acOn ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-500 border border-slate-200"}`}>{acOn ? "가동중" : "OFF"}</span>
             </div>
+            <div className="flex items-center gap-1.5 mb-2"><EvBadge cat="support" />{acAvail ? <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-600 text-white">실연동</span> : <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200">미연동</span>}</div>
+            <p className="text-[11px] text-slate-500 leading-snug mb-3">신선외기·필터 동반 시만 보호적 — 단순 재순환은 무익·위험(광저우 식당 코로나 집단감염, Lu 2020). ‘환기송풍’으로 운용.</p>
             <div className="flex flex-wrap gap-2">
               <Btn a="ac_on" label="송풍 환기 ON" kind="n" />
               <Btn a="ac_off" label="전원 OFF" kind="d" />
             </div>
           </div>
-          {/* 미연동 가전 — Smart Protocol 자동제어 대상(현재 어댑터 미연동, OFF) */}
-          {[
-            { name: "환기청정기", icon: "mode_fan", note: "급·배기 환기율 제어 (Wells-Riley Q·ACH)" },
-            { name: "가습기", icon: "humidity_high", note: "인플루엔자·RSV 목표습도 50% (비말 안정성↓)" },
-            { name: "제습기", icon: "humidity_low", note: "노로·곰팡이·욕창 억제 45%" },
-            { name: "보일러", icon: "mode_heat", note: "겨울 저체온·인플루엔자 시즌 난방 22℃" },
-            { name: "로봇청소기", icon: "cleaning_services", note: "표면 살균 (노로·CDI)" },
-            { name: "스타일러", icon: "checkroom", note: "의류·린넨 살균 (옴·요양보호사 출퇴근)" },
-          ].map((d) => (
+          )}
+          {/* 미연동 가전 — 근거 카테고리별. 어댑터 연동 시 위험등급 자동 제어 */}
+          {FM_DEMO_DEVICES.filter((d) => showDev(d.cat, false)).map((d) => (
             <div key={d.name} className="border border-slate-200 rounded-xl p-5 bg-slate-50/30">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="p-2 rounded-lg bg-slate-100 text-slate-400 shrink-0"><span className="material-symbols-outlined text-[18px]">{d.icon}</span></div>
-                  <div className="min-w-0"><p className="font-bold text-slate-900">{d.name}</p><p className="text-xs text-slate-400 truncate">어댑터 미연동 (데모) · {d.note}</p></div>
+                  <div className="min-w-0"><p className="font-bold text-slate-900 truncate">{d.name}</p><p className="text-xs text-slate-400">어댑터 미연동 (데모)</p></div>
                 </div>
                 <span className="text-[10px] font-bold px-2 py-1 rounded bg-slate-100 text-slate-500 border border-slate-200 shrink-0">OFF</span>
               </div>
+              <div className="flex items-center gap-1.5 mb-2"><EvBadge cat={d.cat} /><span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200">미연동</span></div>
+              <p className="text-[11px] text-slate-500 leading-snug mb-3">{d.evidence}</p>
               <div className="flex flex-wrap items-center gap-2">
                 <button disabled className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-400 cursor-not-allowed">전원 ON</button>
                 <span className="text-[11px] text-slate-400">연동 시 위험등급 따라 자동 제어</span>
               </div>
             </div>
           ))}
+          {appFilter === "live" && !cowayAvail && !acAvail && (
+            <div className="md:col-span-2 text-center text-sm text-slate-400 py-8 border border-dashed border-slate-200 rounded-xl">현재 실연동된 가전이 없습니다 · 코웨이 어댑터 점검 필요</div>
+          )}
         </div>
       </div>
 
@@ -782,8 +924,11 @@ function FMView() {
 
       {/* 일별 추이 차트 (시연) */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)] h-[360px] flex flex-col">
-        <h3 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2"><TrendingUp size={20} className="text-blue-600" /> 일별 자동 제어 건수 및 평균 감염 위험도</h3>
-        <p className="text-xs text-slate-400 mb-4">ThinQ AI 개입에 따른 위험도 하락 상관관계 (시연 데이터)</p>
+        <h3 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
+          <TrendingUp size={20} className="text-blue-600" /> 일별 자동 제어 건수 및 평균 감염 위험도
+          <span className="ml-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">○ 시뮬·예시</span>
+        </h3>
+        <p className="text-xs text-slate-400 mb-4">ThinQ AI 개입에 따른 위험도 하락 상관관계 · 고정 예시 데이터(실측 아님)</p>
         <div className="flex-1 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={fmDeviceRiskData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -1041,7 +1186,7 @@ function DirectorView() {
       {/* 비용 비교 차트 — 주차별 실측 자동대응 기반(ThinQ 절감 추정) */}
       <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-[0_4px_12px_rgba(0,0,0,0.05)] flex flex-col h-[420px]">
         <h3 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2"><TrendingDown size={20} className="text-emerald-600" /> 수동 방역 vs ThinQ 자동제어 유지비용</h3>
-        <p className="text-sm text-slate-500 mb-6">주차별 자동대응 실측 기반 절감 추정 (단위: 만원/주)</p>
+        <p className="text-sm text-slate-500 mb-6">자동대응 <b>횟수는 실측</b> · 단가(건당)·수동 기준선은 <b>가정값(추정)</b> (단위: 만원/주)</p>
         <div className="flex-1 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={costData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>

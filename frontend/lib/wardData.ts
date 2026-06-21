@@ -72,9 +72,8 @@ export const ROOM_DATA: WardRoom[] = [
       { name: "전여빈", age: 75, status: "안정", vitals: { bt: 36.6, hr: 68, bp: "115/75" } } ] },
 ];
 
-// 5-Tier rank (정렬·필터용)
-export const TIER_RANK: Record<string, number> = { MONITOR: 0, CAUTION: 1, ALERT: 2, HIGH_RISK: 3, CRITICAL: 4 };
-export function tierRank(tier: string): number { return TIER_RANK[tier] ?? 0; }
+// 5-Tier rank — 단일 소스는 lib/tier.ts. 여기서는 재노출만(기존 import 경로 호환).
+export { tierRank } from "./tier";
 
 // tier별 ThinQ 가전 자동대응 (Wells-Riley·REHVA 기반 — 위험 등급↑ → 환기·정화 강도↑)
 export type AutoDevice = { type: "vent" | "purifier" | "ac"; name: string; mode: string };

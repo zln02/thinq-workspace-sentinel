@@ -4,13 +4,12 @@
 // 투명하게 증빙한다(B2G 인증·시연용).
 import { ChevronRight, Globe, Activity, Sigma, ShieldCheck, Wind, Users } from "lucide-react";
 import { useExternalBoost, useControlPlan, useLiveWard } from "@/lib/useSentinel";
-import { TIER_META, type Tier } from "@/lib/tier";
+import { TIER_META, tierRank, type Tier } from "@/lib/tier";
 
 // Rudnick-Milton 상수 (backend rebreathed.py 와 일치)
 const C_OUT = 420;     // 외기 CO₂(ppm)
 const C_EXH = 38000;   // 날숨 CO₂(ppm)
 
-const TIER_RANK: Record<string, number> = { MONITOR: 0, CAUTION: 1, ALERT: 2, HIGH_RISK: 3, CRITICAL: 4 };
 const POI_TIERS: [number, Tier][] = [[0.30, "CRITICAL"], [0.15, "HIGH_RISK"], [0.05, "ALERT"], [0.01, "CAUTION"]];
 function poiToTier(poi: number | null | undefined): Tier {
   if (poi == null) return "MONITOR";
@@ -78,7 +77,7 @@ export default function FlowPanel({ spaceId = "ward_a" }: { spaceId?: string }) 
   const finalTier = live?.tier ?? "MONITOR";
   const sensorTier = poiToTier(poi);                       // 센서발 기본 등급
   const boostActive = boost !== "MONITOR";
-  const externalWon = (live?.tier_source === "external") || (TIER_RANK[boost] ?? 0) > (TIER_RANK[sensorTier] ?? 0);
+  const externalWon = (live?.tier_source === "external") || tierRank(boost) > tierRank(sensorTier);
   const gov = GOV_META[live?.governance ?? "none"] ?? GOV_META.none;
   const empty = occ === 0;
 

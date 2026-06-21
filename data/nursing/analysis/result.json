@@ -1,0 +1,243 @@
+{
+  "corpus": {
+    "collected": 78087,
+    "analyzed": 75633,
+    "by_persona": {
+      "staff": 15892,
+      "manager": 16545,
+      "family": 21458,
+      "competitor": 14194,
+      "policy": 7544
+    },
+    "keywords": 51,
+    "channels": [
+      "blog",
+      "cafe",
+      "kin",
+      "news"
+    ]
+  },
+  "sentiment_lexicon": {
+    "negative": 37,
+    "positive": 16
+  },
+  "persona_negativity": {
+    "staff": {
+      "n": 15892,
+      "neg_rate": 84.0
+    },
+    "manager": {
+      "n": 16545,
+      "neg_rate": 66.5
+    },
+    "family": {
+      "n": 21458,
+      "neg_rate": 55.2
+    },
+    "competitor": {
+      "n": 14194,
+      "neg_rate": 15.5
+    },
+    "policy": {
+      "n": 7544,
+      "neg_rate": 79.5
+    }
+  },
+  "cam_opportunity_zone": [
+    {
+      "keyword": "요양병원 집단감염",
+      "n": 1938,
+      "neg_rate": 99.3,
+      "persona": "manager"
+    },
+    {
+      "keyword": "요양병원 욕창",
+      "n": 2972,
+      "neg_rate": 98.2,
+      "persona": "family"
+    },
+    {
+      "keyword": "요양병원 야간근무",
+      "n": 2780,
+      "neg_rate": 97.0,
+      "persona": "staff"
+    },
+    {
+      "keyword": "요양병원 폐업",
+      "n": 1900,
+      "neg_rate": 96.3,
+      "persona": "manager"
+    },
+    {
+      "keyword": "요양병원 행정처분",
+      "n": 1944,
+      "neg_rate": 96.0,
+      "persona": "manager"
+    },
+    {
+      "keyword": "요양병원 학대 방치",
+      "n": 1789,
+      "neg_rate": 95.1,
+      "persona": "family"
+    },
+    {
+      "keyword": "요양병원 냄새",
+      "n": 2966,
+      "neg_rate": 92.6,
+      "persona": "family"
+    },
+    {
+      "keyword": "요양병원 감염관리료",
+      "n": 1975,
+      "neg_rate": 91.5,
+      "persona": "manager"
+    }
+  ],
+  "cam_median": {
+    "freq": 1504,
+    "neg_rate": 71.4
+  },
+  "strongest_single_keyword": [
+    {
+      "keyword": "요양병원 KONIS 감시체계",
+      "n": 186,
+      "neg_rate": 100.0,
+      "persona": "policy"
+    },
+    {
+      "keyword": "요양병원 집단감염",
+      "n": 1938,
+      "neg_rate": 99.3,
+      "persona": "manager"
+    },
+    {
+      "keyword": "호흡기감염병 유행 예측",
+      "n": 965,
+      "neg_rate": 98.9,
+      "persona": "policy"
+    },
+    {
+      "keyword": "요양병원 욕창",
+      "n": 2972,
+      "neg_rate": 98.2,
+      "persona": "family"
+    },
+    {
+      "keyword": "요양병원 감염병 대응 정책",
+      "n": 985,
+      "neg_rate": 97.1,
+      "persona": "policy"
+    }
+  ],
+  "lda": {
+    "perplexity_scan": {
+      "2": 274.1,
+      "3": 259.3,
+      "4": 248.1,
+      "5": 225.0,
+      "6": 215.2,
+      "7": 211.4,
+      "8": 208.8,
+      "9": 202.9,
+      "10": 208.4
+    },
+    "chosen_n": 5,
+    "topics": [
+      {
+        "topic": 0,
+        "terms": [
+          "욕창",
+          "치료",
+          "면회",
+          "재활",
+          "입원",
+          "추천",
+          "부모",
+          "치매"
+        ]
+      },
+      {
+        "topic": 1,
+        "terms": [
+          "의료",
+          "인력",
+          "부족",
+          "수가",
+          "폐업",
+          "기관",
+          "학대",
+          "간병"
+        ]
+      },
+      {
+        "topic": 2,
+        "terms": [
+          "기관",
+          "인증",
+          "평가",
+          "의료",
+          "청구",
+          "급여",
+          "처분",
+          "행정"
+        ]
+      },
+      {
+        "topic": 3,
+        "terms": [
+          "감염",
+          "관리",
+          "코로나",
+          "예방",
+          "집단",
+          "사고",
+          "낙상",
+          "발생"
+        ]
+      },
+      {
+        "topic": 4,
+        "terms": [
+          "근무",
+          "보호사",
+          "야간",
+          "시간",
+          "교대",
+          "산재",
+          "수당",
+          "급여"
+        ]
+      }
+    ]
+  },
+  "integration_void": {
+    "n_competitor": 14194,
+    "signals": {
+      "체온+공기 통합": {
+        "count": 27,
+        "pct": 0.19
+      },
+      "보호자앱 연계": {
+        "count": 12,
+        "pct": 0.08
+      },
+      "지역경보 연동": {
+        "count": 4,
+        "pct": 0.03
+      },
+      "감염관리료 자동증빙": {
+        "count": 0,
+        "pct": 0.0
+      }
+    },
+    "brands": {
+      "삼성": 1244,
+      "LG": 666,
+      "KT": 167,
+      "SK": 198,
+      "뷰노": 13,
+      "코웨이": 909
+    },
+    "brand_share_pct": 22.52
+  }
+}

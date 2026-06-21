@@ -31,3 +31,14 @@ coverage/
 htmlcov/
 # 대용량 발표 PDF는 git에 넣지 않음 (Notion/드라이브 보관)
 docs/legal/ppt/*.pdf
+
+# ── 발표 대용량·백업 제외 (2026-06-20) ──
+docs/발표/*.pdf
+docs/발표/*.zip
+docs/발표/**/*.pdf
+docs/발표/**/*.zip
+docs/발표/deck_site/_archive/
+docs/발표/deck_site/_ref/
+docs/발표/deck_site/uploads/
+data/nursing/raw.csv
+data/nursing/raw_json/
