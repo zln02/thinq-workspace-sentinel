@@ -350,7 +350,7 @@ document.addEventListener('fullscreenchange',function(){var b=document.getElemen
   <div style="margin-top:12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:19px; color:#A89F90;">
     <span style="font-weight:700; color:#6E675C;">출처</span>
     <span>경쟁 솔루션 키워드 12종 · 8,888건 VOC 시그널 분석 (네이버·YouTube)</span><span>·</span>
-    <span style="color:#6E675C;">본 저장소 재현: 경쟁 공기청정기·스마트병원 모니터링 28건(전부 환자활력·살균) 중 체온+공기·보호자앱·자동증빙 통합 시그널 <b>0건</b></span>
+    <span style="color:#6E675C;">본 저장소 재현: 경쟁·시장 언급 <b>14,194건</b> 중 감염관리료 자동증빙 <b>0건</b> · 지역경보 연동 0.03% · 체온+공기 통합 0.19% — 통합 시그널 사실상 0 (PM 0.05% thesis 대규모 재현)</span>
   </div>
   <div style="display:flex; align-items:center; gap:16px; padding-top:14px; border-top:1px solid rgba(47,65,53,0.08); margin-top:12px;"><span style="font-size:25px; color:#B05F3B; font-weight:700;">→</span><span style="font-size:24px; color:#3A463C; font-weight:500;">부품은 많고 통합은 0 — 그럼 이 빈칸에 무엇을 채울까요?</span></div>
   <div style="position:absolute; bottom:24px; right:44px; font-size:20px; font-weight:600; color:#C7BCA9; letter-spacing:0.04em;">LG DX School</div>
@@ -548,23 +548,23 @@ document.addEventListener('fullscreenchange',function(){var b=document.getElemen
 </section>
 
 <!-- ===== 09.5 P3+ 분석 방법론 (Show your work) ===== -->
-<section data-label="P3 · 방법론" data-speaker-notes="이 분석은 주장이 아닙니다. 크롤러와 분석 코드를 저장소에 공개했고, 지금 이 자리에서 다시 돌려도 같은 결과가 나옵니다. 직접 재현한 186건 샘플, 13개 키워드, 다섯 페르소나에서 — 집단감염·학대·냄새·욕창 부정도는 100%, 야간근무 97%, 이직·처우 93%로 나왔습니다. 토픽 모델링을 돌리면 냄새·욕창, 인건비·폐업·수가, 면회·보호자, 감염·집단·학대, 야간·처우·이직 다섯 갈래로 저절로 갈라집니다 — 저희가 손으로 나눈 게 아니라 데이터가 스스로 나눈 겁니다. 감정은 일반 BERT 대신 한 단어씩 정당화할 수 있는 요양 도메인 룰 사전(부정어 37·긍정어 16)을 만들어 썼습니다. 표본을 123건에서 186건으로 늘려도 숫자는 그대로였고, 전체 4만 8천여 건 분석에서도 동일한 패턴이 확인됩니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; background:#F4EEE3; padding:64px 80px 60px;">
+<section data-label="P3 · 방법론" data-speaker-notes="이 분석은 주장이 아닙니다. 크롤러와 분석 코드를 저장소에 공개했고, 지금 이 자리에서 다시 돌려도 같은 결과가 나옵니다. 네이버 검색 API로 51개 키워드를 직접 크롤링해 7만 8천 건을 모았고, 노이즈를 걸러 7만 5천 6백여 건을 분석했습니다 — PM이 분석한 4만 8천 건보다 큰 규모를 저희가 직접 재현한 겁니다. 결과가 결정적입니다. 종사자 부정도가 84.0%로 나왔는데, 이건 PM의 4만 8천 건 분석값 84%와 소수점까지 일치합니다 — 표본을 독립적으로 다시 모아도 같은 결론에 수렴한 겁니다. 키워드별로는 집단감염 99.3%, 욕창 98.2%, 야간근무 97.0%, 폐업 96.3%, 행정처분 96.0%로, 빈도도 높고 부정도도 높은 진짜 기회존입니다. 토픽 모델링을 돌리면 돌봄·욕창, 인력난·폐업·수가, 인증·행정처분, 감염·코로나·낙상, 야간·교대·산재 다섯 갈래로 저절로 갈라집니다 — 저희가 손으로 나눈 게 아니라 데이터가 스스로 나눈 겁니다. 감정은 일반 BERT 대신 한 단어씩 정당화할 수 있는 요양 도메인 룰 사전(부정어 37·긍정어 16)을 만들어 썼습니다. 표본을 186건에서 7만 5천 건으로 200배 키워도 같은 패턴, 같은 결론 — 그래서 이건 우연이 아니라 측정입니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; background:#F4EEE3; padding:64px 80px 60px;">
   <div style="display:flex; justify-content:space-between; align-items:center;">
     <div style="display:flex; align-items:center; gap:12px;"><span style="font-size:21px; font-weight:700; color:#fff; background:#B05F3B; border-radius:6px; padding:5px 12px;">P3+</span><span style="font-size:23px; font-weight:600; letter-spacing:0.08em; color:#A89F90; text-transform:uppercase;">BX · 분석 방법론 (Show your work)</span></div>
     <span style="font-size:22px; font-weight:600; color:#2F4135; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); padding:7px 16px; border-radius:9999px;">신뢰성</span>
   </div>
   <h2 style="font-size:44px; font-weight:700; letter-spacing:-0.025em; color:#2F4135; line-height:1.1; margin:16px 0 4px;">주장이 아니라 재현됩니다 — 크롤러·데이터·코드 공개</h2>
-  <p style="font-size:24px; font-weight:500; color:#6E675C; margin:0; line-height:1.4;">쉽게 말해, 저장소의 스크립트를 그대로 돌리면 같은 숫자가 나옵니다 (재현 샘플 N=186 · 13키워드 · 5페르소나, 전체 48,514건 동일 패턴).</p>
+  <p style="font-size:24px; font-weight:500; color:#6E675C; margin:0; line-height:1.4;">쉽게 말해, 저장소의 스크립트를 그대로 돌리면 같은 숫자가 나옵니다 (직접 크롤 <b style="color:#2F4135;">N=75,633</b> · 51키워드 · 5페르소나 · 4채널 — PM 48,514건 결론을 독립 재현·초과).</p>
   <div style="flex:1; display:grid; grid-template-columns:1fr 1fr 1.05fr; gap:18px; margin-top:22px; align-content:center;">
     <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:16px; padding:26px 26px; display:flex; flex-direction:column; gap:14px;">
       <span style="font-size:20px; font-weight:700; color:#B05F3B; background:#F1E7DA; border-radius:9999px; padding:5px 14px; align-self:flex-start;">① 토픽 자동 분리</span>
       <div style="font-size:23px; font-weight:600; color:#2F4135; line-height:1.35;">LDA 5토픽 — 데이터가 스스로</div>
       <div style="display:flex; flex-direction:column; gap:7px;">
-        <div style="font-size:19px; color:#3A463C;"><b style="color:#B05F3B;">T1</b> 냄새·욕창·생활·간병·환경</div>
-        <div style="font-size:19px; color:#3A463C;"><b style="color:#B05F3B;">T2</b> 인건비·폐업·경영난·수가</div>
-        <div style="font-size:19px; color:#3A463C;"><b style="color:#B05F3B;">T3</b> 면회·보호자·치매·자유·제한</div>
-        <div style="font-size:19px; color:#3A463C;"><b style="color:#B05F3B;">T4</b> 감염·집단·학대·취약·대응</div>
-        <div style="font-size:19px; color:#3A463C;"><b style="color:#B05F3B;">T5</b> 야간·근무·수당·처우·이직</div>
+        <div style="font-size:19px; color:#3A463C;"><b style="color:#B05F3B;">T1</b> 욕창·재활·면회·치매·부모</div>
+        <div style="font-size:19px; color:#3A463C;"><b style="color:#B05F3B;">T2</b> 인력부족·수가·폐업·간병·학대</div>
+        <div style="font-size:19px; color:#3A463C;"><b style="color:#B05F3B;">T3</b> 인증·평가·청구·행정처분·급여</div>
+        <div style="font-size:19px; color:#3A463C;"><b style="color:#B05F3B;">T4</b> 감염·코로나·집단·낙상·예방</div>
+        <div style="font-size:19px; color:#3A463C;"><b style="color:#B05F3B;">T5</b> 야간·교대·보호사·산재·수당</div>
       </div>
       <div style="font-size:20px; color:#6E675C; line-height:1.4;">5토픽이 <b style="color:#2F4135;">페르소나로 그대로 갈라짐</b> · Perplexity 스캔(n2-10) 공개</div>
     </div>
@@ -579,18 +579,18 @@ document.addEventListener('fullscreenchange',function(){var b=document.getElemen
     </div>
     <div style="background:linear-gradient(155deg,#3A4F42,#2F4135); border-radius:16px; padding:26px 26px; display:flex; flex-direction:column; gap:12px; box-shadow:0 12px 28px rgba(47,65,53,0.20);">
       <span style="font-size:20px; font-weight:700; color:#2F4135; background:#fff; border-radius:9999px; padding:5px 14px; align-self:flex-start;">③ 재현된 부정도</span>
-      <div style="font-size:22px; font-weight:600; color:#fff; line-height:1.3;">키워드별 실측 (N=186)</div>
-      <div style="display:flex; flex-direction:column; gap:8px;">
-        <div style="display:flex; align-items:baseline; justify-content:space-between;"><span style="font-size:20px; color:rgba(255,255,255,0.85);">집단감염·학대·냄새·욕창</span><span style="font-size:30px; font-weight:700; color:#fff;">100%</span></div>
-        <div style="display:flex; align-items:baseline; justify-content:space-between;"><span style="font-size:20px; color:rgba(255,255,255,0.85);">야간근무</span><span style="font-size:30px; font-weight:700; color:#fff;">97%</span></div>
-        <div style="display:flex; align-items:baseline; justify-content:space-between;"><span style="font-size:20px; color:rgba(255,255,255,0.85);">이직·처우</span><span style="font-size:30px; font-weight:700; color:#fff;">93%</span></div>
+      <div style="font-size:22px; font-weight:600; color:#fff; line-height:1.3;">키워드별 실측 (N=75,633)</div>
+      <div style="display:flex; flex-direction:column; gap:7px;">
+        <div style="display:flex; align-items:baseline; justify-content:space-between;"><span style="font-size:20px; color:rgba(255,255,255,0.85);">집단감염 <span style="font-size:16px; color:rgba(255,255,255,0.55);">n1,938</span></span><span style="font-size:29px; font-weight:700; color:#fff;">99.3%</span></div>
+        <div style="display:flex; align-items:baseline; justify-content:space-between;"><span style="font-size:20px; color:rgba(255,255,255,0.85);">욕창 <span style="font-size:16px; color:rgba(255,255,255,0.55);">n2,972</span></span><span style="font-size:29px; font-weight:700; color:#fff;">98.2%</span></div>
+        <div style="display:flex; align-items:baseline; justify-content:space-between;"><span style="font-size:20px; color:rgba(255,255,255,0.85);">야간근무 <span style="font-size:16px; color:rgba(255,255,255,0.55);">n2,780</span></span><span style="font-size:29px; font-weight:700; color:#fff;">97.0%</span></div>
       </div>
-      <div style="font-size:20px; color:rgba(255,255,255,0.82); line-height:1.4;">스크립트 재실행 시 동일 — 주장이 아닌 측정값.</div>
+      <div style="background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.22); border-radius:10px; padding:9px 12px; font-size:18px; color:#fff; line-height:1.4;">종사자 전체 <b>84.0%</b> = PM 4.8만건 분석값과 일치<br><span style="color:rgba(255,255,255,0.7);">독립 표본이 같은 결론으로 수렴 — 측정값</span></div>
     </div>
   </div>
   <div style="margin-top:14px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:19px; color:#A89F90;">
     <span style="font-weight:700; color:#6E675C;">방법</span>
-    <span>Kiwi 형태소(NNG·NNP) · CountVectorizer(max_features 500, min_df 3) · LDA(n=5, random_state 42)</span><span>·</span>
+    <span>Naver API 51키워드·4채널 78,087건 수집→75,633건 분석 · Kiwi 형태소(NNG·NNP) · CountVectorizer(max_features 500, min_df 3) · LDA(n=5, random_state 42)</span><span>·</span>
     <span>감정 룰 사전(부정 37·긍정 16)</span><span>·</span>
     <span style="color:#6E675C;">재현 — <b>scripts/cx/run.py</b> · <b>data/nursing/raw.csv</b> · <b>lexicon.py</b> (저장소 공개)</span>
   </div>
