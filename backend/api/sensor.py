@@ -29,7 +29,7 @@ from pydantic import BaseModel
 from backend.api.auth import require_api_key
 from backend.api.sse import publish_live
 from pipeline.simulator.iaq import iaq_exceedances
-from pipeline.simulator.rebreathed import infection_probability, tier_from_poi
+from pipeline.simulator.rebreathed import infection_probability, tier_from_poi, quanta_for
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/sensor", tags=["sensor"])
@@ -141,17 +141,22 @@ def _env_tier(temp: Optional[float], humidity: Optional[float]) -> str:
     return _TIER_NAMES[rank]
 
 
-def compute_tier(co2, gas_raw, temp=None, humidity=None, occupancy=None):
+def compute_tier(co2, gas_raw, temp=None, humidity=None, occupancy=None,
+                 pathogen=None, quanta=None):
     """감염위험(CO2 재호흡률/가스) + 환경위험(온습도)을 종합해 더 높은 tier 채택.
 
     occupancy(재실 인원): None이면 시연 가정 DEMO_OCCUPANCY 사용. 0이면 빈 병실 →
     infection_probability가 (0, f) 반환 → PoI 0 → MONITOR(사람 없으면 감염위험 0).
     LD2310C는 재실 '유무'만 주므로 bridge가 재실=상수폴백(None)/부재=0 으로 게이팅.
+
+    quanta/pathogen(선택): 병원체별 q(quanta/h)를 반영. 둘 다 미지정이면 기존 동작과 동일하게
+    DEMO_QUANTA(인플루엔자급 30) 사용 → 라이브/데모 호환. pathogen 지정 시 quanta_for()로 해석.
     """
     n = DEMO_OCCUPANCY if occupancy is None else occupancy
+    q = quanta if quanta is not None else (quanta_for(pathogen) if pathogen else DEMO_QUANTA)
     if co2 is not None:
         poi, f = infection_probability(
-            co2, DEMO_INFECTORS, n, DEMO_QUANTA, DEMO_EXPOSURE_H
+            co2, DEMO_INFECTORS, n, q, DEMO_EXPOSURE_H
         )
         base = tier_from_poi(poi)
     elif gas_raw is not None:
@@ -788,7 +793,9 @@ async def performance_kpi():
     """Performance Tracker — 경영성과 지표(최근 24h). 대시보드 상단 카드용.
 
     - auto_actions: 자동 선제대응 횟수(tier≥ALERT 산출 건수)
-    - avg_poi / poi_reduction_pct: 평균 감염확률 + 피크 대비 저감율(모델 기반)
+    - avg_poi: 평균 감염확률
+    - poi_reduction_pct: 평균이 기간 '피크' 대비 얼마나 낮은지(변동 폭 지표).
+      ※ ThinQ 개입에 의한 '저감 효과'로 단정하지 말 것 — 단순 평균/최대 격차임.
     - spaces_monitored: 모니터링 중인 공간 수
     DB 미연결/데이터 부족 시 시연용 폴백값(정직 표기: 시뮬 기반).
     """

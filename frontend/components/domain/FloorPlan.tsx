@@ -30,7 +30,7 @@ export function FloorPlan({ spaces }: { spaces: SpaceCard[] }) {
         {spaces.map((sp) => (
           <div key={sp.space_id} className="relative">
             <span className={`absolute -top-1.5 right-2 z-10 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${sp.isLive ? "bg-emerald-500 text-white" : "bg-white text-slate-500 border border-slate-300 shadow-sm"}`}>
-              {sp.isLive ? <><Radio size={10} /> 실센서 LIVE</> : "백엔드 라이브"}
+              {sp.isLive ? <><Radio size={10} /> 실센서 LIVE</> : "시뮬"}
             </span>
             <RoomCard
               roomCode={sp.space_name}
@@ -51,7 +51,7 @@ export function FloorPlan({ spaces }: { spaces: SpaceCard[] }) {
             <div className="p-6 border-b border-[#D6E2EF] bg-[#F3F7FB] shrink-0">
               <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
                 {selected.space_name}
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${selected.isLive ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-600"}`}>{selected.isLive ? "실센서" : "백엔드 라이브"}</span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${selected.isLive ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-600"}`}>{selected.isLive ? "실센서" : "시뮬"}</span>
               </h2>
               <p className="text-sm text-slate-500 mt-1">{selected.space_type} · 정원 {selected.max_occupancy}명{selected.occ != null ? ` · 현재 재실 ${selected.occ}명` : ""}</p>
             </div>

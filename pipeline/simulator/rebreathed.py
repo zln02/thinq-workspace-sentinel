@@ -113,13 +113,32 @@ def infection_probability_transient(
     return p, f_mean
 
 
-# 병원체별 quanta 방출률 시나리오 (quanta/h) — Buonanno et al. 2020, Env. Int.
-#   민감도 분석용: q 불확실성(활동/변종)을 worst·typical·best 로 명시해 방어.
+# 병원체별 quanta 방출률 시나리오 (quanta/h) — Buonanno et al. 2020(Env. Int.),
+# Riley 1962(TB), CDC 2024(RSV). q 불확실성(활동/변종)을 worst·typical·best 로 명시해 방어.
+# ※ 이 테이블이 quanta 의 단일 소스(SSOT). pipeline/simulator/space.py 의 PATHOGEN_QUANTA 와
+#   값이 갈렸던 이력이 있어, 신규 코드는 여기 quanta_for()/PATHOGEN_QUANTA 를 사용할 것.
 QUANTA_SCENARIOS: dict[str, dict[str, float]] = {
     "INFLUENZA": {"best": 15.0, "typical": 30.0, "worst": 100.0},
     "COVID-19":  {"best": 14.0, "typical": 60.0, "worst": 300.0},
     "RSV":       {"best": 8.0,  "typical": 20.0, "worst": 70.0},
+    "TB":        {"best": 1.0,  "typical": 13.0, "worst": 60.0},   # Riley 1962 — 비말핵, 장기노출
+    "NOROVIRUS": {"best": 0.5,  "typical": 1.0,  "worst": 5.0},    # 주로 fomite, 공기전파 비중 낮음
 }
+
+# 병원체 → 대표(typical) quanta. 미지 병원체는 인플루엔자급(30)으로 폴백.
+PATHOGEN_QUANTA: dict[str, float] = {p: s["typical"] for p, s in QUANTA_SCENARIOS.items()}
+
+
+def quanta_for(pathogen: str | None, level: str = "typical") -> float:
+    """병원체별 quanta 방출률 q(quanta/h). level=best|typical|worst.
+
+    라이브 PoI 산출에서 병원체별 q 를 일관되게 쓰기 위한 단일 진입점.
+    미지/미지정 병원체는 인플루엔자급 typical(30)로 폴백(데모 호환).
+    """
+    scen = QUANTA_SCENARIOS.get((pathogen or "").upper().replace("COVID19", "COVID-19"))
+    if not scen:
+        return QUANTA_SCENARIOS["INFLUENZA"]["typical"]
+    return scen.get(level, scen["typical"])
 
 
 def sensitivity_analysis(

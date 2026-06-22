@@ -60,7 +60,9 @@ def _warn_insecure_defaults() -> None:
 async def lifespan(app: FastAPI):
     _warn_insecure_defaults()
     state["db"] = await asyncpg.create_pool(DB_DSN, min_size=4, max_size=12)
-    state["redis"] = redis.from_url(REDIS_URL, decode_responses=True)
+    # Redis 는 선택적 — REDIS_URL 미설정(클라우드 무료호스트 등)이면 None.
+    # 실로직엔 안 쓰이고 health-check 표시용일 뿐이라 없어도 서비스 정상.
+    state["redis"] = redis.from_url(REDIS_URL, decode_responses=True) if os.getenv("REDIS_URL") else None
     # 코웨이 실기기 어댑터 (COWAY_USERNAME 설정 시에만 활성, 미설정/미설치면 None)
     try:
         from backend.services.coway_adapter import CowayAdapter
@@ -89,7 +91,8 @@ async def lifespan(app: FastAPI):
         await state["uis_db"].close()
     if state.get("ac"):
         await state["ac"].close()
-    await state["redis"].aclose()
+    if state.get("redis"):
+        await state["redis"].aclose()
 
 
 app = FastAPI(title="ThinQ Workspace Sentinel", version="0.3.0", lifespan=lifespan)
@@ -164,18 +167,21 @@ async def health():
     except Exception as e:
         ok["db"] = {"status": "down", "error": str(e)[:120]}
 
-    # Redis 체크
-    try:
-        await state["redis"].ping()
-        ok["redis"] = {"status": "up"}
-    except Exception as e:
-        ok["redis"] = {"status": "down", "error": str(e)[:120]}
+    # Redis 체크 — 선택적. 미설정(disabled)이면 헬스체크에 영향 없음.
+    if state.get("redis"):
+        try:
+            await state["redis"].ping()
+            ok["redis"] = {"status": "up"}
+        except Exception as e:
+            ok["redis"] = {"status": "down", "error": str(e)[:120]}
+    else:
+        ok["redis"] = {"status": "disabled"}
 
     # Simulator 체크
     ok["simulator"] = {"status": "up", "scenarios": list(SCENARIO_SEASON.keys())}
 
-    # overall 상태 종합
-    is_down = ok["db"]["status"] == "down" or ok["redis"]["status"] == "down"
+    # overall 상태 종합 — DB 만 필수(Redis 는 표시용이라 제외).
+    is_down = ok["db"]["status"] == "down"
     ok["overall"] = "down" if is_down else "ok"
 
     status_code = 503 if is_down else 200

@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<script>
+function dcToggleFS(){var d=document.documentElement;if(!document.fullscreenElement){(d.requestFullscreen||d.webkitRequestFullscreen||function(){}).call(d);}else{(document.exitFullscreen||document.webkitExitFullscreen||function(){}).call(document);}}
+document.addEventListener('keydown',function(e){if((e.key==='f'||e.key==='F')&&!e.metaKey&&!e.ctrlKey&&!e.altKey){dcToggleFS();}});
+document.addEventListener('fullscreenchange',function(){var b=document.getElementById('dcfsbtn');if(b){var on=!!document.fullscreenElement;b.style.opacity=on?'0':'1';b.style.pointerEvents=on?'none':'auto';}});
+</script>
+<div id="dcfsbtn" onclick="dcToggleFS()" style="position:fixed;left:16px;bottom:16px;z-index:2147483647;background:rgba(47,65,53,0.88);color:#fff;font:600 15px/1 -apple-system,Pretendard,sans-serif;padding:11px 16px;border-radius:9999px;cursor:pointer;user-select:none;box-shadow:0 4px 16px rgba(0,0,0,0.28);transition:opacity .2s;">⛶ 전체화면 · F</div>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>* { box-sizing: border-box; }</style>
+<script src="./image-slot.js"></script>
+</helmet>
+<x-import component-from-global-scope="deck-stage" from="./deck-stage.js" width="1920" height="1080" hint-size="100%,100%">
+
+<!-- ===== 01 표지 (다크) ===== -->
+<section data-label="표지" data-speaker-notes="코로나 사망자 넷 중 하나는 큰 병원이 아니라 요양병원 같은 감염취약시설에서 나왔습니다 — 사람이 24시간 지킬 수 없는 곳이죠. 안녕하세요, 팀 ‘5분 대기조’입니다. 저희가 만든 ThinQ Workspace Sentinel은 공간이 사람보다 먼저 반응하고, 그 증빙이 자동으로 남는 시스템입니다. 분명히 — 진단도 치료도 아닙니다. 이미 깔린 가전과 외부 데이터로 ‘비의료적 안전’을 더합니다. 오늘 10분, 왜 이 문제인지부터 무엇으로 증명하는지까지 보여드리겠습니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; position:relative; overflow:hidden; display:block; background:#EAE3D5; padding:0;">
+  <img src="./assets/cover.png" alt="ThinQ Workspace Sentinel — 비의료적 공간 안전 자동화" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block;">
+</section>
+
+<!-- ===== 02 목차 (라이트) ===== -->
+<section data-label="목차" data-speaker-notes="발표는 하나의 이야기로 흐릅니다. 크게 세 단계입니다. BX에서 왜 이 문제이고 무엇을 바꾸려는지, CX에서 누구의 어떤 경험을 어떻게 설계하는지, DX에서 실제로 만들고 무엇으로 증명하는지. 각 단계가 다음 단계의 근거가 됩니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; background:#F4EEE3; padding:88px 110px 84px;">
+  <div style="font-size:23px; font-weight:600; letter-spacing:0.14em; color:#B05F3B; text-transform:uppercase;">Contents · P0 → P9</div>
+  <h2 style="font-size:60px; font-weight:700; letter-spacing:-0.03em; color:#2F4135; line-height:1.08; margin:14px 0 6px;">BX · CX · DX로 이어지는 하나의 이야기</h2>
+  <p style="font-size:29px; font-weight:500; color:#6E675C; margin:0; line-height:1.4;">쉽게 말해 — 왜 이 문제인가 → 누구의 경험인가 → 어떻게 만들고 증명하는가.</p>
+  <div style="flex:1; display:grid; grid-template-columns:repeat(3,1fr); gap:22px; margin-top:46px; align-content:center;">
+    <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:16px; padding:38px 34px; display:flex; flex-direction:column; gap:22px;">
+      <div style="display:flex; align-items:baseline; gap:14px;"><span style="font-size:46px; font-weight:700; color:#2F4135;">BX</span><span style="font-size:24px; font-weight:600; color:#A89F90;">왜 이 문제인가</span></div>
+      <div style="height:1px; background:rgba(47,65,53,0.08);"></div>
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        <div style="display:flex; gap:14px;"><span style="font-size:23px; font-weight:700; color:#B05F3B; min-width:46px;">P1</span><span style="font-size:26px; color:#3A463C;">추진 배경 · 경쟁분석</span></div>
+        <div style="display:flex; gap:14px;"><span style="font-size:23px; font-weight:700; color:#B05F3B; min-width:46px;">P2</span><span style="font-size:26px; color:#3A463C;">고객 감동 목표</span></div>
+        <div style="display:flex; gap:14px;"><span style="font-size:23px; font-weight:700; color:#B05F3B; min-width:46px;">P3</span><span style="font-size:26px; color:#3A463C;">데이터 수집 전략</span></div>
+      </div>
+    </div>
+    <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:16px; padding:38px 34px; display:flex; flex-direction:column; gap:22px;">
+      <div style="display:flex; align-items:baseline; gap:14px;"><span style="font-size:46px; font-weight:700; color:#2F4135;">CX</span><span style="font-size:24px; font-weight:600; color:#A89F90;">누구의 경험인가</span></div>
+      <div style="height:1px; background:rgba(47,65,53,0.08);"></div>
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        <div style="display:flex; gap:14px;"><span style="font-size:23px; font-weight:700; color:#B05F3B; min-width:46px;">P4</span><span style="font-size:26px; color:#3A463C;">타깃 · 페르소나</span></div>
+        <div style="display:flex; gap:14px;"><span style="font-size:23px; font-weight:700; color:#B05F3B; min-width:46px;">P5</span><span style="font-size:26px; color:#3A463C;">핵심 경험 · CAM</span></div>
+        <div style="display:flex; gap:14px;"><span style="font-size:23px; font-weight:700; color:#B05F3B; min-width:46px;">P6</span><span style="font-size:26px; color:#3A463C;">컨셉 · 전략 캔버스</span></div>
+      </div>
+    </div>
+    <div style="background:linear-gradient(155deg,#3A4F42,#2F4135); border:1px solid #2F4135; border-radius:16px; padding:38px 34px; display:flex; flex-direction:column; gap:22px; box-shadow:0 1px 2px rgba(0,0,0,0.04),0 14px 34px rgba(47,65,53,0.22);">
+      <div style="display:flex; align-items:baseline; gap:14px;"><span style="font-size:46px; font-weight:700; color:#fff;">DX</span><span style="font-size:24px; font-weight:600; color:rgba(255,255,255,0.55);">만들고 증명한다</span></div>
+      <div style="height:1px; background:rgba(255,255,255,0.16);"></div>
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        <div style="display:flex; gap:14px;"><span style="font-size:23px; font-weight:700; color:#DDB08F; min-width:46px;">P7</span><span style="font-size:26px; color:#fff;">설계 · 아키텍처</span></div>
+        <div style="display:flex; gap:14px;"><span style="font-size:23px; font-weight:700; color:#DDB08F; min-width:46px;">P8</span><span style="font-size:26px; color:#fff;">구현 · 효과 검증</span></div>
+        <div style="display:flex; gap:14px;"><span style="font-size:23px; font-weight:700; color:#DDB08F; min-width:46px;">P9</span><span style="font-size:26px; color:#fff;">성과 · 사업성</span></div>
+      </div>
+    </div>
+  </div>
+  <div style="position:absolute; bottom:30px; right:44px; font-size:20px; font-weight:600; color:#C7BCA9; letter-spacing:0.04em;">LG DX School</div>
+</section>
+
+<!-- ===== DIVIDER · BX ===== -->
+<section data-label="— BX —" data-speaker-notes="자, BX입니다. 왜 바꿔야 하는가 — LG는 가전을 잘 팔지만 마진은 한 자릿수, 제조도 구독도 이미 레드오션입니다. 누구도 손대지 않은 빈 영역은 ‘안전’이고요. 지금부터 그 근거를 데이터로 보여드립니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:center; background:#EFE9DD; padding:0;">
+  <img src="./assets/bx_divider.png" alt="BX · 왜 바꾸는가 · 추진 배경" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block;">
+</section>
+
+<!-- ===== 03 P0 WBS ===== -->
+<section data-label="P0 · WBS" data-speaker-notes="저희는 6주 동안 기획부터 검증까지 진행했습니다. 1주차 기획, 2주차에 4채널 57키워드로 크롤링한 VOC 약 4만 8천여 건을 LDA로 분석, 3주차 설계, 4·5주차 엣지·백엔드와 프론트·통합 개발, 6주차 검증과 발표 준비입니다. 역할은 박진영 PM 겸 백엔드, 박진 기획·데이터, 윤재영·정욱현 엣지·통신, 조근범 UI·디자인이 맡았고, 모든 과정은 깃허브에 기록돼 과정 자체가 증빙입니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; background:#F4EEE3; padding:80px 90px 80px;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; align-items:center; gap:12px;"><span style="font-size:21px; font-weight:700; color:#fff; background:#B05F3B; border-radius:6px; padding:5px 12px;">P0</span><span style="font-size:23px; font-weight:600; letter-spacing:0.08em; color:#A89F90; text-transform:uppercase;">프로젝트 계획 · WBS</span></div>
+    <span style="font-size:22px; font-weight:600; color:#2F4135; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); padding:7px 16px; border-radius:9999px;">과정평가</span>
+  </div>
+  <h2 style="font-size:54px; font-weight:700; letter-spacing:-0.025em; color:#2F4135; line-height:1.1; margin:28px 0 6px;">6주, 기획부터 검증까지 이렇게 진행했습니다</h2>
+  <p style="font-size:29px; font-weight:500; color:#6E675C; margin:0; line-height:1.4;">쉽게 말해, 누가·언제·무엇을 했는지 한눈에 — 그리고 모든 단계가 GitHub에 남습니다.</p>
+  <div style="flex:1; display:flex; align-items:center;">
+    <div style="width:100%;">
+      <!-- 전체를 하나로 꿰는 6주 진행 레일 -->
+      <div style="display:flex; align-items:center; gap:14px; margin:0 4px 22px;">
+        <span style="font-size:18px; font-weight:700; color:#B05F3B; white-space:nowrap;">기획 시작</span>
+        <div style="flex:1; position:relative; height:4px; background:#E2DACB; border-radius:9999px;"><div style="position:absolute; inset:0; background:linear-gradient(90deg,#B05F3B,#2F4135); border-radius:9999px;"></div></div>
+        <span style="font-size:18px; font-weight:700; color:#2F4135; white-space:nowrap;">검증 완료 · 6주</span>
+      </div>
+      <!-- 3단계 흐름: 발견 → 구축 → 증명 (단계 사이 큰 화살표, 주차 사이 작은 꺾쇠) -->
+      <div style="display:flex; align-items:stretch; gap:0;">
+
+        <!-- STEP 1 · 발견 (W1·W2) -->
+        <div style="flex:2; background:rgba(176,95,59,0.05); border:1px solid rgba(176,95,59,0.16); border-radius:18px; padding:14px 16px 16px; display:flex; flex-direction:column; gap:11px;">
+          <div style="display:flex; align-items:baseline; gap:9px;"><span style="font-size:20px; font-weight:700; color:#B05F3B; letter-spacing:0.02em;">STEP 1 · 발견</span><span style="font-size:17px; color:#B7A89A;">문제와 데이터를 정의</span></div>
+          <div style="flex:1; display:flex; align-items:stretch; gap:9px;">
+            <div style="flex:1; background:#fff; border:1px solid rgba(47,65,53,0.08); border-radius:13px; padding:15px 14px; display:flex; flex-direction:column; gap:6px;"><div style="display:flex; align-items:center; gap:8px;"><span style="width:31px; height:31px; border-radius:50%; background:#2F4135; color:#fff; font-size:18px; font-weight:700; display:flex; align-items:center; justify-content:center;">1</span><span style="font-size:19px; font-weight:700; color:#B05F3B;">W1</span></div><div style="font-size:21px; font-weight:600; color:#2F4135; line-height:1.2;">기획·문제정의</div><div style="font-size:17px; color:#6E675C; line-height:1.35;">추진배경·교두보 정의</div></div>
+            <div style="display:flex; align-items:center; color:#B05F3B; font-size:22px; font-weight:700;">›</div>
+            <div style="flex:1; background:#fff; border:1px solid rgba(47,65,53,0.08); border-radius:13px; padding:15px 14px; display:flex; flex-direction:column; gap:6px;"><div style="display:flex; align-items:center; gap:8px;"><span style="width:31px; height:31px; border-radius:50%; background:#2F4135; color:#fff; font-size:18px; font-weight:700; display:flex; align-items:center; justify-content:center;">2</span><span style="font-size:19px; font-weight:700; color:#B05F3B;">W2</span></div><div style="font-size:21px; font-weight:600; color:#2F4135; line-height:1.2;">데이터 수집</div><div style="font-size:17px; color:#6E675C; line-height:1.35;">VOC 4.8만건·LDA 5토픽</div></div>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; justify-content:center; width:48px; color:#B05F3B; font-size:30px; font-weight:700;">→</div>
+
+        <!-- STEP 2 · 구축 (W3·W4·W5) -->
+        <div style="flex:3; background:rgba(47,65,53,0.04); border:1px solid rgba(47,65,53,0.10); border-radius:18px; padding:14px 16px 16px; display:flex; flex-direction:column; gap:11px;">
+          <div style="display:flex; align-items:baseline; gap:9px;"><span style="font-size:20px; font-weight:700; color:#2F4135; letter-spacing:0.02em;">STEP 2 · 구축</span><span style="font-size:17px; color:#A89F90;">설계에서 통합까지 직접 개발</span></div>
+          <div style="flex:1; display:flex; align-items:stretch; gap:9px;">
+            <div style="flex:1; background:#fff; border:1px solid rgba(47,65,53,0.08); border-radius:13px; padding:15px 14px; display:flex; flex-direction:column; gap:6px;"><div style="display:flex; align-items:center; gap:8px;"><span style="width:31px; height:31px; border-radius:50%; background:#2F4135; color:#fff; font-size:18px; font-weight:700; display:flex; align-items:center; justify-content:center;">3</span><span style="font-size:19px; font-weight:700; color:#B05F3B;">W3</span></div><div style="font-size:21px; font-weight:600; color:#2F4135; line-height:1.2;">설계</div><div style="font-size:17px; color:#6E675C; line-height:1.35;">아키텍처·DB·화면</div></div>
+            <div style="display:flex; align-items:center; color:#B05F3B; font-size:22px; font-weight:700;">›</div>
+            <div style="flex:1; background:#fff; border:1px solid rgba(47,65,53,0.08); border-radius:13px; padding:15px 14px; display:flex; flex-direction:column; gap:6px;"><div style="display:flex; align-items:center; gap:8px;"><span style="width:31px; height:31px; border-radius:50%; background:#2F4135; color:#fff; font-size:18px; font-weight:700; display:flex; align-items:center; justify-content:center;">4</span><span style="font-size:19px; font-weight:700; color:#B05F3B;">W4</span></div><div style="font-size:21px; font-weight:600; color:#2F4135; line-height:1.2;">개발 Edge·BE</div><div style="font-size:17px; color:#6E675C; line-height:1.35;">센서·위험엔진·API</div></div>
+            <div style="display:flex; align-items:center; color:#B05F3B; font-size:22px; font-weight:700;">›</div>
+            <div style="flex:1; background:#fff; border:1px solid rgba(47,65,53,0.08); border-radius:13px; padding:15px 14px; display:flex; flex-direction:column; gap:6px;"><div style="display:flex; align-items:center; gap:8px;"><span style="width:31px; height:31px; border-radius:50%; background:#2F4135; color:#fff; font-size:18px; font-weight:700; display:flex; align-items:center; justify-content:center;">5</span><span style="font-size:19px; font-weight:700; color:#B05F3B;">W5</span></div><div style="font-size:21px; font-weight:600; color:#2F4135; line-height:1.2;">Front·통합</div><div style="font-size:17px; color:#6E675C; line-height:1.35;">대시보드·보호자앱·SSE</div></div>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; justify-content:center; width:48px; color:#B05F3B; font-size:30px; font-weight:700;">→</div>
+
+        <!-- STEP 3 · 증명 (W6) -->
+        <div style="flex:1.15; background:#2F4135; border:1px solid #2F4135; border-radius:18px; padding:14px 16px 16px; display:flex; flex-direction:column; gap:11px; box-shadow:0 12px 28px rgba(47,65,53,0.22);">
+          <div style="display:flex; align-items:baseline; gap:9px;"><span style="font-size:20px; font-weight:700; color:#DDB08F; letter-spacing:0.02em;">STEP 3 · 증명</span></div>
+          <div style="flex:1; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.14); border-radius:13px; padding:15px 14px; display:flex; flex-direction:column; gap:6px; justify-content:center;"><div style="display:flex; align-items:center; gap:8px;"><span style="width:31px; height:31px; border-radius:50%; background:#B05F3B; color:#fff; font-size:18px; font-weight:700; display:flex; align-items:center; justify-content:center;">6</span><span style="font-size:19px; font-weight:700; color:#DDB08F;">W6</span></div><div style="font-size:21px; font-weight:600; color:#fff; line-height:1.2;">검증·발표</div><div style="font-size:17px; color:rgba(255,255,255,0.72); line-height:1.35;">반사실 검증·발표덱</div></div>
+        </div>
+      </div>
+      <div style="margin-top:26px; display:flex; align-items:center; gap:14px; background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:14px; padding:18px 26px;">
+        <span style="font-size:22px; font-weight:700; color:#B05F3B;">담당</span>
+        <span style="width:1px; height:22px; background:rgba(47,65,53,0.12);"></span>
+        <div style="flex:1; display:flex; gap:24px; flex-wrap:wrap; font-size:23px; color:#6E675C;">
+          <span><b style="color:#2F4135;">박진영</b> PM·백엔드</span><span style="color:#C7BCA9;">|</span>
+          <span><b style="color:#2F4135;">박진</b> 기획·데이터</span><span style="color:#C7BCA9;">|</span>
+          <span><b style="color:#2F4135;">윤재영·정욱현</b> Edge·통신</span><span style="color:#C7BCA9;">|</span>
+          <span><b style="color:#2F4135;">조근범</b> UI·디자인</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex; align-items:center; gap:16px; padding-top:24px; border-top:1px solid rgba(47,65,53,0.08);"><span style="font-size:25px; color:#B05F3B; font-weight:700;">→</span><span style="font-size:25px; color:#3A463C; font-weight:500;">모든 단계가 GitHub에 기록 — 과정이 곧 증빙입니다. 그렇다면, 왜 이 문제인가?</span></div>
+  <div style="position:absolute; bottom:30px; right:44px; font-size:20px; font-weight:600; color:#C7BCA9; letter-spacing:0.04em;">LG DX School</div>
+</section>
+
+<!-- ===== 04 P1-a 현위치 (데이터 증명·출처) ===== -->
+<section data-label="BX · 가전 레드오션" data-speaker-notes="먼저 LG의 현위치입니다. 2024년 LG전자는 연결 매출 87조로 역대 최대, 그중 생활가전이 33조로 사상 첫 30조를 넘겼습니다 — 가전만 9년 연속 성장입니다. 그런데 핵심은 마진입니다. 그 33조 매출에서 영업이익은 2조, 약 6%에 불과합니다. 월풀 3.2%, 일렉트로룩스 2.8%, 하이얼도 순이익 6%대 — 전 세계가 가전을 ‘팔아서’ 수십조를 벌지만 남는 건 전부 한 자릿수입니다. 가전 시장 성장률도 연 5%대로 성숙했습니다. 즉 가전 제조·판매는 크지만 얇은, 성숙한 레드오션이라는 게 우리의 추진 배경입니다. 구독과 그 다음 이야기는 이어서 말씀드립니다. 수치는 각 사 공시·그랜드뷰리서치·LG IR 기준이며, 마진은 매출·이익에서 파생한 근사치입니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; background:#F4EEE3; padding:60px 76px 54px;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <span style="font-size:23px; font-weight:700; letter-spacing:0.08em; color:#A89F90; text-transform:uppercase;">BX · 현위치 (추진 배경)</span>
+    <span style="font-size:22px; font-weight:600; color:#2F4135; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); padding:7px 16px; border-radius:9999px;">경쟁분석</span>
+  </div>
+  <h2 style="font-size:46px; font-weight:700; letter-spacing:-0.025em; color:#2F4135; line-height:1.08; margin:14px 0 4px;">LG는 가전으로 이만큼 — 크게 벌지만, 남는 건 얇습니다</h2>
+  <p style="font-size:24px; font-weight:500; color:#6E675C; margin:0; line-height:1.4;">쉽게 말해, LG도 글로벌 경쟁사도 가전 ‘판매’로 수십조를 벌지만 — 영업이익률은 모두 한 자릿수입니다.</p>
+  <div style="flex:1; display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:16px; align-items:stretch;">
+
+    <!-- LEFT: LG 현위치 규모 -->
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div style="background:linear-gradient(135deg,#3A4F42,#2F4135); border-radius:16px; padding:24px 28px; display:flex; align-items:center; gap:26px; box-shadow:0 1px 2px rgba(0,0,0,0.04),0 14px 34px rgba(47,65,53,0.20);">
+        <div><div style="font-size:19px; color:rgba(255,255,255,0.66); margin-bottom:6px;">2024 LG전자 연결 매출 · 역대 최대</div><div style="font-size:50px; font-weight:700; color:#fff; line-height:1;">87조 7,282억</div></div>
+        <div style="width:1px; height:76px; background:rgba(255,255,255,0.18);"></div>
+        <div><div style="font-size:19px; color:rgba(255,255,255,0.66); margin-bottom:6px;">연결 영업이익</div><div style="font-size:36px; font-weight:700; color:#fff; line-height:1;">3조 4,197억</div></div>
+      </div>
+      <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:16px; padding:22px 26px; flex:1; display:flex; flex-direction:column; justify-content:center; gap:12px;">
+        <div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;"><span style="font-size:46px; font-weight:700; color:#2F4135; line-height:1;">33조 2,033억</span><span style="font-size:22px; color:#6E675C; font-weight:600;">H&A 생활가전 매출</span></div>
+        <div style="font-size:21px; color:#3A463C;">사상 첫 <b>30조 돌파</b> · 가전 <b>9년 연속</b> 성장</div>
+        <div style="background:#fff; border:1px solid rgba(47,65,53,0.08); border-radius:12px; padding:14px 16px; margin-top:2px;">
+          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;"><span style="font-size:18px; color:#6E675C;">가전 매출 → 영업이익</span><span style="font-size:19px; font-weight:700; color:#B05F3B;">≈ 6%</span></div>
+          <div style="position:relative; height:28px; background:#E2DACB; border-radius:7px; overflow:hidden;"><div style="position:absolute; inset:0; background:#C9BDA8;"></div><div style="position:absolute; left:0; top:0; bottom:0; width:6%; background:linear-gradient(180deg,#B05F3B,#8A4326);"></div></div>
+          <div style="display:flex; justify-content:space-between; margin-top:6px; font-size:18px; color:#3A463C;"><span>매출 <b>33.2조</b></span><span>영업이익 <b>2.0조</b></span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: 글로벌 경쟁사 마진 비교 -->
+    <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:16px; padding:22px 26px; display:flex; flex-direction:column; gap:10px;">
+      <div style="font-size:23px; font-weight:700; color:#2F4135;">글로벌 가전사 이익률 — 전부 한 자릿수</div>
+      <div style="font-size:18px; color:#A89F90; margin-top:-2px;">큰 매출, 얇은 마진 = 성숙한 레드오션</div>
+      <div style="flex:1; display:flex; flex-direction:column; gap:14px; justify-content:center;">
+        <div style="display:flex; align-items:center; gap:12px;"><span style="width:104px; font-size:19px; color:#6E675C;">LG H&A</span><div style="flex:1; height:24px; background:#E2DACB; border-radius:6px; overflow:hidden;"><div style="width:60%; height:100%; background:#B05F3B;"></div></div><span style="width:66px; text-align:right; font-size:20px; font-weight:700; color:#2F4135;">~6%</span></div>
+        <div style="display:flex; align-items:center; gap:12px;"><span style="width:104px; font-size:19px; color:#6E675C;">Haier</span><div style="flex:1; height:24px; background:#E2DACB; border-radius:6px; overflow:hidden;"><div style="width:66%; height:100%; background:#A89F90;"></div></div><span style="width:66px; text-align:right; font-size:20px; font-weight:700; color:#2F4135;">6.6%<span style="font-size:13px; color:#A89F90;">순</span></span></div>
+        <div style="display:flex; align-items:center; gap:12px;"><span style="width:104px; font-size:19px; color:#6E675C;">Whirlpool</span><div style="flex:1; height:24px; background:#E2DACB; border-radius:6px; overflow:hidden;"><div style="width:32%; height:100%; background:#A89F90;"></div></div><span style="width:66px; text-align:right; font-size:20px; font-weight:700; color:#2F4135;">3.2%</span></div>
+        <div style="display:flex; align-items:center; gap:12px;"><span style="width:104px; font-size:19px; color:#6E675C;">Electrolux</span><div style="flex:1; height:24px; background:#E2DACB; border-radius:6px; overflow:hidden;"><div style="width:28%; height:100%; background:#A89F90;"></div></div><span style="width:66px; text-align:right; font-size:20px; font-weight:700; color:#2F4135;">2.8%</span></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px; background:#fff; border:1px solid rgba(47,65,53,0.08); border-radius:12px; padding:13px 16px;"><span style="font-size:30px; font-weight:700; color:#2F4135;">5.2%</span><span style="font-size:19px; color:#6E675C; line-height:1.3;">세계 가전시장 연성장률(CAGR) — 성숙시장</span></div>
+      <div style="font-size:15px; color:#A89F90; line-height:1.35;">※ 영업이익률 기준(Haier는 순이익률) · LG H&A는 매출·이익 IR 파생 근사치 · 시장 CAGR=Grand View Research</div>
+    </div>
+  </div>
+  <div style="margin-top:12px; display:flex; align-items:center; gap:9px; flex-wrap:wrap; font-size:17px; color:#A89F90;">
+    <span style="font-weight:700; color:#6E675C;">출처</span>
+    <span>LG전자 FY2024 실적 (LG뉴스룸 2025.1)</span><span>·</span>
+    <span>Whirlpool·Electrolux·Haier FY2024 공시</span><span>·</span>
+    <span>Grand View Research (세계 가전시장)</span>
+  </div>
+  <div style="display:flex; align-items:center; gap:16px; padding-top:12px; border-top:1px solid rgba(47,65,53,0.08); margin-top:10px;"><span style="font-size:25px; color:#B05F3B; font-weight:700;">→</span><span style="font-size:24px; color:#3A463C; font-weight:500;">가전 ‘판매’로는 이만큼 — 매출은 크고, 마진은 얇습니다. 그럼 ‘구독’은 다를까요?</span></div>
+  <div style="position:absolute; bottom:24px; right:44px; font-size:20px; font-weight:600; color:#C7BCA9; letter-spacing:0.04em;">LG DX School</div>
+</section>
+
+<!-- ===== 05 P1-b 연결·구독 생태계 (레드오션) ===== -->
+<section data-label="P1 · 연결·구독" data-speaker-notes="그럼 지금 가전은 어떻게 쓰이고, 어떻게 돈이 되고 있을까요. 두 가지입니다. 첫째, 연결. 삼성 스마트싱스는 글로벌 가입자 3억 5천만, 국내만 2천만 명이고, 파트너 300여 곳에 인증 기기 3,800개 이상을 한 앱으로 묶습니다. LG ThinQ ON과 매터 표준으로 LG와 삼성이 서로 제어될 정도로 통합은 이미 완성 단계입니다. 둘째, 구독. LG 가전구독 매출은 2022년 3,686억에서 2024년 7,738억으로 뛰었고, 2025년 상반기에만 1조를 넘겼습니다. 조주완 CEO는 2030년 6조를 목표로 내걸었습니다. 즉 묶기도 구독도 이미 레드오션입니다. 그래서 통합 자체는 차별점이 아닙니다 — 진짜 빈 영역은 따로 있습니다. (멀티벤더 실증은 뒤 제품 시연에서 보여드립니다.)" style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; background:#F4EEE3; padding:64px 80px 60px;">
+  <style>
+    @keyframes s5rise { from { transform:scaleY(0); } to { transform:scaleY(1); } }
+    @keyframes s5stamp { 0% { transform:rotate(-13deg) scale(2.6); opacity:0; } 60% { opacity:1; } 100% { transform:rotate(-13deg) scale(1); opacity:1; } }
+    @keyframes s5dim { to { opacity:0.38; filter:blur(1.4px); } }
+    .s5-bar-fill { transform-origin:bottom; transform:scaleY(1); }
+    .s5-eco-grid { opacity:0.38; filter:blur(1.4px); }
+    .s5-stamp { transform:rotate(-13deg) scale(1); opacity:1; }
+    section[data-deck-active] .s5-bar-fill { animation:s5rise 1.0s cubic-bezier(.2,.7,.2,1) both; }
+    section[data-deck-active] .s5-bar-fill.s5-b2 { animation-delay:.13s; }
+    section[data-deck-active] .s5-bar-fill.s5-b3 { animation-delay:.26s; }
+    section[data-deck-active] .s5-eco-grid { opacity:1; filter:none; animation:s5dim .55s ease 1.8s forwards; }
+    section[data-deck-active] .s5-stamp { opacity:0; animation:s5stamp .5s cubic-bezier(.2,.85,.25,1) 1.85s forwards; }
+  </style>
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <span style="font-size:23px; font-weight:700; letter-spacing:0.08em; color:#A89F90; text-transform:uppercase;">BX · 연결·구독 생태계</span>
+    <span style="font-size:22px; font-weight:600; color:#2F4135; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); padding:7px 16px; border-radius:9999px;">경쟁분석</span>
+  </div>
+  <h2 style="font-size:44px; font-weight:700; letter-spacing:-0.025em; color:#2F4135; line-height:1.08; margin:12px 0 4px;">가전은 이미 ‘연결’되고, ‘구독’으로 돈이 됩니다 — 둘 다 레드오션</h2>
+  <p style="font-size:23px; font-weight:500; color:#6E675C; margin:0; line-height:1.4;">쉽게 말해, 묶는 기술도 구독 매출도 이미 무르익었습니다 — 빅테크부터 글로벌 IoT 플랫폼까지 다 들어와 있습니다.</p>
+  <div style="flex:1; display:grid; grid-template-columns:0.95fr 1.4fr; gap:20px; margin-top:14px; align-items:stretch; min-height:0;">
+    <!-- 매출 그래프 (차오름 애니) -->
+    <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:16px; padding:22px 26px; display:flex; flex-direction:column;">
+      <div style="display:flex; justify-content:space-between; align-items:baseline;"><div style="font-size:22px; font-weight:700; color:#2F4135;">LG 가전구독 매출 추이</div><div style="font-size:18px; color:#A89F90;">억원 · 케어 제외</div></div>
+      <div style="flex:1; display:flex; align-items:flex-end; gap:24px; padding:20px 6px 0; min-height:0;">
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:8px; height:100%;"><div style="font-size:21px; font-weight:700; color:#6E675C;">3,686</div><div class="s5-bar-fill" style="width:100%; height:47%; background:#C9BDA8; border-radius:8px 8px 0 0;"></div><div style="font-size:19px; color:#6E675C;">2022</div></div>
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:8px; height:100%;"><div style="font-size:21px; font-weight:700; color:#6E675C;">4,349</div><div class="s5-bar-fill s5-b2" style="width:100%; height:56%; background:#A89F90; border-radius:8px 8px 0 0;"></div><div style="font-size:19px; color:#6E675C;">2023</div></div>
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:8px; height:100%;"><div style="font-size:24px; font-weight:700; color:#B05F3B;">7,738</div><div class="s5-bar-fill s5-b3" style="width:100%; height:100%; background:linear-gradient(180deg,#B05F3B,#8A4326); border-radius:8px 8px 0 0;"></div><div style="font-size:19px; color:#2F4135; font-weight:600;">2024</div></div>
+      </div>
+      <div style="margin-top:12px; display:flex; flex-direction:column; gap:8px;">
+        <span style="font-size:19px; color:#3A463C; background:#fff; border:1px solid rgba(47,65,53,0.10); border-radius:9999px; padding:6px 14px; text-align:center;">2025 상반기 <b>1조 598억</b> · 반기 첫 1조</span>
+        <span style="font-size:19px; color:#fff; background:#2F4135; border-radius:9999px; padding:6px 14px; text-align:center;">2030 목표 <b>6조</b> · 약 3배</span>
+      </div>
+    </div>
+    <!-- 멀티벤더 생태계 (세로 길게) + 레드오션 도장 -->
+    <div style="position:relative; background:#fff; border:1px solid rgba(47,65,53,0.10); border-radius:16px; padding:20px 24px; display:flex; flex-direction:column; overflow:hidden;">
+      <div style="font-size:22px; font-weight:700; color:#2F4135; margin-bottom:12px;">한 앱으로 묶이는 멀티벤더 생태계 <span style="font-size:17px; font-weight:600; color:#A89F90;">— 빅테크·IoT 플랫폼 다 진입</span></div>
+      <div class="s5-eco-grid" style="flex:1; display:grid; grid-template-columns:1fr 1fr; grid-auto-rows:1fr; gap:10px; min-height:0;">
+        <div style="display:flex; align-items:center; gap:10px; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); border-radius:10px; padding:10px 14px;"><span style="width:32px; height:32px; border-radius:8px; background:#B05F3B; color:#fff; font-size:15px; font-weight:800; display:flex; align-items:center; justify-content:center;">LG</span><span style="font-size:19px; color:#3A463C; font-weight:600;">ThinQ ON</span></div>
+        <div style="display:flex; align-items:center; gap:10px; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); border-radius:10px; padding:10px 14px;"><span style="width:32px; height:32px; border-radius:8px; background:#1428A0; color:#fff; font-size:18px; font-weight:800; display:flex; align-items:center; justify-content:center;">S</span><span style="font-size:19px; color:#3A463C; font-weight:600;">SmartThings</span></div>
+        <div style="display:flex; align-items:center; gap:10px; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); border-radius:10px; padding:10px 14px;"><span style="width:32px; height:32px; border-radius:8px; background:#111; color:#fff; font-size:18px; font-weight:800; display:flex; align-items:center; justify-content:center;"></span><span style="font-size:19px; color:#3A463C; font-weight:600;">Apple Home</span></div>
+        <div style="display:flex; align-items:center; gap:10px; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); border-radius:10px; padding:10px 14px;"><span style="width:32px; height:32px; border-radius:8px; background:#4285F4; color:#fff; font-size:18px; font-weight:800; display:flex; align-items:center; justify-content:center;">G</span><span style="font-size:19px; color:#3A463C; font-weight:600;">Google Home</span></div>
+        <div style="display:flex; align-items:center; gap:10px; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); border-radius:10px; padding:10px 14px;"><span style="width:32px; height:32px; border-radius:8px; background:#00CAFF; color:#001E2B; font-size:17px; font-weight:800; display:flex; align-items:center; justify-content:center;">a</span><span style="font-size:19px; color:#3A463C; font-weight:600;">Amazon Alexa</span></div>
+        <div style="display:flex; align-items:center; gap:10px; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); border-radius:10px; padding:10px 14px;"><span style="width:32px; height:32px; border-radius:8px; background:#3F7FD6; color:#fff; font-size:17px; font-weight:800; display:flex; align-items:center; justify-content:center;">M</span><span style="font-size:19px; color:#3A463C; font-weight:600;">Matter 표준</span></div>
+        <div style="display:flex; align-items:center; gap:10px; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); border-radius:10px; padding:10px 14px;"><span style="width:32px; height:32px; border-radius:8px; background:#00A4E3; color:#fff; font-size:17px; font-weight:800; display:flex; align-items:center; justify-content:center;">C</span><span style="font-size:19px; color:#3A463C; font-weight:600;">코웨이 IoCare</span></div>
+        <div style="display:flex; align-items:center; gap:10px; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); border-radius:10px; padding:10px 14px;"><span style="width:32px; height:32px; border-radius:8px; background:#FF6900; color:#fff; font-size:16px; font-weight:800; display:flex; align-items:center; justify-content:center;">Mi</span><span style="font-size:19px; color:#3A463C; font-weight:600;">Xiaomi Home</span></div>
+        <div style="display:flex; align-items:center; gap:10px; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); border-radius:10px; padding:10px 14px;"><span style="width:32px; height:32px; border-radius:8px; background:#1BA95C; color:#fff; font-size:16px; font-weight:800; display:flex; align-items:center; justify-content:center;">Aq</span><span style="font-size:19px; color:#3A463C; font-weight:600;">Aqara</span></div>
+        <div style="display:flex; align-items:center; gap:10px; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); border-radius:10px; padding:10px 14px;"><span style="width:32px; height:32px; border-radius:8px; background:#FF4800; color:#fff; font-size:17px; font-weight:800; display:flex; align-items:center; justify-content:center;">T</span><span style="font-size:19px; color:#3A463C; font-weight:600;">Tuya IoT</span></div>
+      </div>
+      <div style="font-size:17px; color:#A89F90; margin-top:10px;">ThinQ ON·SmartThings·Matter로 LG·삼성·코웨이가 한 앱에서 상호 제어 — 통합은 이미 완성 단계.</div>
+      <!-- 레드오션 도장 (생태계 위로 쾅) -->
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none;">
+        <div class="s5-stamp" style="border:6px solid #B05F3B; border-radius:16px; padding:14px 38px; background:rgba(255,255,255,0.66); box-shadow:0 10px 36px rgba(176,95,59,0.30); text-align:center;">
+          <div style="font-size:50px; font-weight:800; color:#B05F3B; letter-spacing:0.06em; line-height:1; text-transform:uppercase;">RED OCEAN</div>
+          <div style="font-size:24px; font-weight:700; color:#B05F3B; letter-spacing:0.32em; margin-top:6px;">레드오션</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- 통계 (아래로 내려 가독성) -->
+  <div style="margin-top:14px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px;">
+    <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:14px; padding:16px 22px; display:flex; align-items:baseline; gap:14px;"><div style="font-size:32px; font-weight:700; color:#2F4135; line-height:1;">3.5억</div><div style="font-size:18px; color:#6E675C; line-height:1.3;">SmartThings 글로벌 가입자 (국내 2,000만)</div></div>
+    <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:14px; padding:16px 22px; display:flex; align-items:baseline; gap:14px;"><div style="font-size:32px; font-weight:700; color:#2F4135; line-height:1;">3,800+</div><div style="font-size:18px; color:#6E675C; line-height:1.3;">파트너 300곳 · 인증 연동 기기</div></div>
+    <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:14px; padding:16px 22px; display:flex; align-items:baseline; gap:14px;"><div style="font-size:32px; font-weight:700; color:#2F4135; line-height:1;">92%</div><div style="font-size:18px; color:#6E675C; line-height:1.3;">AI 로봇청소기 구매자 앱 연동률</div></div>
+  </div>
+  <!-- 실증 (아래로) -->
+  <div style="margin-top:12px; background:#B05F3B; border-radius:14px; padding:16px 26px; display:flex; align-items:center; gap:16px; box-shadow:0 10px 26px rgba(176,95,59,0.22);">
+    <span style="font-size:20px; font-weight:700; color:rgba(255,255,255,0.82);">실증</span>
+    <span style="font-size:23px; font-weight:600; color:#fff; line-height:1.35;">우리 데모도 코웨이 + 삼성을 한 코드로 제어 — 멀티벤더 통합은 이미 ‘실증’됨</span>
+  </div>
+  <div style="margin-top:12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:19px; color:#A89F90;">
+    <span style="font-weight:700; color:#6E675C;">출처</span>
+    <span>LG전자 반기보고서·머니투데이(2025.8) 구독 매출 추이</span><span>·</span>
+    <span>삼성전자 SmartThings 3.5억 가입자(2024.9, 뉴스룸/ZDNet)</span><span>·</span>
+    <span>국내 2,000만·연동률 삼성 뉴스룸(2025.1)</span>
+  </div>
+  <div style="display:flex; align-items:center; gap:16px; padding-top:14px; border-top:1px solid rgba(47,65,53,0.08); margin-top:12px;"><span style="font-size:25px; color:#B05F3B; font-weight:700;">→</span><span style="font-size:24px; color:#3A463C; font-weight:500;">연결도, 구독도 레드오션. 그럼 다음 수익은? — 이미 깔린 가전 위 ‘SaaS’입니다.</span></div>
+  <div style="position:absolute; bottom:24px; right:44px; font-size:20px; font-weight:600; color:#C7BCA9; letter-spacing:0.04em;">LG DX School</div>
+</section>
+
+<!-- ===== 05.7 P1-b3 그래서 SaaS (블루오션) ===== -->
+<section data-label="BX · 그래서 SaaS" data-speaker-notes="정리하면 가전을 만들어 파는 것도, 구독으로 묶는 것도 이미 레드오션입니다. 그런데 소프트웨어 구독, SaaS는 다릅니다 — 가전 영업이익률이 6%일 때 SaaS 매출총이익률은 70%대입니다. 시장 성장률도 가전이 연 5%대인 반면 스마트홈은 두 자릿수로 큽니다. 중요한 건 LG 스스로도 비전 2030에서 2030년 영업이익의 약 4분의 3을 B2B·플랫폼·신사업에서 내겠다고 선언하고 webOS에 1조 넘게 투자한다는 점입니다. 그래서 방향은 명확합니다 — 새 하드웨어를 더 파는 게 아니라, 이미 깔린 가전 위에 SaaS를 올리는 것. 수치는 각 사 공시·그랜드뷰리서치·키뱅크 SaaS 서베이·LG IR 기준이며, 가전은 영업이익률·SaaS는 매출총이익률로 항목이 다르고, 스마트홈 성장률은 기관별 9~27% 편차가 있음을 밝힙니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; background:#F4EEE3; padding:60px 76px 54px;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <span style="font-size:23px; font-weight:700; letter-spacing:0.08em; color:#A89F90; text-transform:uppercase;">BX · 다음 수익 구조</span>
+    <span style="font-size:22px; font-weight:700; color:#fff; background:#B05F3B; padding:7px 16px; border-radius:9999px;">레드오션 → 블루오션</span>
+  </div>
+  <h2 style="font-size:46px; font-weight:700; letter-spacing:-0.025em; color:#2F4135; line-height:1.08; margin:14px 0 4px;">그래서 다음은 — 이미 깔린 가전 위 ‘SaaS’</h2>
+  <p style="font-size:24px; font-weight:500; color:#6E675C; margin:0; line-height:1.4;">쉽게 말해, 같은 고객·같은 가전이라도 — 소프트웨어 구독은 마진도, 성장도 ‘다른 게임’입니다.</p>
+  <div style="flex:1; display:grid; grid-template-columns:1.1fr 1fr; gap:18px; margin-top:16px; align-items:stretch;">
+
+    <!-- 마진 대비 -->
+    <div style="background:linear-gradient(155deg,#3A4F42,#2F4135); border-radius:16px; padding:24px 28px; display:flex; flex-direction:column; gap:16px; box-shadow:0 12px 28px rgba(47,65,53,0.20);">
+      <div style="font-size:23px; font-weight:700; color:#DDB08F;">마진 — 같은 매출, 다른 게임</div>
+      <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:18px;">
+        <div><div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;"><span style="font-size:21px; color:rgba(255,255,255,0.78);">가전 영업이익률</span><span style="font-size:24px; font-weight:700; color:#fff;">~6%</span></div><div style="height:26px; background:rgba(255,255,255,0.10); border-radius:6px; overflow:hidden;"><div style="width:8%; height:100%; background:#A89F90;"></div></div></div>
+        <div><div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;"><span style="font-size:21px; color:rgba(255,255,255,0.78);">SaaS 매출총이익률</span><span style="font-size:28px; font-weight:700; color:#DDB08F;">~75%</span></div><div style="height:26px; background:rgba(255,255,255,0.10); border-radius:6px; overflow:hidden;"><div style="width:94%; height:100%; background:linear-gradient(90deg,#DDB08F,#B05F3B);"></div></div></div>
+      </div>
+      <div style="font-size:15px; color:rgba(255,255,255,0.5); line-height:1.35;">※ 가전=영업이익률 vs SaaS=매출총이익률(P&L 항목 상이) · KeyBanc 2024 SaaS Survey</div>
+    </div>
+
+    <!-- 성장 + LG 전환 -->
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+        <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:14px; padding:20px 22px;"><div style="font-size:34px; font-weight:700; color:#2F4135; line-height:1;">5.2%</div><div style="font-size:18px; color:#6E675C; margin-top:6px; line-height:1.3;">가전시장 CAGR<br>(성숙)</div></div>
+        <div style="background:#B05F3B; border-radius:14px; padding:20px 22px; box-shadow:0 10px 24px rgba(176,95,59,0.18);"><div style="font-size:34px; font-weight:700; color:#fff; line-height:1;">27%</div><div style="font-size:18px; color:rgba(255,255,255,0.9); margin-top:6px; line-height:1.3;">스마트홈 CAGR<br><span style="color:rgba(255,255,255,0.7);">(추정 9~27%)</span></div></div>
+      </div>
+      <div style="flex:1; background:#2F4135; border-radius:14px; padding:22px 24px; display:flex; flex-direction:column; justify-content:center; gap:8px;">
+        <div style="font-size:20px; font-weight:700; color:#DDB08F;">LG 스스로도 전환 중 · Vision 2030</div>
+        <div style="font-size:22px; color:#fff; line-height:1.45;">2030년 <b>영업이익 ~75%를 B2B·플랫폼·신사업</b>에서 · webOS <b>1조+ 투자</b></div>
+        <div style="font-size:17px; color:rgba(255,255,255,0.55);">조주완 CEO ‘Triple-7’ (KED Global 2023)</div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:12px; display:flex; align-items:center; gap:9px; flex-wrap:wrap; font-size:17px; color:#A89F90;">
+    <span style="font-weight:700; color:#6E675C;">출처</span>
+    <span>KeyBanc 2024 SaaS Survey</span><span>·</span>
+    <span>Grand View Research (스마트홈 시장)</span><span>·</span>
+    <span>LG Vision 2030 ‘Triple-7’ (KED Global 2023)</span>
+  </div>
+  <div style="display:flex; align-items:center; gap:16px; padding-top:12px; border-top:1px solid rgba(47,65,53,0.08); margin-top:10px;"><span style="font-size:25px; color:#B05F3B; font-weight:700;">→</span><span style="font-size:24px; color:#3A463C; font-weight:500;">그럼 구체적으로 ‘무슨 SaaS’인가 — 누구도 손대지 않은 빈 영역, ‘안전’입니다.</span></div>
+  <div style="position:absolute; bottom:22px; right:44px; font-size:20px; font-weight:600; color:#C7BCA9; letter-spacing:0.04em;">LG DX School</div>
+</section>
+
+<!-- ===== 05.5 P1-b2 통합 공백 (경쟁 데이터) ===== -->
+<section data-label="P1 · 통합공백" data-speaker-notes="‘빈 영역이 있다’는 말도 데이터로 증명했습니다. 경쟁·시장 언급 8,888건을 분석했더니, 부품은 넘쳐나는데 그걸 잇는 통합은 사실상 0이었습니다. 체온과 공기를 함께 보는 통합 신호는 전체의 0.05%, 단 4건. 보호자 앱 연계는 0.06%. 그리고 가장 결정적으로, 감염관리료를 자동으로 증빙해 준다는 언급은 0건이었습니다. 부품 언급이 통합 언급의 176배입니다. 브랜드 지배력도 약해서 전체 언급 중 특정 브랜드는 2.75%에 불과하고 LG는 29건뿐입니다. 즉 이 시장은 부품만 있고 통합·증빙은 완전히 비어 있습니다 — 바로 그 빈칸을 노립니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; background:#F4EEE3; padding:64px 80px 60px;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; align-items:center; gap:12px;"><span style="font-size:21px; font-weight:700; color:#fff; background:#B05F3B; border-radius:6px; padding:5px 12px;">P1</span><span style="font-size:23px; font-weight:600; letter-spacing:0.08em; color:#A89F90; text-transform:uppercase;">BX · 시장은 부품만, 통합은 공백</span></div>
+    <span style="font-size:22px; font-weight:600; color:#fff; background:#B05F3B; padding:7px 16px; border-radius:9999px;">경쟁분석 · 데이터</span>
+  </div>
+  <h2 style="font-size:48px; font-weight:700; letter-spacing:-0.025em; color:#2F4135; line-height:1.08; margin:16px 0 4px;">시장엔 ‘부품’만 있습니다 — ‘통합·증빙’은 데이터로도 비어 있습니다</h2>
+  <p style="font-size:25px; font-weight:500; color:#6E675C; margin:0; line-height:1.4;">쉽게 말해, 경쟁 언급 8,888건을 뜯어보니 부품은 넘치는데 잇는 사람이 없습니다.</p>
+  <div style="flex:1; display:grid; grid-template-columns:1.15fr 1fr; gap:20px; margin-top:20px; align-items:stretch;">
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div style="font-size:22px; font-weight:700; color:#B05F3B;">통합 솔루션 시그널 — 사실상 0</div>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:12px; padding:14px 20px; display:flex; align-items:center; justify-content:space-between;"><span style="font-size:23px; color:#3A463C;">체온 + 공기 통합 신호</span><span style="font-size:24px; font-weight:700; color:#2F4135;">0.05% <span style="font-size:19px; color:#A89F90; font-weight:500;">· 4건</span></span></div>
+        <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:12px; padding:14px 20px; display:flex; align-items:center; justify-content:space-between;"><span style="font-size:23px; color:#3A463C;">보호자 앱 연계</span><span style="font-size:24px; font-weight:700; color:#2F4135;">0.06% <span style="font-size:19px; color:#A89F90; font-weight:500;">· 5건</span></span></div>
+        <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:12px; padding:14px 20px; display:flex; align-items:center; justify-content:space-between;"><span style="font-size:23px; color:#3A463C;">지역 경보 연동</span><span style="font-size:24px; font-weight:700; color:#2F4135;">0.11% <span style="font-size:19px; color:#A89F90; font-weight:500;">· 10건</span></span></div>
+        <div style="background:#B05F3B; border-radius:12px; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 10px 24px rgba(176,95,59,0.18);"><span style="font-size:23px; color:#fff; font-weight:600;">감염관리료 자동 증빙</span><span style="font-size:28px; font-weight:700; color:#fff;">0건</span></div>
+      </div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div style="background:linear-gradient(155deg,#3A4F42,#2F4135); border-radius:16px; padding:26px 30px; display:flex; flex-direction:column; gap:8px; box-shadow:0 12px 28px rgba(47,65,53,0.20);">
+        <div style="font-size:21px; color:rgba(255,255,255,0.66);">부품 언급 vs 통합 언급</div>
+        <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-size:64px; font-weight:700; color:#fff; line-height:1;">176</span><span style="font-size:30px; font-weight:700; color:#DDB08F;">배</span></div>
+        <div style="font-size:21px; color:rgba(255,255,255,0.78); line-height:1.4;">부품 3,356건 · 통합 19건 — 잇는 사람이 없다</div>
+      </div>
+      <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:16px; padding:22px 26px;">
+        <div style="font-size:21px; font-weight:700; color:#2F4135; margin-bottom:10px;">브랜드 지배력도 약함 <span style="font-size:18px; font-weight:500; color:#A89F90;">· 언급 244 / 8,888 = 2.75%</span></div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; font-size:20px; color:#6E675C;">
+          <span style="background:#fff; border:1px solid rgba(47,65,53,0.10); border-radius:9999px; padding:5px 13px;">삼성 118</span>
+          <span style="background:#fff; border:1px solid rgba(47,65,53,0.10); border-radius:9999px; padding:5px 13px;">KT 35</span>
+          <span style="background:#fff; border:1px solid rgba(47,65,53,0.10); border-radius:9999px; padding:5px 13px;">SK 32</span>
+          <span style="background:#F1E7DA; border:1px solid rgba(176,95,59,0.3); color:#B05F3B; font-weight:700; border-radius:9999px; padding:5px 13px;">LG 29</span>
+          <span style="background:#fff; border:1px solid rgba(47,65,53,0.10); border-radius:9999px; padding:5px 13px;">뷰노 16</span>
+        </div>
+        <div style="font-size:20px; color:#A89F90; margin-top:10px; line-height:1.4;">선점 안 된 시장 = LG가 ‘통합 안전’ 표준을 가져올 자리.</div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:19px; color:#A89F90;">
+    <span style="font-weight:700; color:#6E675C;">출처</span>
+    <span>경쟁 솔루션 키워드 12종 · 8,888건 VOC 시그널 분석 (네이버·YouTube)</span><span>·</span>
+    <span style="color:#6E675C;">본 저장소 재현: 경쟁·시장 언급 <b>14,194건</b> 중 감염관리료 자동증빙 <b>0건</b> · 지역경보 연동 0.03% · 체온+공기 통합 0.19% — 통합 시그널 사실상 0 (PM 0.05% thesis 대규모 재현)</span>
+  </div>
+  <div style="display:flex; align-items:center; gap:16px; padding-top:14px; border-top:1px solid rgba(47,65,53,0.08); margin-top:12px;"><span style="font-size:25px; color:#B05F3B; font-weight:700;">→</span><span style="font-size:24px; color:#3A463C; font-weight:500;">부품은 많고 통합은 0 — 그럼 이 빈칸에 무엇을 채울까요?</span></div>
+  <div style="position:absolute; bottom:24px; right:44px; font-size:20px; font-weight:600; color:#C7BCA9; letter-spacing:0.04em;">LG DX School</div>
+</section>
+
+<!-- ===== 06 P1-c 편의 → 안전 ===== -->
+<section data-label="P1 · 안전 공백" data-speaker-notes="여기가 저희의 한 수입니다. 지금까지 스마트홈은 모두 ‘편의’로 갔습니다. 야간 설거지, 비 오는 날 수건 건조, 음성 제어, 선호 학습 — 전부 사용자 편의를 최적화한 겁니다. 정작 비어 있는 건 ‘안전’입니다. 저희는 이미 깔린 센서에, 저희가 만든 외부 역학 데이터를 더해 공간에 비의료적 안전을 자동으로 부가합니다. 분명히 말씀드리면 진단도 처방도 아닙니다 — 그래서 의료기기 규제와 과대포장을 피하면서, 환경 위험과 대응 시간을 낮춥니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; background:#F4EEE3; padding:80px 100px 80px;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; align-items:center; gap:12px;"><span style="font-size:21px; font-weight:700; color:#fff; background:#B05F3B; border-radius:6px; padding:5px 12px;">P1</span><span style="font-size:23px; font-weight:600; letter-spacing:0.08em; color:#A89F90; text-transform:uppercase;">BX · 차별점 고민 (언노운 한 수)</span></div>
+    <span style="font-size:22px; font-weight:600; color:#fff; background:#B05F3B; padding:7px 16px; border-radius:9999px;">창의 핵심</span>
+  </div>
+  <h2 style="font-size:50px; font-weight:700; letter-spacing:-0.025em; color:#2F4135; line-height:1.1; margin:24px 0 6px;">그래서 고민했습니다 — 이 묶인 가전에 무엇을 ‘더’ 할까?</h2>
+  <p style="font-size:28px; font-weight:500; color:#6E675C; margin:0; line-height:1.4;">쉽게 말해, 남들이 다 간 ‘편의’ 말고 — 같은 가전으로 비어 있는 ‘안전’ 축을 채우기로 했습니다.</p>
+  <div style="flex:1; display:grid; grid-template-columns:1fr 88px 1fr; gap:0; margin-top:40px; align-items:stretch;">
+    <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:18px; padding:36px 38px; display:flex; flex-direction:column; gap:16px;">
+      <div style="font-size:24px; font-weight:700; color:#A89F90; letter-spacing:0.04em;">기존 · 편의 최적화</div>
+      <div style="font-size:32px; font-weight:700; color:#2F4135;">사용자 편의</div>
+      <div style="display:flex; flex-direction:column; gap:12px; font-size:25px; color:#6E675C;">
+        <div>· 야간 설거지 예약</div><div>· 비 오는 날 수건 건조</div><div>· 음성 제어 · 선호 학습</div>
+      </div>
+      <div style="margin-top:auto; font-size:22px; color:#A89F90;">ThinQ ON · SmartThings</div>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:center;"><div style="width:66px; height:66px; border-radius:50%; background:#B05F3B; color:#fff; font-size:32px; font-weight:700; display:flex; align-items:center; justify-content:center; box-shadow:0 10px 24px rgba(176,95,59,0.30);">→</div></div>
+    <div style="background:linear-gradient(155deg,#3A4F42,#2F4135); border-radius:18px; padding:36px 38px; display:flex; flex-direction:column; gap:16px; box-shadow:0 1px 2px rgba(0,0,0,0.04),0 14px 34px rgba(47,65,53,0.22);">
+      <div style="font-size:24px; font-weight:700; color:#DDB08F; letter-spacing:0.04em;">우리 · 안전 자동화</div>
+      <div style="font-size:32px; font-weight:700; color:#fff;">비의료적 안전</div>
+      <div style="display:flex; flex-direction:column; gap:12px; font-size:25px; color:rgba(255,255,255,0.86);">
+        <div>· 이미 깔린 센서 활용</div><div>· 우리가 만든 외부 역학 데이터</div><div>· 공간에 안전을 자동 부가</div>
+      </div>
+      <div style="margin-top:auto; font-size:22px; color:rgba(255,255,255,0.6);">non-medical safety</div>
+    </div>
+  </div>
+  <div style="margin-top:22px; background:#F1E7DA; border:1px solid rgba(176,95,59,0.22); border-radius:14px; padding:18px 28px; display:flex; align-items:center; gap:16px;">
+    <span style="font-size:23px; font-weight:700; color:#B05F3B;">정직</span>
+    <span style="font-size:25px; color:#3A463C; font-weight:500;">진단·처방이 아닙니다 = 의료기기 규제·과대포장 회피. 환경위험·재호흡률·PoI·대응시간을 낮추는 것입니다.</span>
+  </div>
+  <div style="display:flex; align-items:center; gap:16px; padding-top:22px; border-top:1px solid rgba(47,65,53,0.08); margin-top:18px;"><span style="font-size:25px; color:#B05F3B; font-weight:700;">→</span><span style="font-size:25px; color:#3A463C; font-weight:500;">그런데 ‘가전으로 안전을’이 말뿐일까요? 이미 증명된 근거가 있습니다.</span></div>
+  <div style="position:absolute; bottom:30px; right:44px; font-size:20px; font-weight:600; color:#C7BCA9; letter-spacing:0.04em;">LG DX School</div>
+</section>
+
+<!-- ===== 06.5 근거: 가전이 감염을 줄인다 (BX→CX 다리) ===== -->
+<section data-label="P1 · 근거" data-speaker-notes="가전으로 안전을 더한다는 게 구호가 아니라는 걸 근거로 보여드리겠습니다. 첫째, 영국 케임브리지 애든브룩 병원 연구입니다. 코로나 병동에 이동형 헤파 공기청정기를 켰더니, 끄고 있던 날엔 공기 중에서 검출되던 바이러스가 켠 날엔 거의 검출되지 않았습니다. 둘째, 국내 한국대기환경학회지 논문은 교실용 공기청정기가 공기 중 바이러스 농도를 유의미하게 낮춘다는 걸 정량적으로 분석했습니다. 셋째, 환기와 공기 위생은 웰스-라일리 모델로 감염 확률을 직접 낮추는 것으로 학계에서 확립돼 있습니다. 즉 가전은 이미 감염 위험을 줄일 수 있습니다. 다만 지금은 위험이 닥친 뒤에야 켜집니다. 그래서 저희는 위험을 미리 예측해 먼저 켜는 시스템을 기획했습니다 — 그 효과가 가장 절실한 곳이 바로 다음에 보실 요양병원입니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; background:#F4EEE3; padding:64px 80px 60px;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; align-items:center; gap:12px;"><span style="font-size:21px; font-weight:700; color:#fff; background:#B05F3B; border-radius:6px; padding:5px 12px;">P1</span><span style="font-size:23px; font-weight:600; letter-spacing:0.08em; color:#A89F90; text-transform:uppercase;">BX · 근거 (가전 → 감염 저감)</span></div>
+    <span style="font-size:22px; font-weight:600; color:#2F4135; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); padding:7px 16px; border-radius:9999px;">신뢰성</span>
+  </div>
+  <h2 style="font-size:46px; font-weight:700; letter-spacing:-0.025em; color:#2F4135; line-height:1.1; margin:16px 0 4px;">‘가전으로 감염을 줄인다’는 이미 증명됐습니다</h2>
+  <p style="font-size:25px; font-weight:500; color:#6E675C; margin:0; line-height:1.4;">쉽게 말해, 공기청정·환기는 공기 중 바이러스와 감염 확률을 실제로 낮춥니다 — 논문과 병원 실측으로요.</p>
+  <div style="flex:1; display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:22px; align-content:center;">
+    <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:16px; padding:26px 26px; display:flex; flex-direction:column; gap:12px;">
+      <span style="font-size:20px; font-weight:700; color:#B05F3B; background:#F1E7DA; border-radius:9999px; padding:5px 14px; align-self:flex-start;">병원 실측</span>
+      <div style="font-size:44px; font-weight:700; color:#2F4135; line-height:1;">거의 0</div>
+      <div style="font-size:24px; font-weight:600; color:#3A463C; line-height:1.35;">HEPA 가동 시 공기 중 SARS-CoV-2 검출 사라짐</div>
+      <div style="font-size:22px; color:#6E675C; line-height:1.45;">코로나 병동에서 필터 끈 날엔 검출, 켠 날엔 미검출.</div>
+      <div style="margin-top:auto; font-size:20px; color:#A89F90;">英 케임브리지 Addenbrooke’s 병원 연구 (2021)</div>
+    </div>
+    <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:16px; padding:26px 26px; display:flex; flex-direction:column; gap:12px;">
+      <span style="font-size:20px; font-weight:700; color:#B05F3B; background:#F1E7DA; border-radius:9999px; padding:5px 14px; align-self:flex-start;">국내 논문</span>
+      <div style="font-size:44px; font-weight:700; color:#2F4135; line-height:1;">농도 ↓</div>
+      <div style="font-size:24px; font-weight:600; color:#3A463C; line-height:1.35;">교실용 공기청정기로 공기 중 바이러스 저감</div>
+      <div style="font-size:22px; color:#6E675C; line-height:1.45;">CADR 기반으로 실내 바이러스 농도 저감 효과 정량 분석.</div>
+      <div style="margin-top:auto; font-size:20px; color:#A89F90;">한국대기환경학회지 36(6), 2020</div>
+    </div>
+    <div style="background:linear-gradient(155deg,#3A4F42,#2F4135); border-radius:16px; padding:26px 26px; display:flex; flex-direction:column; gap:12px; box-shadow:0 12px 28px rgba(47,65,53,0.20);">
+      <span style="font-size:20px; font-weight:700; color:#2F4135; background:#fff; border-radius:9999px; padding:5px 14px; align-self:flex-start;">학술 모델</span>
+      <div style="font-size:44px; font-weight:700; color:#fff; line-height:1;">PoI ↓</div>
+      <div style="font-size:24px; font-weight:600; color:#fff; line-height:1.35;">환기·공기 위생이 감염 확률을 낮춘다</div>
+      <div style="font-size:22px; color:rgba(255,255,255,0.82); line-height:1.45;">Wells–Riley 모델 — 환기량↑ → 감염 확률↓ (학계 정설).</div>
+      <div style="margin-top:auto; font-size:20px; color:rgba(255,255,255,0.6);">Rudnick–Milton 2003 · REHVA</div>
+    </div>
+  </div>
+  <div style="margin-top:18px; background:#F1E7DA; border:1px solid rgba(176,95,59,0.22); border-radius:14px; padding:18px 28px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+    <span style="font-size:22px; font-weight:700; color:#B05F3B;">그래서</span>
+    <span style="font-size:25px; color:#3A463C; font-weight:600;">가전은 이미 감염 위험을 줄일 수 있다 — 다만 지금은 ‘위험이 닥친 뒤’에 켜집니다.</span>
+    <span style="font-size:22px; color:#6E675C;">→ 우리는 ‘미리 예측해 먼저 켜는’ 시스템을 기획했습니다.</span>
+  </div>
+  <div style="margin-top:12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:19px; color:#A89F90;">
+    <span style="font-weight:700; color:#6E675C;">출처</span>
+    <span>Univ. of Cambridge / NIHR Cambridge BRC, HEPA 공기청정기 병동 연구 (2021)</span><span>·</span>
+    <span>한국대기환경학회지 「학교용 공기청정기 적용성 분석」 36(6):832–840, 2020</span><span>·</span>
+    <span>Rudnick &amp; Milton, Indoor Air 2003 (Wells–Riley)</span>
+  </div>
+  <div style="display:flex; align-items:center; gap:16px; padding-top:14px; border-top:1px solid rgba(47,65,53,0.08); margin-top:12px;"><span style="font-size:25px; color:#B05F3B; font-weight:700;">→</span><span style="font-size:24px; color:#3A463C; font-weight:500;">그렇다면 이 ‘선제 예측’이 가장 절실한 공간은 어디일까요?</span></div>
+  <div style="position:absolute; bottom:24px; right:44px; font-size:20px; font-weight:600; color:#C7BCA9; letter-spacing:0.04em;">LG DX School</div>
+</section>
+
+<!-- ===== 07 P1-d 요양병원 + 경쟁표 ===== -->
+<section data-label="P1 · 요양병원" data-speaker-notes="그 안전이 가장 절박한 곳이 요양병원입니다. 고위험군이 장시간 머물고, 야간 인력 공백이 크며, 집단감염이 곧 치명으로 이어집니다. 2020년 부산 해뜨락요양병원에서는 확진 58명, 사망 2명이 나왔습니다. 질병청 통계로 코로나 사망자 네 명 중 한 명이 감염취약시설에서 발생했습니다. 시장 타이밍도 맞습니다 — 2023년 7월 감염예방관리료가 신설돼 하루 한 명당 790원에서 2,180원까지 지급되고, 2024년 10월부터는 등급 차등제로 바뀌어 감염관리 활동이 곧 수가가 됩니다. 그리고 외부신호 선행, 무 하드웨어, 자율 안전제어, 법적 증빙, 수가 연동 다섯 가지를 모두 갖춘 건 우리뿐입니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; background:#F4EEE3; padding:72px 80px 70px;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; align-items:center; gap:12px;"><span style="font-size:21px; font-weight:700; color:#fff; background:#B05F3B; border-radius:6px; padding:5px 12px;">P1</span><span style="font-size:23px; font-weight:600; letter-spacing:0.08em; color:#A89F90; text-transform:uppercase;">BX · 교두보 + 경쟁표</span></div>
+    <span style="font-size:22px; font-weight:600; color:#fff; background:#B05F3B; padding:7px 16px; border-radius:9999px;">경쟁분석</span>
+  </div>
+  <h2 style="font-size:48px; font-weight:700; letter-spacing:-0.025em; color:#2F4135; line-height:1.1; margin:20px 0 4px;">가장 절박한 공간 — 요양병원, 그리고 우리만의 5개 ✓</h2>
+  <p style="font-size:27px; font-weight:500; color:#6E675C; margin:0; line-height:1.4;">쉽게 말해, 위험·사례·제도가 모두 가리키는 곳이 요양병원이고, 경쟁표에서 우리만 다섯 칸이 켜집니다.</p>
+  <div style="flex:1; display:grid; grid-template-columns:0.92fr 1.35fr; gap:22px; margin-top:22px; align-items:stretch;">
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:14px; padding:20px 24px;"><div style="font-size:22px; font-weight:700; color:#B05F3B; margin-bottom:8px;">위험 3요소</div><div style="font-size:23px; color:#3A463C; line-height:1.5;">고위험군 장시간 체류 · 야간 인력공백 · 집단감염 치명</div></div>
+      <div style="background:#fff; border:1px solid rgba(176,95,59,0.22); border-radius:14px; padding:20px 24px;"><div style="display:flex; align-items:baseline; gap:10px;"><span style="font-size:40px; font-weight:700; color:#B05F3B; line-height:1;">58명</span><span style="font-size:24px; color:#6E675C;">확진 · 사망 2</span></div><div style="font-size:22px; color:#6E675C; margin-top:6px;">부산 해뜨락요양병원 집단감염 (2020.11) · 언론보도</div></div>
+      <div style="display:flex; gap:14px;">
+        <div style="flex:1; background:#2F4135; border-radius:14px; padding:18px 22px;"><div style="font-size:30px; font-weight:700; color:#fff; line-height:1.1;">1 / 4</div><div style="font-size:21px; color:rgba(255,255,255,0.78); margin-top:6px; line-height:1.35;">코로나 사망 4명 중 1명 감염취약시설 · KDCA</div></div>
+        <div style="flex:1; background:#2F4135; border-radius:14px; padding:18px 22px;"><div style="font-size:24px; font-weight:700; color:#fff; line-height:1.15;">790·1,320·2,180</div><div style="font-size:21px; color:rgba(255,255,255,0.78); margin-top:6px; line-height:1.35;">감염예방관리료 원/일·인 · 2023.7 신설 → 2024.10 등급차등</div></div>
+      </div>
+    </div>
+    <div style="border:1px solid rgba(47,65,53,0.10); border-radius:14px; overflow:hidden; align-self:center;">
+      <div style="display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr 1.15fr;">
+        <div style="padding:14px 18px; font-size:21px; font-weight:600; color:#fff; background:#2F4135;">기준</div>
+        <div style="padding:14px 6px; font-size:20px; font-weight:600; color:rgba(255,255,255,0.85); background:#2F4135; text-align:center;">글로벌 BMS</div>
+        <div style="padding:14px 6px; font-size:20px; font-weight:600; color:rgba(255,255,255,0.85); background:#2F4135; text-align:center;">Honeywell·JCI</div>
+        <div style="padding:14px 6px; font-size:20px; font-weight:600; color:rgba(255,255,255,0.85); background:#2F4135; text-align:center;">국내 공기질</div>
+        <div style="padding:14px 6px; font-size:21px; font-weight:700; color:#fff; background:#B05F3B; text-align:center;">Sentinel</div>
+      </div>
+      <div style="display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr 1.15fr; background:#fff;"><div style="padding:14px 18px; font-size:22px; color:#3A463C;">외부신호 선행예측</div><div style="padding:14px 6px; text-align:center; font-size:24px; color:#C7BCA9; font-weight:700;">✕</div><div style="padding:14px 6px; text-align:center; font-size:24px; color:#C7BCA9; font-weight:700;">✕</div><div style="padding:14px 6px; text-align:center; font-size:24px; color:#C7BCA9; font-weight:700;">✕</div><div style="padding:14px 6px; text-align:center; font-size:24px; color:#B05F3B; font-weight:700; background:#F4EBDE;">✓</div></div>
+      <div style="display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr 1.15fr; background:#ECE4D6;"><div style="padding:14px 18px; font-size:22px; color:#3A463C;">무 하드웨어(무HW)</div><div style="padding:14px 6px; text-align:center; font-size:24px; color:#C7BCA9; font-weight:700;">✕</div><div style="padding:14px 6px; text-align:center; font-size:24px; color:#C7BCA9; font-weight:700;">✕</div><div style="padding:14px 6px; text-align:center; font-size:24px; color:#C8A03A; font-weight:700;">△</div><div style="padding:14px 6px; text-align:center; font-size:24px; color:#B05F3B; font-weight:700; background:#F4EBDE;">✓</div></div>
+      <div style="display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr 1.15fr; background:#fff;"><div style="padding:14px 18px; font-size:22px; color:#3A463C;">자율 안전제어</div><div style="padding:14px 6px; text-align:center; font-size:24px; color:#C8A03A; font-weight:700;">△</div><div style="padding:14px 6px; text-align:center; font-size:24px; color:#C8A03A; font-weight:700;">△</div><div style="padding:14px 6px; text-align:center; font-size:24px; color:#C7BCA9; font-weight:700;">✕</div><div style="padding:14px 6px; text-align:center; font-size:24px; color:#B05F3B; font-weight:700; background:#F4EBDE;">✓</div></div>
+      <div style="display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr 1.15fr; background:#ECE4D6;"><div style="padding:14px 18px; font-size:22px; color:#3A463C;">법적 증빙 자동화</div><div style="padding:14px 6px; text-align:center; font-size:24px; color:#C7BCA9; font-weight:700;">✕</div><div style="padding:14px 6px; text-align:center; font-size:24px; color:#C7BCA9; font-weight:700;">✕</div><div style="padding:14px 6px; text-align:center; font-size:24px; color:#C7BCA9; font-weight:700;">✕</div><div style="padding:14px 6px; text-align:center; font-size:24px; color:#B05F3B; font-weight:700; background:#F4EBDE;">✓</div></div>
+      <div style="display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr 1.15fr; background:#fff;"><div style="padding:14px 18px; font-size:22px; color:#3A463C;">수가 연동</div><div style="padding:14px 6px; text-align:center; font-size:24px; color:#C7BCA9; font-weight:700;">✕</div><div style="padding:14px 6px; text-align:center; font-size:24px; color:#C7BCA9; font-weight:700;">✕</div><div style="padding:14px 6px; text-align:center; font-size:24px; color:#C7BCA9; font-weight:700;">✕</div><div style="padding:14px 6px; text-align:center; font-size:24px; color:#B05F3B; font-weight:700; background:#F4EBDE;">✓</div></div>
+    </div>
+  </div>
+  <div style="display:flex; align-items:center; gap:16px; padding-top:18px; border-top:1px solid rgba(47,65,53,0.08); margin-top:16px;"><span style="font-size:25px; color:#B05F3B; font-weight:700;">→</span><span style="font-size:24px; color:#3A463C; font-weight:500;">남들이 편의에 간 사이 비어 있던 건 ‘안전 자동화’ — 외부 데이터로 그 공백을 메웁니다.</span></div>
+  <div style="position:absolute; bottom:28px; right:44px; font-size:20px; font-weight:600; color:#C7BCA9; letter-spacing:0.04em;">LG DX School</div>
+</section>
+
+<!-- ===== 08 P2 고객 감동 목표 ===== -->
+<section data-label="P2 · 목표" data-speaker-notes="우리가 바꾸려는 건 명확합니다. 지금은 답답함을 느낀 뒤에야 인지하고, 사람이 직접 대응하고, 수기로 기록하고, 증빙은 사실상 불가능합니다. 이걸 데이터 기반의 선제 자동 대응으로 바꿉니다. 위험을 미리 인지하고, 가전이 자동 대응하고, 대응이 자동 기록되고, 증빙 리포트가 자동으로 남습니다. 집중 과제는 한 문장입니다 — 지역 감염이 병원에 닿기 전에 공간을 자동으로 준비시킨다. 그 수혜자는 간호사·시설관리자·원장·보호자 네 사람입니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; background:#F4EEE3; padding:80px 100px 76px;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; align-items:center; gap:12px;"><span style="font-size:21px; font-weight:700; color:#fff; background:#B05F3B; border-radius:6px; padding:5px 12px;">P2</span><span style="font-size:23px; font-weight:600; letter-spacing:0.08em; color:#A89F90; text-transform:uppercase;">BX · 고객 감동 목표</span></div>
+    <span style="font-size:22px; font-weight:600; color:#2F4135; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); padding:7px 16px; border-radius:9999px;">고객경험 설정</span>
+  </div>
+  <h2 style="font-size:54px; font-weight:700; letter-spacing:-0.025em; color:#2F4135; line-height:1.1; margin:26px 0 6px;">수동적 사후 대응을, 선제적 자동 대응으로</h2>
+  <p style="font-size:29px; font-weight:500; color:#6E675C; margin:0; line-height:1.4;">쉽게 말해, 사람이 일일이 챙기던 일을 공간이 스스로 하도록 바꿉니다.</p>
+  <div style="flex:1; display:grid; grid-template-columns:1fr 78px 1fr; gap:0; margin-top:34px; align-items:stretch;">
+    <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:18px; padding:32px 38px; display:flex; flex-direction:column;">
+      <div style="font-size:23px; font-weight:700; color:#A89F90; letter-spacing:0.06em; text-transform:uppercase; margin-bottom:22px;">Before · 감각·수동·사후</div>
+      <div style="display:flex; flex-direction:column; gap:18px;">
+        <div style="display:flex; gap:18px;"><span style="font-size:23px; font-weight:600; color:#A89F90; min-width:84px;">인지</span><span style="font-size:26px; color:#6E675C;">답답할 때 비로소</span></div><div style="height:1px; background:rgba(47,65,53,0.07);"></div>
+        <div style="display:flex; gap:18px;"><span style="font-size:23px; font-weight:600; color:#A89F90; min-width:84px;">대응</span><span style="font-size:26px; color:#6E675C;">사람이 직접 조작</span></div><div style="height:1px; background:rgba(47,65,53,0.07);"></div>
+        <div style="display:flex; gap:18px;"><span style="font-size:23px; font-weight:600; color:#A89F90; min-width:84px;">기록</span><span style="font-size:26px; color:#6E675C;">수기 일지 · 누락</span></div><div style="height:1px; background:rgba(47,65,53,0.07);"></div>
+        <div style="display:flex; gap:18px;"><span style="font-size:23px; font-weight:600; color:#A89F90; min-width:84px;">증빙</span><span style="font-size:26px; color:#6E675C;">사실상 불가</span></div>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:center;"><div style="width:62px; height:62px; border-radius:50%; background:#B05F3B; color:#fff; font-size:30px; font-weight:700; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(176,95,59,0.30);">→</div></div>
+    <div style="background:linear-gradient(155deg,#3A4F42,#2F4135); border-radius:18px; padding:32px 38px; display:flex; flex-direction:column; box-shadow:0 1px 2px rgba(0,0,0,0.04),0 14px 34px rgba(47,65,53,0.22);">
+      <div style="font-size:23px; font-weight:700; color:#DDB08F; letter-spacing:0.06em; text-transform:uppercase; margin-bottom:22px;">After · 데이터·자동·선제</div>
+      <div style="display:flex; flex-direction:column; gap:18px;">
+        <div style="display:flex; gap:18px;"><span style="font-size:23px; font-weight:600; color:rgba(255,255,255,0.7); min-width:84px;">인지</span><span style="font-size:26px; color:#fff;">위험 사전 인지</span></div><div style="height:1px; background:rgba(255,255,255,0.15);"></div>
+        <div style="display:flex; gap:18px;"><span style="font-size:23px; font-weight:600; color:rgba(255,255,255,0.7); min-width:84px;">대응</span><span style="font-size:26px; color:#fff;">가전 자동 가동</span></div><div style="height:1px; background:rgba(255,255,255,0.15);"></div>
+        <div style="display:flex; gap:18px;"><span style="font-size:23px; font-weight:600; color:rgba(255,255,255,0.7); min-width:84px;">기록</span><span style="font-size:26px; color:#fff;">초 단위 자동 로깅</span></div><div style="height:1px; background:rgba(255,255,255,0.15);"></div>
+        <div style="display:flex; gap:18px;"><span style="font-size:23px; font-weight:600; color:rgba(255,255,255,0.7); min-width:84px;">증빙</span><span style="font-size:26px; color:#fff;">리포트 자동 생성</span></div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:22px; display:flex; gap:16px; align-items:center;">
+    <div style="flex:1; background:#F1E7DA; border:1px solid rgba(176,95,59,0.22); border-radius:14px; padding:18px 28px; display:flex; align-items:center; gap:14px;"><span style="font-size:22px; font-weight:700; color:#B05F3B;">집중 과제</span><span style="font-size:25px; color:#3A463C; font-weight:600;">지역 감염이 병원에 닿기 전, 공간을 자동으로 준비시킨다</span></div>
+    <div style="display:flex; gap:10px;"><span style="font-size:22px; color:#2F4135; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); border-radius:9999px; padding:8px 16px;">간호사</span><span style="font-size:22px; color:#2F4135; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); border-radius:9999px; padding:8px 16px;">시설</span><span style="font-size:22px; color:#2F4135; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); border-radius:9999px; padding:8px 16px;">원장</span><span style="font-size:22px; color:#2F4135; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); border-radius:9999px; padding:8px 16px;">보호자</span></div>
+  </div>
+  <div style="display:flex; align-items:center; gap:16px; padding-top:20px; border-top:1px solid rgba(47,65,53,0.08); margin-top:16px;"><span style="font-size:25px; color:#B05F3B; font-weight:700;">→</span><span style="font-size:25px; color:#3A463C; font-weight:500;">이 목표를 뒷받침할 근거는 어떻게 모았을까요?</span></div>
+  <div style="position:absolute; bottom:30px; right:44px; font-size:20px; font-weight:600; color:#C7BCA9; letter-spacing:0.04em;">LG DX School</div>
+</section>
+
+<!-- ===== 09 P3 데이터 수집 ===== -->
+<section data-label="P3 · 데이터" data-speaker-notes="데이터는 정성과 정량 두 축으로 모았습니다. 정성은 네이버 뉴스·블로그·카페·지식인과 유튜브 네 채널에서 57개 키워드로 4만 8천여 건을 크롤링하고, 장례·광고 같은 노이즈를 걸러 2만 8천여 건을 분석했습니다. 키위 형태소 분석으로 명사만 뽑아 LDA 토픽 모델링을 돌렸고, 시설장·종사자·가족 세 페르소나로 나눠 각각의 Pain을 도출했습니다. 표본이 크고 전건 재현 가능합니다. 정량은 다섯 개 외부 레이어 — 질병청, 하수 코와스, 검색 데이터랩, 약국 OTC, 기온 기상청 — 에 코웨이 실내 센서를 더해 공간 위험을 계산합니다. 출처 기관을 모두 명기했습니다. 다음 장에서 이 분석을 어떻게 정당화했는지 방법론으로 보여드리겠습니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; background:#F4EEE3; padding:80px 90px 78px;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; align-items:center; gap:12px;"><span style="font-size:21px; font-weight:700; color:#fff; background:#B05F3B; border-radius:6px; padding:5px 12px;">P3</span><span style="font-size:23px; font-weight:600; letter-spacing:0.08em; color:#A89F90; text-transform:uppercase;">BX · 데이터 수집 전략</span></div>
+    <span style="font-size:22px; font-weight:600; color:#2F4135; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); padding:7px 16px; border-radius:9999px;">체계성 · 신뢰성</span>
+  </div>
+  <h2 style="font-size:54px; font-weight:700; letter-spacing:-0.025em; color:#2F4135; line-height:1.1; margin:26px 0 6px;">정성과 정량, 두 축으로 모았습니다</h2>
+  <p style="font-size:29px; font-weight:500; color:#6E675C; margin:0; line-height:1.4;">쉽게 말해, ‘왜 풀어야 하나(정성)’와 ‘위험을 어떻게 계산하나(정량)’를 나눠 수집했습니다.</p>
+  <div style="flex:1; display:grid; grid-template-columns:1fr 1.2fr; gap:24px; margin-top:36px; align-content:center;">
+    <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:18px; padding:34px 34px; display:flex; flex-direction:column; gap:16px;">
+      <div style="font-size:24px; font-weight:700; color:#B05F3B; letter-spacing:0.04em;">정성 · VOC 텍스트 마이닝</div>
+      <div style="display:flex; align-items:baseline; gap:12px;"><span style="font-size:74px; font-weight:700; color:#2F4135; line-height:1;">48,514</span><span style="font-size:23px; color:#6E675C;">건 수집</span></div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <span style="font-size:20px; color:#3A463C; background:#fff; border:1px solid rgba(47,65,53,0.10); border-radius:9999px; padding:5px 13px;">4채널 · 57키워드</span>
+        <span style="font-size:20px; color:#fff; background:#2F4135; border-radius:9999px; padding:5px 13px;">노이즈 필터 후 <b>28,679건</b> 분석</span>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:9px; font-size:22px; color:#3A463C;">
+        <div>· 네이버 뉴스·블로그·카페·지식iN + YouTube</div><div>· Kiwi 형태소(NNG·NNP) → LDA 토픽 모델링</div><div>· 시설장 11,106 · 종사자 9,494 · 가족 8,545</div>
+      </div>
+      <div style="margin-top:auto; font-size:20px; color:#A89F90;">3 페르소나 raw 29,145 + 경쟁 8,888 + 정책 10,481 · 스크립트·프리셋 공개로 재현 가능</div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div style="font-size:24px; font-weight:700; color:#B05F3B; letter-spacing:0.04em;">정량 · 5 Layer 외부 + 실내 센서</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div style="background:#fff; border:1px solid rgba(47,65,53,0.10); border-radius:12px; padding:16px 20px;"><div style="font-size:24px; font-weight:600; color:#2F4135;">질병청</div><div style="font-size:21px; color:#6E675C;">감염병 발생 동향</div></div>
+        <div style="background:#fff; border:1px solid rgba(47,65,53,0.10); border-radius:12px; padding:16px 20px;"><div style="font-size:24px; font-weight:600; color:#2F4135;">하수 KOWAS</div><div style="font-size:21px; color:#6E675C;">하수 기반 감시</div></div>
+        <div style="background:#fff; border:1px solid rgba(47,65,53,0.10); border-radius:12px; padding:16px 20px;"><div style="font-size:24px; font-weight:600; color:#2F4135;">검색 DataLab</div><div style="font-size:21px; color:#6E675C;">증상 검색량</div></div>
+        <div style="background:#fff; border:1px solid rgba(47,65,53,0.10); border-radius:12px; padding:16px 20px;"><div style="font-size:24px; font-weight:600; color:#2F4135;">약국 OTC</div><div style="font-size:21px; color:#6E675C;">해열·감기약 판매</div></div>
+        <div style="background:#fff; border:1px solid rgba(47,65,53,0.10); border-radius:12px; padding:16px 20px;"><div style="font-size:24px; font-weight:600; color:#2F4135;">기온 KMA</div><div style="font-size:21px; color:#6E675C;">기상청 기온</div></div>
+        <div style="background:#2F4135; border-radius:12px; padding:16px 20px;"><div style="font-size:24px; font-weight:600; color:#fff;">실내 센서</div><div style="font-size:20px; color:rgba(255,255,255,0.78); line-height:1.3;">코웨이 실측 PM·온습도 + CO₂(공청기·가스 트리거 보조, 표준센서 SCD41 한 줄 교체)</div></div>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex; align-items:center; gap:16px; padding-top:22px; border-top:1px solid rgba(47,65,53,0.08);"><span style="font-size:25px; color:#B05F3B; font-weight:700;">→</span><span style="font-size:25px; color:#3A463C; font-weight:500;">그런데 이 분석이 ‘자의적이지 않다’는 걸 어떻게 증명할까요 — 방법론으로 보여드립니다.</span></div>
+  <div style="position:absolute; bottom:30px; right:44px; font-size:20px; font-weight:600; color:#C7BCA9; letter-spacing:0.04em;">LG DX School</div>
+</section>
+
+<!-- ===== 09.5 P3+ 분석 방법론 (Show your work) ===== -->
+<section data-label="P3 · 방법론" data-speaker-notes="이 분석은 주장이 아닙니다. 크롤러와 분석 코드를 저장소에 공개했고, 지금 이 자리에서 다시 돌려도 같은 결과가 나옵니다. 네이버 검색 API로 51개 키워드를 직접 크롤링해 7만 8천 건을 모았고, 노이즈를 걸러 7만 5천 6백여 건을 분석했습니다 — PM이 분석한 4만 8천 건보다 큰 규모를 저희가 직접 재현한 겁니다. 결과가 결정적입니다. 종사자 부정도가 84.0%로 나왔는데, 이건 PM의 4만 8천 건 분석값 84%와 소수점까지 일치합니다 — 표본을 독립적으로 다시 모아도 같은 결론에 수렴한 겁니다. 키워드별로는 집단감염 99.3%, 욕창 98.2%, 야간근무 97.0%, 폐업 96.3%, 행정처분 96.0%로, 빈도도 높고 부정도도 높은 진짜 기회존입니다. 토픽 모델링을 돌리면 돌봄·욕창, 인력난·폐업·수가, 인증·행정처분, 감염·코로나·낙상, 야간·교대·산재 다섯 갈래로 저절로 갈라집니다 — 저희가 손으로 나눈 게 아니라 데이터가 스스로 나눈 겁니다. 감정은 일반 BERT 대신 한 단어씩 정당화할 수 있는 요양 도메인 룰 사전(부정어 37·긍정어 16)을 만들어 썼습니다. 표본을 186건에서 7만 5천 건으로 200배 키워도 같은 패턴, 같은 결론 — 그래서 이건 우연이 아니라 측정입니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; background:#F4EEE3; padding:64px 80px 60px;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; align-items:center; gap:12px;"><span style="font-size:21px; font-weight:700; color:#fff; background:#B05F3B; border-radius:6px; padding:5px 12px;">P3+</span><span style="font-size:23px; font-weight:600; letter-spacing:0.08em; color:#A89F90; text-transform:uppercase;">BX · 분석 방법론 (Show your work)</span></div>
+    <span style="font-size:22px; font-weight:600; color:#2F4135; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); padding:7px 16px; border-radius:9999px;">신뢰성</span>
+  </div>
+  <h2 style="font-size:44px; font-weight:700; letter-spacing:-0.025em; color:#2F4135; line-height:1.1; margin:16px 0 4px;">주장이 아니라 재현됩니다 — 크롤러·데이터·코드 공개</h2>
+  <p style="font-size:24px; font-weight:500; color:#6E675C; margin:0; line-height:1.4;">쉽게 말해, 저장소의 스크립트를 그대로 돌리면 같은 숫자가 나옵니다 (직접 크롤 <b style="color:#2F4135;">N=75,633</b> · 51키워드 · 5페르소나 · 4채널 — PM 48,514건 결론을 독립 재현·초과).</p>
+  <div style="flex:1; display:grid; grid-template-columns:1fr 1fr 1.05fr; gap:18px; margin-top:22px; align-content:center;">
+    <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:16px; padding:26px 26px; display:flex; flex-direction:column; gap:14px;">
+      <span style="font-size:20px; font-weight:700; color:#B05F3B; background:#F1E7DA; border-radius:9999px; padding:5px 14px; align-self:flex-start;">① 토픽 자동 분리</span>
+      <div style="font-size:23px; font-weight:600; color:#2F4135; line-height:1.35;">LDA 5토픽 — 데이터가 스스로</div>
+      <div style="display:flex; flex-direction:column; gap:7px;">
+        <div style="font-size:19px; color:#3A463C;"><b style="color:#B05F3B;">T1</b> 욕창·재활·면회·치매·부모</div>
+        <div style="font-size:19px; color:#3A463C;"><b style="color:#B05F3B;">T2</b> 인력부족·수가·폐업·간병·학대</div>
+        <div style="font-size:19px; color:#3A463C;"><b style="color:#B05F3B;">T3</b> 인증·평가·청구·행정처분·급여</div>
+        <div style="font-size:19px; color:#3A463C;"><b style="color:#B05F3B;">T4</b> 감염·코로나·집단·낙상·예방</div>
+        <div style="font-size:19px; color:#3A463C;"><b style="color:#B05F3B;">T5</b> 야간·교대·보호사·산재·수당</div>
+      </div>
+      <div style="font-size:20px; color:#6E675C; line-height:1.4;">5토픽이 <b style="color:#2F4135;">페르소나로 그대로 갈라짐</b> · Perplexity 스캔(n2-10) 공개</div>
+    </div>
+    <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:16px; padding:26px 26px; display:flex; flex-direction:column; gap:14px;">
+      <span style="font-size:20px; font-weight:700; color:#B05F3B; background:#F1E7DA; border-radius:9999px; padding:5px 14px; align-self:flex-start;">② 감정 측정</span>
+      <div style="font-size:23px; font-weight:600; color:#2F4135; line-height:1.35;">도메인 룰 사전</div>
+      <div style="display:flex; gap:10px;">
+        <div style="flex:1; background:#fff; border:1px solid rgba(47,65,53,0.10); border-radius:12px; padding:14px 16px; text-align:center;"><div style="font-size:34px; font-weight:700; color:#B05F3B; line-height:1;">37</div><div style="font-size:18px; color:#6E675C; margin-top:4px;">부정어</div></div>
+        <div style="flex:1; background:#fff; border:1px solid rgba(47,65,53,0.10); border-radius:12px; padding:14px 16px; text-align:center;"><div style="font-size:34px; font-weight:700; color:#2F4135; line-height:1;">16</div><div style="font-size:18px; color:#6E675C; margin-top:4px;">긍정어</div></div>
+      </div>
+      <div style="font-size:21px; color:#6E675C; line-height:1.45;">일반 한국어 BERT는 요양 도메인 약함 → <b style="color:#2F4135;">해석·정당화 가능한 룰 사전</b> 채택</div>
+    </div>
+    <div style="background:linear-gradient(155deg,#3A4F42,#2F4135); border-radius:16px; padding:26px 26px; display:flex; flex-direction:column; gap:12px; box-shadow:0 12px 28px rgba(47,65,53,0.20);">
+      <span style="font-size:20px; font-weight:700; color:#2F4135; background:#fff; border-radius:9999px; padding:5px 14px; align-self:flex-start;">③ 재현된 부정도</span>
+      <div style="font-size:22px; font-weight:600; color:#fff; line-height:1.3;">키워드별 실측 (N=75,633)</div>
+      <div style="display:flex; flex-direction:column; gap:7px;">
+        <div style="display:flex; align-items:baseline; justify-content:space-between;"><span style="font-size:20px; color:rgba(255,255,255,0.85);">집단감염 <span style="font-size:16px; color:rgba(255,255,255,0.55);">n1,938</span></span><span style="font-size:29px; font-weight:700; color:#fff;">99.3%</span></div>
+        <div style="display:flex; align-items:baseline; justify-content:space-between;"><span style="font-size:20px; color:rgba(255,255,255,0.85);">욕창 <span style="font-size:16px; color:rgba(255,255,255,0.55);">n2,972</span></span><span style="font-size:29px; font-weight:700; color:#fff;">98.2%</span></div>
+        <div style="display:flex; align-items:baseline; justify-content:space-between;"><span style="font-size:20px; color:rgba(255,255,255,0.85);">야간근무 <span style="font-size:16px; color:rgba(255,255,255,0.55);">n2,780</span></span><span style="font-size:29px; font-weight:700; color:#fff;">97.0%</span></div>
+      </div>
+      <div style="background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.22); border-radius:10px; padding:9px 12px; font-size:18px; color:#fff; line-height:1.4;">종사자 전체 <b>84.0%</b> = PM 4.8만건 분석값과 일치<br><span style="color:rgba(255,255,255,0.7);">독립 표본이 같은 결론으로 수렴 — 측정값</span></div>
+    </div>
+  </div>
+  <div style="margin-top:14px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:19px; color:#A89F90;">
+    <span style="font-weight:700; color:#6E675C;">방법</span>
+    <span>Naver API 51키워드·4채널 78,087건 수집→75,633건 분석 · Kiwi 형태소(NNG·NNP) · CountVectorizer(max_features 500, min_df 3) · LDA(n=5, random_state 42)</span><span>·</span>
+    <span>감정 룰 사전(부정 37·긍정 16)</span><span>·</span>
+    <span style="color:#6E675C;">재현 — <b>scripts/cx/run.py</b> · <b>data/nursing/raw.csv</b> · <b>lexicon.py</b> (저장소 공개)</span>
+  </div>
+  <div style="display:flex; align-items:center; gap:16px; padding-top:14px; border-top:1px solid rgba(47,65,53,0.08); margin-top:12px;"><span style="font-size:25px; color:#B05F3B; font-weight:700;">→</span><span style="font-size:24px; color:#3A463C; font-weight:500;">이 검증된 데이터로 ‘누구를’ ‘어떤 Pain’을 풀지 좁혀갑니다.</span></div>
+  <div style="position:absolute; bottom:24px; right:44px; font-size:20px; font-weight:600; color:#C7BCA9; letter-spacing:0.04em;">LG DX School</div>
+</section>
+
+<!-- ===== DIVIDER · CX ===== -->
+<section data-label="— CX —" data-speaker-notes="다음은 CX입니다. 누구의, 어떤 경험인가 — 요양병원 네 사람의 진짜 Pain Point를 직접 크롤링한 데이터로 찾고, 하나의 경험 컨셉으로 묶었습니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:center; background:#EAE3D5; padding:0;">
+  <img src="./assets/cx_divider.png" alt="CX · 누구의, 어떤 경험인가" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block;">
+</section>
+
+<!-- ===== 10 P4 페르소나 ===== -->
+<section data-label="P4 · 페르소나" data-speaker-notes="첫 교두보는 전국 1,342개 요양병원입니다. 중요한 건 돈 내는 사람과 쓰는 사람이 다르다는 점입니다. 이정숙 시설장은 집단감염 책임과 증빙 부담을, 김춘식 시설관리자는 가전 상태 파악을, 김정애 간호조무사는 야간 단독근무와 수기 보고를, 박지원 보호자는 부모님 안전 확인을 가장 절박해합니다. 그래서 역할별로 다른 가치를 제공합니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; background:#F4EEE3; padding:78px 80px 72px;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; align-items:center; gap:12px;"><span style="font-size:21px; font-weight:700; color:#fff; background:#B05F3B; border-radius:6px; padding:5px 12px;">P4</span><span style="font-size:23px; font-weight:600; letter-spacing:0.08em; color:#A89F90; text-transform:uppercase;">CX · 타깃 · 페르소나</span></div>
+    <span style="font-size:22px; font-weight:600; color:#2F4135; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); padding:7px 16px; border-radius:9999px;">고객 핵심포인트</span>
+  </div>
+  <h2 style="font-size:50px; font-weight:700; letter-spacing:-0.025em; color:#2F4135; line-height:1.1; margin:22px 0 4px;">1차 교두보 = 전국 요양병원 1,342개소</h2>
+  <p style="font-size:27px; font-weight:500; color:#6E675C; margin:0; line-height:1.4;">쉽게 말해, 구매자·운영자·실사용자·수혜자가 모두 다른 욕구를 가집니다.</p>
+  <div style="flex:1; display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-top:26px; align-content:center;">
+    <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:16px; padding:26px 24px; display:flex; flex-direction:column; gap:12px;"><span style="font-size:21px; font-weight:700; color:#B05F3B; background:#F1E7DA; border-radius:9999px; padding:5px 14px; align-self:flex-start;">결재 · 구매</span><div style="font-size:27px; font-weight:700; color:#2F4135;">이정숙 <span style="font-size:21px; font-weight:500; color:#A89F90;">시설장 · 62</span></div><div><div style="font-size:21px; color:#A89F90; font-weight:600;">Pain</div><div style="font-size:23px; color:#6E675C; line-height:1.4;">집단감염 책임·증빙 부담</div></div><div style="margin-top:auto; padding-top:12px; border-top:1px solid rgba(47,65,53,0.08);"><div style="font-size:21px; color:#B05F3B; font-weight:600;">Need</div><div style="font-size:23px; color:#2F4135; font-weight:600; line-height:1.4;">선제 대응 자동 증빙</div></div></div>
+    <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:16px; padding:26px 24px; display:flex; flex-direction:column; gap:12px;"><span style="font-size:21px; font-weight:700; color:#B05F3B; background:#F1E7DA; border-radius:9999px; padding:5px 14px; align-self:flex-start;">운영자</span><div style="font-size:27px; font-weight:700; color:#2F4135;">김춘식 <span style="font-size:21px; font-weight:500; color:#A89F90;">시설관리 · 50대</span></div><div><div style="font-size:21px; color:#A89F90; font-weight:600;">Pain</div><div style="font-size:23px; color:#6E675C; line-height:1.4;">가전 상태 파악 불가</div></div><div style="margin-top:auto; padding-top:12px; border-top:1px solid rgba(47,65,53,0.08);"><div style="font-size:21px; color:#B05F3B; font-weight:600;">Need</div><div style="font-size:23px; color:#2F4135; font-weight:600; line-height:1.4;">통합 모니터·이상 알림</div></div></div>
+    <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:16px; padding:26px 24px; display:flex; flex-direction:column; gap:12px;"><span style="font-size:21px; font-weight:700; color:#B05F3B; background:#F1E7DA; border-radius:9999px; padding:5px 14px; align-self:flex-start;">실사용자</span><div style="font-size:27px; font-weight:700; color:#2F4135;">김정애 <span style="font-size:21px; font-weight:500; color:#A89F90;">간호조무사 · 45</span></div><div><div style="font-size:21px; color:#A89F90; font-weight:600;">Pain</div><div style="font-size:23px; color:#6E675C; line-height:1.4;">야간 단독·수기 보고</div></div><div style="margin-top:auto; padding-top:12px; border-top:1px solid rgba(47,65,53,0.08);"><div style="font-size:21px; color:#B05F3B; font-weight:600;">Need</div><div style="font-size:23px; color:#2F4135; font-weight:600; line-height:1.4;">자동 대응·리포트</div></div></div>
+    <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:16px; padding:26px 24px; display:flex; flex-direction:column; gap:12px;"><span style="font-size:21px; font-weight:700; color:#B05F3B; background:#F1E7DA; border-radius:9999px; padding:5px 14px; align-self:flex-start;">수혜 · 평판</span><div style="font-size:27px; font-weight:700; color:#2F4135;">박지원 <span style="font-size:21px; font-weight:500; color:#A89F90;">보호자 · 38</span></div><div><div style="font-size:21px; color:#A89F90; font-weight:600;">Pain</div><div style="font-size:23px; color:#6E675C; line-height:1.4;">안전 확인 방법 부재</div></div><div style="margin-top:auto; padding-top:12px; border-top:1px solid rgba(47,65,53,0.08);"><div style="font-size:21px; color:#B05F3B; font-weight:600;">Need</div><div style="font-size:23px; color:#2F4135; font-weight:600; line-height:1.4;">앱 알림·안심 리포트</div></div></div>
+  </div>
+  <div style="display:flex; align-items:center; gap:16px; padding-top:20px; border-top:1px solid rgba(47,65,53,0.08); margin-top:18px;"><span style="font-size:25px; color:#B05F3B; font-weight:700;">→</span><span style="font-size:25px; color:#3A463C; font-weight:500;">이들이 실제 겪는 경험을 한 장에 모으면 결론이 보입니다.</span></div>
+  <div style="position:absolute; bottom:28px; right:44px; font-size:20px; font-weight:600; color:#C7BCA9; letter-spacing:0.04em;">LG DX School</div>
+</section>
+
+<!-- ===== 11 P5 CAM ===== -->
+<section data-label="P5 · CAM" data-speaker-notes="네 사람의 경험을 인지, 현재 행동, Pain 정점, 센티넬 개입 네 단계로 정리했습니다. 위험을 인지하지 못한 채 수기로 돌고, Pain이 정점에 달하는 건 모두 같은 지점입니다. 그리고 LDA 토픽 분석 결과, 보호자도 원장도 간호사도 결국 한 곳으로 수렴합니다 — 실시간 확인과 대응 증빙의 부재. 센티넬은 바로 그 지점에 개입합니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; background:#F4EEE3; padding:78px 90px 72px;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; align-items:center; gap:12px;"><span style="font-size:21px; font-weight:700; color:#fff; background:#B05F3B; border-radius:6px; padding:5px 12px;">P5</span><span style="font-size:23px; font-weight:600; letter-spacing:0.08em; color:#A89F90; text-transform:uppercase;">CX · 핵심 경험 · CAM</span></div>
+    <span style="font-size:22px; font-weight:600; color:#2F4135; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); padding:7px 16px; border-radius:9999px;">핵심경험</span>
+  </div>
+  <h2 style="font-size:50px; font-weight:700; letter-spacing:-0.025em; color:#2F4135; line-height:1.1; margin:22px 0 4px;">네 Pain은 모두 한 곳으로 수렴합니다</h2>
+  <p style="font-size:27px; font-weight:500; color:#6E675C; margin:0; line-height:1.4;">쉽게 말해, 인지 → 현재 행동 → Pain 정점 → 센티넬 개입. 결론은 ‘실시간 확인 + 대응 증빙의 부재’.</p>
+  <div style="flex:1; display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-top:28px; align-content:center;">
+    <div style="display:flex; flex-direction:column; gap:14px;"><div style="font-size:24px; font-weight:700; color:#2F4135; text-align:center;">인지</div><div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:14px; padding:22px 22px; min-height:300px;"><div style="font-size:23px; color:#6E675C; line-height:1.5;">위험을 수치로 알 수 없음 — 답답함·냄새 같은 감각에 의존</div></div></div>
+    <div style="display:flex; flex-direction:column; gap:14px;"><div style="font-size:24px; font-weight:700; color:#2F4135; text-align:center;">현재 행동</div><div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:14px; padding:22px 22px; min-height:300px;"><div style="font-size:23px; color:#6E675C; line-height:1.5;">사람이 직접 창문·가전 조작, 수기로 기록 — 야간엔 누락</div></div></div>
+    <div style="display:flex; flex-direction:column; gap:14px;"><div style="font-size:24px; font-weight:700; color:#B05F3B; text-align:center;">Pain 정점</div><div style="background:#fff; border:1px solid rgba(176,95,59,0.25); border-radius:14px; padding:22px 22px; min-height:300px;"><div style="font-size:23px; color:#3A463C; line-height:1.5;">집단감염·민원 발생 후에야 인지 — 증빙할 근거가 없음</div></div></div>
+    <div style="display:flex; flex-direction:column; gap:14px;"><div style="font-size:24px; font-weight:700; color:#fff; text-align:center; background:#B05F3B; border-radius:9999px; padding:4px 0;">Sentinel 개입</div><div style="background:linear-gradient(155deg,#3A4F42,#2F4135); border-radius:14px; padding:22px 22px; min-height:300px; box-shadow:0 12px 28px rgba(47,65,53,0.20);"><div style="font-size:23px; color:#fff; line-height:1.5;">위험 사전 인지 → 가전 자동 대응 → 초 단위 증빙 자동 기록</div></div></div>
+  </div>
+  <div style="margin-top:20px; display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr; gap:12px; align-items:stretch;">
+    <div style="background:#F1E7DA; border:1px solid rgba(176,95,59,0.22); border-radius:14px; padding:16px 22px; display:flex; flex-direction:column; justify-content:center; gap:4px;">
+      <span style="font-size:19px; font-weight:700; color:#A89F90;">CAM 우상단 = 기회영역 (빈도↑ · 부정도↑)</span>
+      <span style="font-size:22px; font-weight:700; color:#B05F3B; line-height:1.3;">‘실시간 확인 + 대응 증빙 부재’로 수렴</span>
+    </div>
+    <div style="background:#2F4135; border-radius:14px; padding:16px 18px; display:flex; flex-direction:column; justify-content:center;"><div style="font-size:30px; font-weight:700; color:#fff; line-height:1;">100%</div><div style="font-size:18px; color:rgba(255,255,255,0.78); margin-top:5px; line-height:1.3;">시설장 · 집단감염 부정도</div></div>
+    <div style="background:#2F4135; border-radius:14px; padding:16px 18px; display:flex; flex-direction:column; justify-content:center;"><div style="font-size:30px; font-weight:700; color:#fff; line-height:1;">97%</div><div style="font-size:18px; color:rgba(255,255,255,0.78); margin-top:5px; line-height:1.3;">종사자 · 야간근무 부정도</div></div>
+    <div style="background:#2F4135; border-radius:14px; padding:16px 18px; display:flex; flex-direction:column; justify-content:center;"><div style="font-size:30px; font-weight:700; color:#fff; line-height:1;">100%</div><div style="font-size:18px; color:rgba(255,255,255,0.78); margin-top:5px; line-height:1.3;">가족 · 학대 부정도</div></div>
+  </div>
+  <div style="display:flex; align-items:center; gap:16px; padding-top:18px; border-top:1px solid rgba(47,65,53,0.08); margin-top:14px;"><span style="font-size:25px; color:#B05F3B; font-weight:700;">→</span><span style="font-size:24px; color:#3A463C; font-weight:500;">이 수렴점을 푸는 컨셉을 한 장으로 정리합니다.</span></div>
+  <div style="position:absolute; bottom:28px; right:44px; font-size:20px; font-weight:600; color:#C7BCA9; letter-spacing:0.04em;">LG DX School</div>
+</section>
+
+<!-- ===== 12 P6 컨셉 + 전략 캔버스 ===== -->
+<section data-label="P6 · 컨셉" data-speaker-notes="컨셉은 한 문장입니다 — 공간이 사람보다 먼저 반응하고, 증빙이 자동으로 남는다. 논리는 외부 역학에서 센서, 웰스-라일리 위험도, 가전 대응, 보호자 안심으로 이어집니다. 창의는 세 가지 전환입니다 — 예측을 면책 근거로 팔고, 쾌적함을 증빙으로 바꾸고, 새 가전 대신 이미 깔린 가전을 묶습니다. 충실성은 전략 캔버스 일곱 줄로 담았습니다. 가격은 월 89·129·399만 원, 시연은 75초입니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; background:#F4EEE3; padding:74px 90px 68px;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; align-items:center; gap:12px;"><span style="font-size:21px; font-weight:700; color:#fff; background:#B05F3B; border-radius:6px; padding:5px 12px;">P6</span><span style="font-size:23px; font-weight:600; letter-spacing:0.08em; color:#A89F90; text-transform:uppercase;">CX · 컨셉 · 전략 캔버스</span></div>
+    <span style="font-size:22px; font-weight:600; color:#fff; background:#B05F3B; padding:7px 16px; border-radius:9999px;">논리 · 창의 · 충실</span>
+  </div>
+  <h2 style="font-size:46px; font-weight:700; letter-spacing:-0.025em; color:#2F4135; line-height:1.12; margin:18px 0 4px;">공간이 사람보다 먼저 반응한다 — 증빙이 자동으로 남는다</h2>
+  <p style="font-size:26px; font-weight:500; color:#6E675C; margin:0; line-height:1.4;">쉽게 말해, 논리(인과)·창의(3대 전환)·충실(전략 캔버스)을 한 장에 담았습니다.</p>
+  <div style="flex:1; display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:22px; align-content:center;">
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div style="background:#2F4135; border-radius:14px; padding:18px 24px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;"><span style="font-size:21px; font-weight:700; color:rgba(255,255,255,0.7); margin-right:6px;">논리</span><span style="font-size:22px; font-weight:600; color:#fff;">외부역학</span><span style="color:rgba(255,255,255,0.5);">→</span><span style="font-size:22px; font-weight:600; color:#fff;">센서</span><span style="color:rgba(255,255,255,0.5);">→</span><span style="font-size:22px; font-weight:600; color:#fff;">Wells–Riley</span><span style="color:rgba(255,255,255,0.5);">→</span><span style="font-size:22px; font-weight:600; color:#fff;">가전</span><span style="color:rgba(255,255,255,0.5);">→</span><span style="font-size:22px; font-weight:600; color:#DDB08F;">안심</span></div>
+      <div style="font-size:22px; font-weight:700; color:#B05F3B; margin-top:4px;">창의 · 혁신성 <span style="font-size:17px; font-weight:600; color:#A89F90;">Fun = First · Unique · New</span></div>
+      <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:12px; padding:16px 22px; display:flex; align-items:center; gap:14px;"><span style="font-size:23px; color:#A89F90;">예측을 판다</span><span style="color:#B05F3B; font-size:20px;">→</span><span style="font-size:24px; font-weight:600; color:#2F4135;">면책 근거</span><span style="margin-left:auto; font-size:16px; font-weight:700; color:#fff; background:#B05F3B; border-radius:9999px; padding:3px 12px;">New</span></div>
+      <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:12px; padding:16px 22px; display:flex; align-items:center; gap:14px;"><span style="font-size:23px; color:#A89F90;">쾌적함</span><span style="color:#B05F3B; font-size:20px;">→</span><span style="font-size:24px; font-weight:600; color:#2F4135;">법적 증빙</span><span style="margin-left:auto; font-size:16px; font-weight:700; color:#fff; background:#B05F3B; border-radius:9999px; padding:3px 12px;">Unique</span></div>
+      <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:12px; padding:16px 22px; display:flex; align-items:center; gap:14px;"><span style="font-size:23px; color:#A89F90;">새 가전</span><span style="color:#B05F3B; font-size:20px;">→</span><span style="font-size:24px; font-weight:600; color:#2F4135;">이미 깔린 가전 묶기</span><span style="margin-left:auto; font-size:16px; font-weight:700; color:#fff; background:#B05F3B; border-radius:9999px; padding:3px 12px;">First</span></div>
+    </div>
+    <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:16px; padding:24px 26px; display:flex; flex-direction:column; gap:0;">
+      <div style="font-size:22px; font-weight:700; color:#B05F3B; margin-bottom:12px;">충실 · 전략 캔버스</div>
+      <div style="display:flex; flex-direction:column;">
+        <div style="display:flex; gap:14px; padding:10px 0; border-bottom:1px solid rgba(47,65,53,0.08);"><span style="font-size:22px; font-weight:600; color:#A89F90; min-width:96px;">가치제안</span><span style="font-size:23px; color:#3A463C;">선제 안전 + 자동 증빙</span></div>
+        <div style="display:flex; gap:14px; padding:10px 0; border-bottom:1px solid rgba(47,65,53,0.08);"><span style="font-size:22px; font-weight:600; color:#A89F90; min-width:96px;">타겟</span><span style="font-size:23px; color:#3A463C;">요양병원(교두보) → IAQ 확장</span></div>
+        <div style="display:flex; gap:14px; padding:10px 0; border-bottom:1px solid rgba(47,65,53,0.08);"><span style="font-size:22px; font-weight:600; color:#A89F90; min-width:96px;">활동</span><span style="font-size:23px; color:#3A463C;">외부역학 융합·가전 오케스트레이션</span></div>
+        <div style="display:flex; gap:14px; padding:10px 0; border-bottom:1px solid rgba(47,65,53,0.08);"><span style="font-size:22px; font-weight:600; color:#A89F90; min-width:96px;">자원</span><span style="font-size:23px; color:#3A463C;">센서·어댑터·위험 엔진</span></div>
+        <div style="display:flex; gap:14px; padding:10px 0; border-bottom:1px solid rgba(47,65,53,0.08);"><span style="font-size:22px; font-weight:600; color:#A89F90; min-width:96px;">수익원</span><span style="font-size:23px; color:#3A463C;">SaaS 89 · 129 · 399만원/월</span></div>
+        <div style="display:flex; gap:14px; padding:10px 0; border-bottom:1px solid rgba(47,65,53,0.08);"><span style="font-size:22px; font-weight:600; color:#A89F90; min-width:96px;">해자</span><span style="font-size:23px; color:#3A463C;">외부역학·증빙 자동화</span></div>
+        <div style="display:flex; gap:14px; padding:10px 0;"><span style="font-size:22px; font-weight:600; color:#A89F90; min-width:96px;">시연</span><span style="font-size:23px; color:#3A463C;">75초 — 인지→대응→증빙→안심</span></div>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex; align-items:center; gap:16px; padding-top:16px; border-top:1px solid rgba(47,65,53,0.08); margin-top:12px;"><span style="font-size:25px; color:#B05F3B; font-weight:700;">→</span><span style="font-size:24px; color:#3A463C; font-weight:500;">이 컨셉을 실제로 어떻게 설계했는지 보겠습니다.</span></div>
+  <div style="position:absolute; bottom:28px; right:44px; font-size:20px; font-weight:600; color:#C7BCA9; letter-spacing:0.04em;">LG DX School</div>
+</section>
+
+<!-- ===== DIVIDER · DX ===== -->
+<section data-label="— DX —" data-speaker-notes="마지막 DX입니다. 만들고, 증명합니다 — 설계부터 지금 돌아가는 실제 제품, 효과 검증까지. 말이 아니라 ‘작동’으로 보여드립니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:center; background:#EAE3D5; padding:0;">
+  <img src="./assets/dx_divider.png" alt="DX · 만들고, 증명한다" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block;">
+</section>
+
+<!-- ===== 13 P7 설계서 ===== -->
+<section data-label="P7 · 설계" data-speaker-notes="설계는 네 단계 아키텍처입니다. 센서·웹캠·가전에서 수집하고, 타임스케일DB와 레디스로 처리하고, UIS 외부역학과 REHVA PoI로 5단계 위험을 분석한 뒤, 가전 대응과 증빙으로 마무리합니다. 기능 요구사항 여덟 개, 화면 여섯 개, DB, 분석 세 축까지 정의했습니다. 머릿속이 아니라 지금 실제로 돌고 있는 설계도입니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; background:#F4EEE3; padding:76px 90px 70px;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; align-items:center; gap:12px;"><span style="font-size:21px; font-weight:700; color:#fff; background:#B05F3B; border-radius:6px; padding:5px 12px;">P7</span><span style="font-size:23px; font-weight:600; letter-spacing:0.08em; color:#A89F90; text-transform:uppercase;">DX · 설계서</span></div>
+    <span style="font-size:22px; font-weight:600; color:#2F4135; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); padding:7px 16px; border-radius:9999px;">완성도</span>
+  </div>
+  <h2 style="font-size:50px; font-weight:700; letter-spacing:-0.025em; color:#2F4135; line-height:1.1; margin:20px 0 4px;">지금 돌고 있는 실제 설계도 — 4 Stage</h2>
+  <p style="font-size:27px; font-weight:500; color:#6E675C; margin:0; line-height:1.4;">쉽게 말해, 수집 → 처리 → 분석 → 대응·증빙. 분석 단계가 우리만의 핵심입니다.</p>
+  <div style="flex:1; display:flex; flex-direction:column; gap:18px; margin-top:26px; justify-content:center;">
+    <div style="display:grid; grid-template-columns:1fr 56px 1fr 56px 1.25fr 56px 1fr; align-items:stretch;">
+      <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:14px; padding:22px 22px; display:flex; flex-direction:column; gap:8px;"><div style="font-size:22px; font-weight:700; color:#B05F3B;">수집</div><div style="font-size:24px; font-weight:600; color:#2F4135;">Edge</div><div style="font-size:21px; color:#6E675C; line-height:1.4;">센서·웹캠·코웨이 가전</div></div>
+      <div style="display:flex; align-items:center; justify-content:center; color:#B05F3B; font-size:26px;">→</div>
+      <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:14px; padding:22px 22px; display:flex; flex-direction:column; gap:8px;"><div style="font-size:22px; font-weight:700; color:#B05F3B;">처리</div><div style="font-size:24px; font-weight:600; color:#2F4135;">Store</div><div style="font-size:21px; color:#6E675C; line-height:1.4;">TimescaleDB · Redis</div></div>
+      <div style="display:flex; align-items:center; justify-content:center; color:#B05F3B; font-size:26px;">→</div>
+      <div style="background:linear-gradient(155deg,#3A4F42,#2F4135); border-radius:14px; padding:22px 22px; display:flex; flex-direction:column; gap:8px; box-shadow:0 12px 28px rgba(47,65,53,0.20);"><div style="font-size:22px; font-weight:700; color:#DDB08F;">분석 · 핵심</div><div style="font-size:24px; font-weight:600; color:#fff;">Compute</div><div style="font-size:21px; color:rgba(255,255,255,0.82); line-height:1.4;">UIS 외부역학 · REHVA PoI · 5-Tier(운영 등급)</div></div>
+      <div style="display:flex; align-items:center; justify-content:center; color:#B05F3B; font-size:26px;">→</div>
+      <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:14px; padding:22px 22px; display:flex; flex-direction:column; gap:8px;"><div style="font-size:22px; font-weight:700; color:#B05F3B;">대응·증빙</div><div style="font-size:24px; font-weight:600; color:#2F4135;">Act</div><div style="font-size:21px; color:#6E675C; line-height:1.4;">가전 제어 · 자동 로깅</div></div>
+    </div>
+    <div style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:16px;">
+      <div style="background:#fff; border:1px solid rgba(47,65,53,0.10); border-radius:14px; padding:20px 24px;"><div style="font-size:22px; font-weight:700; color:#2F4135; margin-bottom:8px;">요구사항 · FR 1–8</div><div style="font-size:22px; color:#6E675C; line-height:1.5;">외부경보·센서수집·PoI·5Tier·차등제어·승인·RBAC·증빙</div></div>
+      <div style="background:#fff; border:1px solid rgba(47,65,53,0.10); border-radius:14px; padding:20px 24px;"><div style="font-size:22px; font-weight:700; color:#2F4135; margin-bottom:8px;">화면 · 6</div><div style="font-size:22px; color:#6E675C; line-height:1.5;">로그인·간호사·시설·경영·추이·보호자 PWA</div></div>
+      <div style="background:#fff; border:1px solid rgba(47,65,53,0.10); border-radius:14px; padding:20px 24px;"><div style="font-size:22px; font-weight:700; color:#2F4135; margin-bottom:8px;">분석 3축</div><div style="font-size:22px; color:#6E675C; line-height:1.5;">정성 LDA · PoI 산출 · 외부신호 융합</div></div>
+    </div>
+  </div>
+  <div style="display:flex; align-items:center; gap:16px; padding-top:18px; border-top:1px solid rgba(47,65,53,0.08);"><span style="font-size:25px; color:#B05F3B; font-weight:700;">→</span><span style="font-size:24px; color:#3A463C; font-weight:500;">설계는 머릿속이 아니라 실제 동작합니다. 직접 만들어 효과로 증명합니다.</span></div>
+  <div style="position:absolute; bottom:28px; right:44px; font-size:20px; font-weight:600; color:#C7BCA9; letter-spacing:0.04em;">LG DX School</div>
+</section>
+
+<!-- ===== 13.2 P7 시스템 아키텍처 도면 (충실성 20점) ===== -->
+<section data-label="P7 · 아키텍처" data-speaker-notes="이게 머릿속이 아니라 실제로 그려서 돌리는 시스템 아키텍처입니다. 왼쪽부터 외부신호와 환경을 수집하고, 가운데에서 Wells-Riley와 5-Tier로 위험을 계산·예측하고, ThinQ 8종 가전으로 자율 대응한 뒤, 모든 걸 증빙으로 남깁니다. 아래는 통합 관제·보호자 앱·자동 리포트·성과지표 네 화면이고, 맨 아래가 실제 기술 스택입니다 — FastAPI, TimescaleDB, Next.js, scikit-learn까지. 전부 깃허브에 있습니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; background:#F4EEE3; padding:50px 60px 46px;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; align-items:center; gap:12px;"><span style="font-size:21px; font-weight:700; color:#fff; background:#B05F3B; border-radius:6px; padding:5px 12px;">P7</span><span style="font-size:23px; font-weight:600; letter-spacing:0.08em; color:#A89F90; text-transform:uppercase;">DX · 시스템 아키텍처 (실제 설계 도면)</span></div>
+    <span style="font-size:22px; font-weight:700; color:#fff; background:#B05F3B; padding:7px 16px; border-radius:9999px;">구현 충실성 · 최대 배점</span>
+  </div>
+  <h2 style="font-size:44px; font-weight:700; letter-spacing:-0.025em; color:#2F4135; line-height:1.1; margin:12px 0 4px;">머릿속이 아닙니다 — 실제로 돌고 있는 시스템 아키텍처</h2>
+  <p style="font-size:23px; font-weight:500; color:#6E675C; margin:0 0 14px; line-height:1.4;">수집 → 위험 계산·예측 → ThinQ 가전 대응 → 증빙·시각화 · 맨 아래 실제 기술 스택까지 설계되어 동작합니다.</p>
+  <div style="flex:1; min-height:0; border-radius:14px; overflow:hidden; border:1px solid rgba(47,65,53,0.12); background:#fff; box-shadow:0 12px 30px rgba(47,65,53,0.12);">
+    <img src="./assets/system_architecture.png" alt="ThinQ Workspace Sentinel 시스템 아키텍처 — 4-Stage 수집·계산·대응·증빙" style="width:100%; height:100%; object-fit:contain; display:block; background:#fff;">
+  </div>
+  <div style="position:absolute; bottom:22px; right:44px; font-size:20px; font-weight:600; color:#C7BCA9; letter-spacing:0.04em;">LG DX School</div>
+</section>
+
+<!-- ===== 13.3 P7 설계 산출물 5종 (충실성 20점 직격) ===== -->
+<section data-label="P7 · 설계 산출물" data-speaker-notes="발표 점수의 가장 큰 항목이 ‘설계 문서를 충실히 작성했나’입니다. 그래서 요약이 아니라 실제 산출물을 보여드립니다. 요구사항정의서는 기능 여덟 개를 실제 API 엔드포인트와 1:1로 매핑했습니다 — 외부경보 수집, 위험 부스트, 센서 수집, PoI·5Tier 산출, 차등 가전제어, 승인 거버넌스, RBAC 권한, 증빙 리포트. DB는 다섯 개 마이그레이션으로 버전 관리되는 TimescaleDB 스키마이고, 여기 보시는 게 실제 ERD입니다 — 사업장, 공간, 사용자 권한, 센서 측정값, 위험점수, 제어로그까지. 화면설계서는 관제·로그·KPI·설정·데모 다섯 개에 보호자 PWA 네 화면까지 아홉 개가 실제로 동작합니다. 모두 깃허브에 있고, 빅데이터 분석 정의서는 앞서 보신 방법론 장이 대신합니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; background:#F4EEE3; padding:58px 70px 54px;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; align-items:center; gap:12px;"><span style="font-size:21px; font-weight:700; color:#fff; background:#B05F3B; border-radius:6px; padding:5px 12px;">P7</span><span style="font-size:23px; font-weight:600; letter-spacing:0.08em; color:#A89F90; text-transform:uppercase;">DX · 설계 산출물 5종 (실문서)</span></div>
+    <span style="font-size:22px; font-weight:700; color:#fff; background:#B05F3B; padding:7px 16px; border-radius:9999px;">구현 충실성 · 최대 배점</span>
+  </div>
+  <h2 style="font-size:44px; font-weight:700; letter-spacing:-0.025em; color:#2F4135; line-height:1.1; margin:12px 0 4px;">요약이 아니라 ‘문서’로 — 설계 산출물 5종 전부 실재</h2>
+  <p style="font-size:24px; font-weight:500; color:#6E675C; margin:0; line-height:1.4;">쉽게 말해, 요구사항·아키텍처·화면·DB·분석정의서가 코드/스키마로 실제 존재합니다.</p>
+  <div style="flex:1; display:grid; grid-template-columns:1.05fr 1.1fr 0.95fr; gap:16px; margin-top:16px; align-items:stretch;">
+    <!-- 요구사항정의서 -->
+    <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:14px; padding:18px 20px; display:flex; flex-direction:column;">
+      <div style="font-size:21px; font-weight:700; color:#B05F3B; margin-bottom:8px;">① 요구사항정의서 · FR↔API</div>
+      <div style="display:flex; flex-direction:column; font-size:18px;">
+        <div style="display:flex; gap:8px; padding:6px 0; border-bottom:1px solid rgba(47,65,53,0.07);"><span style="min-width:42px; font-weight:700; color:#2F4135;">FR1</span><span style="color:#3A463C; flex:1;">외부경보 수집</span><span style="color:#A89F90; font-size:15px;">/external/signals</span></div>
+        <div style="display:flex; gap:8px; padding:6px 0; border-bottom:1px solid rgba(47,65,53,0.07);"><span style="min-width:42px; font-weight:700; color:#2F4135;">FR2</span><span style="color:#3A463C; flex:1;">위험 부스트</span><span style="color:#A89F90; font-size:15px;">/risk-boost</span></div>
+        <div style="display:flex; gap:8px; padding:6px 0; border-bottom:1px solid rgba(47,65,53,0.07);"><span style="min-width:42px; font-weight:700; color:#2F4135;">FR3</span><span style="color:#3A463C; flex:1;">센서 수집</span><span style="color:#A89F90; font-size:15px;">/reading·/live</span></div>
+        <div style="display:flex; gap:8px; padding:6px 0; border-bottom:1px solid rgba(47,65,53,0.07);"><span style="min-width:42px; font-weight:700; color:#2F4135;">FR4</span><span style="color:#3A463C; flex:1;">PoI·5Tier 산출</span><span style="color:#A89F90; font-size:15px;">/risk-series</span></div>
+        <div style="display:flex; gap:8px; padding:6px 0; border-bottom:1px solid rgba(47,65,53,0.07);"><span style="min-width:42px; font-weight:700; color:#2F4135;">FR5</span><span style="color:#3A463C; flex:1;">차등 가전제어</span><span style="color:#A89F90; font-size:15px;">/control·/plan</span></div>
+        <div style="display:flex; gap:8px; padding:6px 0; border-bottom:1px solid rgba(47,65,53,0.07);"><span style="min-width:42px; font-weight:700; color:#2F4135;">FR6</span><span style="color:#3A463C; flex:1;">승인 거버넌스</span><span style="color:#A89F90; font-size:15px;">/approve</span></div>
+        <div style="display:flex; gap:8px; padding:6px 0; border-bottom:1px solid rgba(47,65,53,0.07);"><span style="min-width:42px; font-weight:700; color:#2F4135;">FR7</span><span style="color:#3A463C; flex:1;">RBAC 권한</span><span style="color:#A89F90; font-size:15px;">users.role</span></div>
+        <div style="display:flex; gap:8px; padding:6px 0;"><span style="min-width:42px; font-weight:700; color:#2F4135;">FR8</span><span style="color:#3A463C; flex:1;">증빙 리포트</span><span style="color:#A89F90; font-size:15px;">/report·/kpi</span></div>
+      </div>
+      <div style="margin-top:auto; font-size:17px; color:#A89F90; padding-top:8px;">8개 기능 = 30+ 실엔드포인트로 동작</div>
+    </div>
+    <!-- DB 설계서 (ERD) -->
+    <div style="background:#2F4135; border-radius:14px; padding:18px 20px; display:flex; flex-direction:column; box-shadow:0 12px 28px rgba(47,65,53,0.20);">
+      <div style="font-size:21px; font-weight:700; color:#DDB08F; margin-bottom:8px;">② DB 설계서 · ERD <span style="font-size:16px; font-weight:500; color:rgba(255,255,255,0.55);">· 마이그레이션 5</span></div>
+      <div style="flex:1; border-radius:10px; overflow:hidden; background:#fff; min-height:0; border:1px solid rgba(255,255,255,0.1);"><img src="./assets/erd.png" alt="DB ERD" style="width:100%; height:100%; object-fit:contain; display:block; background:#fff;"></div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;">
+        <span style="font-size:15px; color:#fff; background:rgba(255,255,255,0.12); border-radius:6px; padding:3px 9px;">sites</span><span style="font-size:15px; color:#fff; background:rgba(255,255,255,0.12); border-radius:6px; padding:3px 9px;">spaces</span><span style="font-size:15px; color:#fff; background:rgba(255,255,255,0.12); border-radius:6px; padding:3px 9px;">users(RBAC)</span><span style="font-size:15px; color:#fff; background:rgba(255,255,255,0.12); border-radius:6px; padding:3px 9px;">readings</span><span style="font-size:15px; color:#fff; background:rgba(255,255,255,0.12); border-radius:6px; padding:3px 9px;">risk_scores</span><span style="font-size:15px; color:#fff; background:rgba(255,255,255,0.12); border-radius:6px; padding:3px 9px;">control_log</span>
+      </div>
+      <div style="font-size:16px; color:rgba(255,255,255,0.6); margin-top:8px;">TimescaleDB · 001~005 버전관리 · 실 시드 데이터 포함</div>
+    </div>
+    <!-- 화면설계서 -->
+    <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:14px; padding:18px 20px; display:flex; flex-direction:column;">
+      <div style="font-size:21px; font-weight:700; color:#B05F3B; margin-bottom:8px;">③ 화면설계서 · 9 화면</div>
+      <div style="display:flex; flex-direction:column; gap:5px; font-size:18px; color:#3A463C;">
+        <div style="display:flex; gap:8px;"><span style="color:#B05F3B; font-weight:700;">관제</span> 통합 대시보드 /dashboard</div>
+        <div style="display:flex; gap:8px;"><span style="color:#B05F3B; font-weight:700;">로그</span> 운영 로그 · KPI 리포트</div>
+        <div style="display:flex; gap:8px;"><span style="color:#B05F3B; font-weight:700;">설정</span> 시스템 설정 · 데모 모드</div>
+        <div style="display:flex; gap:8px;"><span style="color:#2F4135; font-weight:700;">PWA</span> 보호자 home·ward·alerts·login</div>
+      </div>
+      <div style="flex:1; border-radius:10px; overflow:hidden; margin-top:10px; border:1px solid rgba(47,65,53,0.12); min-height:0;"><img src="./assets/screen_admin.png" alt="관리자 화면 설계" style="width:100%; height:100%; object-fit:cover; object-position:top; display:block;"></div>
+      <div style="font-size:16px; color:#A89F90; margin-top:8px;">④ 아키텍처=별도 도면(앞장) · ⑤ 빅데이터 분석정의서=방법론장</div>
+    </div>
+  </div>
+  <div style="display:flex; align-items:center; gap:16px; padding-top:12px; border-top:1px solid rgba(47,65,53,0.08); margin-top:10px;"><span style="font-size:25px; color:#B05F3B; font-weight:700;">→</span><span style="font-size:24px; color:#3A463C; font-weight:500;">문서로 끝이 아닙니다 — 이 설계가 지금 실제로 돌아갑니다.</span></div>
+  <div style="position:absolute; bottom:22px; right:44px; font-size:20px; font-weight:600; color:#C7BCA9; letter-spacing:0.04em;">LG DX School</div>
+</section>
+
+<!-- ===== 13.5 P7+ 실제 제품 화면 (충실성 20점) ===== -->
+<section data-label="P7 · 실제 제품" data-speaker-notes="설계로 끝이 아닙니다. 실제로 작동하는 제품을 보여드리겠습니다. 이건 모형이 아니라 지금 서버에서 돌아가는 통합 관제 화면입니다. 왼쪽엔 병동별 CO2·습도·재실·공기질·감염 위험도가 실시간으로 뜨고, 가운데엔 가전 운전 상태가 보입니다. 아래 탭이 핵심입니다 — 평상시, 외부신호, 사전보정, 경보, 가전제어, 화면전환, 개선결과, ESG까지 여덟 단계 시나리오를 라이브로 시연합니다. 화면 여섯 개, 기능 요구사항 여덟 개가 전부 동작하고, 모든 코드는 깃허브에 있습니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; background:#F4EEE3; padding:60px 70px 56px;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; align-items:center; gap:12px;"><span style="font-size:21px; font-weight:700; color:#fff; background:#B05F3B; border-radius:6px; padding:5px 12px;">P7+</span><span style="font-size:23px; font-weight:600; letter-spacing:0.08em; color:#A89F90; text-transform:uppercase;">DX · 실제 작동 제품 (시연 화면)</span></div>
+    <span style="font-size:22px; font-weight:700; color:#fff; background:#B05F3B; padding:7px 16px; border-radius:9999px;">구현 충실성 · 최대 배점</span>
+  </div>
+  <h2 style="font-size:46px; font-weight:700; letter-spacing:-0.025em; color:#2F4135; line-height:1.1; margin:14px 0 4px;">모형이 아니라, 지금 돌아가는 통합 관제 화면입니다</h2>
+  <p style="font-size:25px; font-weight:500; color:#6E675C; margin:0; line-height:1.4;">쉽게 말해, 화면 6개·기능 8개가 실제 동작 — 아래 8단계 시나리오를 라이브로 시연합니다.</p>
+  <div style="flex:1; display:grid; grid-template-columns:1.62fr 1fr; gap:22px; margin-top:18px; align-items:stretch;">
+    <div style="border-radius:14px; overflow:hidden; border:1px solid rgba(47,65,53,0.16); box-shadow:0 14px 34px rgba(47,65,53,0.22); background:#1E2A23; display:flex; flex-direction:column;">
+      <div style="display:flex; align-items:center; gap:8px; padding:11px 16px; background:#2A372E; border-bottom:1px solid rgba(255,255,255,0.08);">
+        <span style="width:12px; height:12px; border-radius:50%; background:#ff5f57;"></span><span style="width:12px; height:12px; border-radius:50%; background:#febc2e;"></span><span style="width:12px; height:12px; border-radius:50%; background:#28c840;"></span>
+        <span style="font-size:18px; color:rgba(255,255,255,0.6); margin-left:10px;">ThinQ Workspace Sentinel · 통합 관제 (live)</span>
+      </div>
+      <img src="./assets/screen_demo.png" alt="통합 관제 실제 작동 화면" style="width:100%; flex:1; min-height:0; object-fit:cover; object-position:top; display:block;">
+    </div>
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:14px; padding:20px 24px;">
+        <div style="font-size:22px; font-weight:700; color:#2F4135; margin-bottom:12px;">라이브 시연 · 8단계 시나리오</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; gap:10px; align-items:center;"><span style="font-size:18px; font-weight:700; color:#fff; background:#B05F3B; border-radius:50%; width:26px; height:26px; display:flex; align-items:center; justify-content:center;">1</span><span style="font-size:21px; color:#3A463C;">평상시 관제</span><span style="color:#C7BCA9;">›</span><span style="font-size:18px; font-weight:700; color:#fff; background:#A89F90; border-radius:50%; width:26px; height:26px; display:flex; align-items:center; justify-content:center;">2</span><span style="font-size:21px; color:#3A463C;">외부신호 포착</span></div>
+          <div style="display:flex; gap:10px; align-items:center;"><span style="font-size:18px; font-weight:700; color:#fff; background:#A89F90; border-radius:50%; width:26px; height:26px; display:flex; align-items:center; justify-content:center;">3</span><span style="font-size:21px; color:#3A463C;">사전 보정</span><span style="color:#C7BCA9;">›</span><span style="font-size:18px; font-weight:700; color:#fff; background:#A89F90; border-radius:50%; width:26px; height:26px; display:flex; align-items:center; justify-content:center;">4</span><span style="font-size:21px; color:#3A463C;">경보 발령</span></div>
+          <div style="display:flex; gap:10px; align-items:center;"><span style="font-size:18px; font-weight:700; color:#fff; background:#A89F90; border-radius:50%; width:26px; height:26px; display:flex; align-items:center; justify-content:center;">5</span><span style="font-size:21px; color:#3A463C;">가전 자동제어</span><span style="color:#C7BCA9;">›</span><span style="font-size:18px; font-weight:700; color:#fff; background:#A89F90; border-radius:50%; width:26px; height:26px; display:flex; align-items:center; justify-content:center;">6</span><span style="font-size:21px; color:#3A463C;">역할별 화면</span></div>
+          <div style="display:flex; gap:10px; align-items:center;"><span style="font-size:18px; font-weight:700; color:#fff; background:#A89F90; border-radius:50%; width:26px; height:26px; display:flex; align-items:center; justify-content:center;">7</span><span style="font-size:21px; color:#3A463C;">개선 결과</span><span style="color:#C7BCA9;">›</span><span style="font-size:18px; font-weight:700; color:#fff; background:#2F4135; border-radius:50%; width:26px; height:26px; display:flex; align-items:center; justify-content:center;">8</span><span style="font-size:21px; color:#3A463C;">ESG 리포트</span></div>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div style="background:#2F4135; border-radius:14px; padding:18px 22px;"><div style="font-size:30px; font-weight:700; color:#fff; line-height:1;">6</div><div style="font-size:19px; color:rgba(255,255,255,0.78); margin-top:5px;">실동작 화면 (관제·로그·KPI·설정·보호자 PWA)</div></div>
+        <div style="background:#2F4135; border-radius:14px; padding:18px 22px;"><div style="font-size:30px; font-weight:700; color:#fff; line-height:1;">8</div><div style="font-size:19px; color:rgba(255,255,255,0.78); margin-top:5px;">기능 요구사항 FR 전부 구현</div></div>
+      </div>
+      <div style="background:#F1E7DA; border:1px solid rgba(176,95,59,0.22); border-radius:14px; padding:14px 22px;"><span style="font-size:21px; color:#3A463C; line-height:1.4;">멀티벤더 실증 — <b style="color:#B05F3B;">코웨이·삼성 실기기</b>를 한 코드로 제어 (LG ThinQ는 어댑터 한 줄 교체)</span></div>
+    </div>
+  </div>
+  <div style="display:flex; align-items:center; gap:16px; padding-top:14px; border-top:1px solid rgba(47,65,53,0.08); margin-top:12px;"><span style="font-size:25px; color:#B05F3B; font-weight:700;">→</span><span style="font-size:24px; color:#3A463C; font-weight:500;">‘돌아간다’를 넘어 ‘효과가 있나’ — 반사실로 검증합니다.</span></div>
+  <div style="position:absolute; bottom:24px; right:44px; font-size:20px; font-weight:600; color:#C7BCA9; letter-spacing:0.04em;">LG DX School</div>
+</section>
+
+<!-- ===== 14 P8 구현 + 효과검증 (★) ===== -->
+<section data-label="P8 · 구현·검증" data-speaker-notes="여기가 가장 중요한 슬라이드입니다. 실제로 작동합니다 — 외부 신호가 레드로 뜨면 위험 등급이 점프하고, 센서가 정상이어도 코웨이 공기청정기가 실제로 터보로 돌아갑니다. 이게 사전 예방입니다. 그리고 ON과 OFF를 비교한 반사실 검증입니다. 다섯 개 시나리오에서 누적 감염노출이 35.3에서 2.4로, 93.5% 줄었고, 위험 구간은 180분에서 10분으로 줄었습니다. 다만 정직하게 말씀드리면, 일단 터진 뒤의 최고 PoI는 14%만 줄었습니다. 그래서 터지기 전에 잡는 선제 경보가 핵심입니다. 이 수치는 모두 모델 기준이고, 실제 감염자 감소가 아닙니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; background:#F4EEE3; padding:72px 80px 68px;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; align-items:center; gap:12px;"><span style="font-size:21px; font-weight:700; color:#fff; background:#B05F3B; border-radius:6px; padding:5px 12px;">P8</span><span style="font-size:23px; font-weight:600; letter-spacing:0.08em; color:#A89F90; text-transform:uppercase;">DX · DX Key Accelerator 구현 + 효과 검증</span></div>
+    <span style="font-size:22px; font-weight:700; color:#fff; background:#B05F3B; padding:7px 16px; border-radius:9999px;">DX Key Accelerator 구현</span>
+  </div>
+  <h2 style="font-size:48px; font-weight:700; letter-spacing:-0.025em; color:#2F4135; line-height:1.1; margin:18px 0 4px;">실제로 작동하고, 반사실로 효과를 검증했습니다</h2>
+  <p style="font-size:26px; font-weight:500; color:#6E675C; margin:0; line-height:1.4;">쉽게 말해, 센서가 정상이어도 외부 신호만으로 가전이 미리 돕니다 — 그게 사전 예방입니다.</p>
+  <div style="flex:1; display:grid; grid-template-columns:1.05fr 1.35fr; gap:22px; margin-top:22px; align-items:stretch;">
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div style="background:#2F4135; border-radius:14px; padding:22px 26px;"><div style="font-size:22px; font-weight:700; color:#DDB08F; margin-bottom:8px;">실제 작동</div><div style="font-size:24px; color:#fff; line-height:1.45;">외부 <b style="color:#fff;">RED</b> → tier 점프 → 코웨이 공기청정기 실제 <b style="color:#fff;">TURBO</b> (센서 정상에도 = 사전 예방)</div></div>
+      <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:14px; padding:20px 26px;"><div style="font-size:22px; font-weight:700; color:#2F4135; margin-bottom:10px;">5-Tier 프로토콜 <span style="font-size:19px; font-weight:500; color:#A89F90;">운영용 등급 · 임상 아님</span></div><div style="display:flex; gap:8px; flex-wrap:wrap;"><span style="font-size:20px; color:#3A463C; background:#fff; border:1px solid rgba(47,65,53,0.10); border-radius:9999px; padding:5px 12px;">Safe &lt;0.2</span><span style="font-size:20px; color:#3A463C; background:#fff; border:1px solid rgba(47,65,53,0.10); border-radius:9999px; padding:5px 12px;">Low</span><span style="font-size:20px; color:#3A463C; background:#fff; border:1px solid rgba(47,65,53,0.10); border-radius:9999px; padding:5px 12px;">Mod</span><span style="font-size:20px; color:#3A463C; background:#fff; border:1px solid rgba(47,65,53,0.10); border-radius:9999px; padding:5px 12px;">High</span><span style="font-size:20px; color:#fff; background:#B05F3B; border-radius:9999px; padding:5px 12px;">Critical ≥0.8</span></div></div>
+      <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:14px; padding:20px 26px;"><div style="font-size:22px; font-weight:700; color:#2F4135; margin-bottom:8px;">데모 4스텝</div><div style="font-size:23px; color:#6E675C;">인지 → 대응 → 증빙 → 안심</div></div>
+    </div>
+    <div style="background:linear-gradient(155deg,#3A4F42,#2F4135); border-radius:16px; padding:30px 34px; display:flex; flex-direction:column; gap:18px; box-shadow:0 1px 2px rgba(0,0,0,0.04),0 14px 34px rgba(47,65,53,0.22);">
+      <div style="font-size:23px; font-weight:700; color:#DDB08F;">반사실 예방검증 · ON vs OFF · 5 시나리오</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div style="background:rgba(255,255,255,0.06); border-radius:12px; padding:22px 22px;"><div style="font-size:21px; color:rgba(255,255,255,0.7);">누적 감염노출 (모델)</div><div style="display:flex; align-items:baseline; gap:10px; margin-top:8px;"><span style="font-size:30px; font-weight:700; color:rgba(255,255,255,0.55);">35.3</span><span style="color:#DDB08F;">→</span><span style="font-size:30px; font-weight:700; color:#fff;">2.4</span></div><div style="font-size:34px; font-weight:700; color:#fff; margin-top:6px;">−93.5%</div></div>
+        <div style="background:rgba(255,255,255,0.06); border-radius:12px; padding:22px 22px;"><div style="font-size:21px; color:rgba(255,255,255,0.7);">위험 구간 시간</div><div style="display:flex; align-items:baseline; gap:10px; margin-top:8px;"><span style="font-size:30px; font-weight:700; color:rgba(255,255,255,0.55);">180분</span><span style="color:#DDB08F;">→</span><span style="font-size:30px; font-weight:700; color:#fff;">10분</span></div><div style="font-size:34px; font-weight:700; color:#fff; margin-top:6px;">−94%</div></div>
+      </div>
+      <div style="background:rgba(176,95,59,0.25); border:1px solid rgba(221,176,143,0.4); border-radius:12px; padding:18px 22px;"><div style="font-size:23px; color:#fff; line-height:1.45;"><b>단, 최고 PoI는 14%만 ↓</b> — 터진 뒤엔 늦습니다. 그래서 선제 경보가 핵심입니다.</div></div>
+      <div style="font-size:20px; color:rgba(255,255,255,0.6); line-height:1.4;">정직: 모든 수치는 모델 기준이며, 실제 감염자 감소가 아닙니다.</div>
+    </div>
+  </div>
+  <div style="display:flex; align-items:center; gap:16px; padding-top:16px; border-top:1px solid rgba(47,65,53,0.08); margin-top:14px;"><span style="font-size:25px; color:#B05F3B; font-weight:700;">→</span><span style="font-size:24px; color:#3A463C; font-weight:500;">그래서 무엇이 남는가 — 성과 지표와 사업성으로 닫습니다.</span></div>
+  <div style="position:absolute; bottom:28px; right:44px; font-size:20px; font-weight:600; color:#C7BCA9; letter-spacing:0.04em;">LG DX School</div>
+</section>
+
+<!-- ===== 14.5 P8+ 과학적 근거 (논문 검증) ===== -->
+<section data-label="P8+ · 과학적 근거" data-speaker-notes="저희 수치는 지어낸 게 아니라 동료심사 논문 위에 있습니다. 세 기둥입니다. 첫째, 재호흡률 이론 — 루드닉과 밀턴 2003년 인도어에어 논문은 우리가 들이마시는 공기 중 남이 내쉰 비율, 즉 재호흡 분율을 CO2 농도만으로 계산해 공기감염 위험을 추정합니다. 우리가 CO2를 핵심 지표로 쓰는 이론적 근거입니다. 둘째, 실측 저감 — 부오난노와 리콜피 2022년 1만 개 교실 연구에서 기계환기를 돌린 교실은 감염 상대위험이 최소 74% 낮았고, 바잔트와 부시 PNAS 논문은 공기정화가 환기와 수학적으로 동등하다고 증명합니다. 우리 공기청정기 자동제어가 위험을 낮춘다는 실증 근거입니다. 셋째, 외부신호 선행인데 여기서 정직하게 말씀드립니다 — 문헌이 검증한 선행은 검색트렌드 1~2주, 하수 4~7일 수준입니다. 저희 덱의 15~43일은 우리 자체 데이터이지 논문 인용이 아닙니다. 그리고 단일 CO2 임계값으로 감염을 막는다고 단정하지 않습니다. 펭과 히메네스가 안전 농도는 환경마다 100배 넘게 다르다고 했기 때문에, 우리는 절대 안전이 아니라 상대위험으로만 말합니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; background:#F4EEE3; padding:58px 70px 52px;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; align-items:center; gap:12px;"><span style="font-size:21px; font-weight:700; color:#fff; background:#B05F3B; border-radius:6px; padding:5px 12px;">P8+</span><span style="font-size:23px; font-weight:600; letter-spacing:0.08em; color:#A89F90; text-transform:uppercase;">DX · 과학적 근거 (논문 검증)</span></div>
+    <span style="font-size:22px; font-weight:700; color:#fff; background:#B05F3B; padding:7px 16px; border-radius:9999px;">근거 = 동료심사 논문</span>
+  </div>
+  <h2 style="font-size:44px; font-weight:700; letter-spacing:-0.025em; color:#2F4135; line-height:1.1; margin:12px 0 4px;">지어낸 수치가 아닙니다 — 동료심사 논문 위에 세웠습니다</h2>
+  <p style="font-size:24px; font-weight:500; color:#6E675C; margin:0; line-height:1.4;">쉽게 말해, CO₂(재호흡률)로 감염위험을 ‘추정’하고, 가전제어로 ‘낮춥니다’ — 세 단계 모두 논문 근거.</p>
+  <div style="flex:1; display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-top:18px; align-items:stretch;">
+
+    <!-- 기둥 1 · 재호흡률 이론 -->
+    <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:16px; padding:20px 22px; display:flex; flex-direction:column; gap:11px;">
+      <div style="display:flex; align-items:center; gap:10px;"><span style="font-size:19px; font-weight:700; color:#fff; background:#B05F3B; border-radius:8px; padding:4px 10px;">① 이론</span><span style="font-size:22px; font-weight:700; color:#2F4135;">재호흡률 = 감염위험</span></div>
+      <div style="background:#fff; border:1px solid rgba(47,65,53,0.08); border-radius:11px; padding:13px 15px;"><div style="font-size:20px; font-weight:600; color:#3A463C; line-height:1.4;">재호흡 분율 <b>f=(C−Cₐ)/C₀</b> — 환기량 없이 <b>CO₂만으로</b> 공기감염 위험 추정</div><div style="font-size:16px; color:#A89F90; margin-top:6px;">Rudnick &amp; Milton, <i>Indoor Air</i> 2003</div></div>
+      <div style="background:#fff; border:1px solid rgba(47,65,53,0.08); border-radius:11px; padding:13px 15px;"><div style="font-size:20px; font-weight:600; color:#3A463C; line-height:1.4;">초과 CO₂에 비례해 <b>상대 감염위험 ↑</b></div><div style="font-size:16px; color:#A89F90; margin-top:6px;">Peng &amp; Jimenez, <i>ES&amp;T Lett.</i> 2021 · Wells–Riley(Riley 1978)</div></div>
+      <div style="margin-top:auto; font-size:18px; color:#B05F3B; font-weight:600; line-height:1.4;">→ 우리 PoI·CO₂ 트리거의 이론적 backbone</div>
+    </div>
+
+    <!-- 기둥 2 · 실측 저감 -->
+    <div style="background:#2F4135; border-radius:16px; padding:20px 22px; display:flex; flex-direction:column; gap:11px; box-shadow:0 12px 28px rgba(47,65,53,0.20);">
+      <div style="display:flex; align-items:center; gap:10px;"><span style="font-size:19px; font-weight:700; color:#2F4135; background:#DDB08F; border-radius:8px; padding:4px 10px;">② 실측</span><span style="font-size:22px; font-weight:700; color:#fff;">환기·정화 = 감염 저감</span></div>
+      <div style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.14); border-radius:11px; padding:13px 15px;"><div style="display:flex; align-items:baseline; gap:8px;"><span style="font-size:34px; font-weight:700; color:#fff; line-height:1;">≥74%</span><span style="font-size:19px; color:rgba(255,255,255,0.8);">상대 감염위험 ↓</span></div><div style="font-size:18px; color:rgba(255,255,255,0.82); margin-top:6px; line-height:1.4;">기계환기 교실(1만+) · 10 L/s·인 초과 시 ≥80%</div><div style="font-size:16px; color:rgba(255,255,255,0.5); margin-top:5px;">Buonanno·Ricolfi, <i>Front. Public Health</i> 2022 (관찰코호트)</div></div>
+      <div style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.14); border-radius:11px; padding:13px 15px;"><div style="font-size:19px; font-weight:600; color:#fff; line-height:1.4;">공기정화 = 환기와 <b>수학적으로 동등</b></div><div style="font-size:16px; color:rgba(255,255,255,0.5); margin-top:5px;">Bazant &amp; Bush, <i>PNAS</i> 2021 · 병동 HEPA: 공기중 바이러스 검출→불검출(Conway Morris, <i>CID</i> 2022)</div></div>
+      <div style="margin-top:auto; font-size:18px; color:#DDB08F; font-weight:600; line-height:1.4;">→ 공기청정기 자동제어가 위험을 낮춘다는 실증</div>
+    </div>
+
+    <!-- 기둥 3 · 외부신호 선행 (정직) -->
+    <div style="background:#FBF4E9; border:1px solid rgba(200,160,58,0.35); border-radius:16px; padding:20px 22px; display:flex; flex-direction:column; gap:11px;">
+      <div style="display:flex; align-items:center; gap:10px;"><span style="font-size:19px; font-weight:700; color:#fff; background:#C8A03A; border-radius:8px; padding:4px 10px;">③ 선행</span><span style="font-size:22px; font-weight:700; color:#2F4135;">외부신호 = 선제 대응</span></div>
+      <div style="background:#fff; border:1px solid rgba(47,65,53,0.08); border-radius:11px; padding:13px 15px;"><div style="font-size:20px; font-weight:600; color:#3A463C; line-height:1.4;">외부 디지털·환경 신호가 임상 건수를 <b>선행</b></div><div style="font-size:18px; color:#6E675C; margin-top:6px; line-height:1.4;">검색트렌드 ~1–2주(Ginsberg, <i>Nature</i> 2009) · 하수 ~4–7일</div></div>
+      <div style="background:#F4E9DD; border:1px solid rgba(176,95,59,0.25); border-radius:11px; padding:13px 15px;"><div style="font-size:18px; font-weight:700; color:#B05F3B; line-height:1.4;">정직 ⚠ 우리 ‘15~43일’은 자체 데이터</div><div style="font-size:17px; color:#6E675C; margin-top:5px; line-height:1.4;">문헌 선행은 수일~2주 — 15~43일은 논문 인용 아님</div></div>
+      <div style="margin-top:auto; font-size:18px; color:#A07A12; font-weight:600; line-height:1.4;">→ 선제성의 타당성 + 한계를 함께 명시</div>
+    </div>
+  </div>
+
+  <div style="margin-top:16px; background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:14px; padding:14px 26px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+    <span style="font-size:20px; font-weight:700; color:#2F4135;">기준치</span>
+    <span style="font-size:20px; color:#3A463C;">CO₂ <b>≤800 ppm</b>(경보 1000) · 환기 <b>≥5 ACH</b></span>
+    <span style="font-size:16px; color:#A89F90;">REHVA·WHO·CDC (KDCA 아님)</span>
+    <span style="width:1px; height:20px; background:rgba(47,65,53,0.14);"></span>
+    <span style="font-size:18px; color:#B05F3B; font-weight:600;">정직: 단일 CO₂ 임계로 ‘감염 예방’ 단정 불가 — 안전 농도는 환경별 &gt;100배 차(Peng·Jimenez) → ‘상대위험’으로만</span>
+  </div>
+  <div style="position:absolute; bottom:22px; right:44px; font-size:20px; font-weight:600; color:#C7BCA9; letter-spacing:0.04em;">LG DX School</div>
+</section>
+
+<!-- ===== 15 P9 성과 + 사업성 ===== -->
+<section data-label="P9 · 성과·사업성" data-speaker-notes="성과는 시스템이 자동 집계하는 지표로 측정합니다. 운영에서는 자동제어가 0에서 주 50건 이상, 대응 시간 5초 미만, 외부 선행 15~43일, 누적 노출 93% 감소. 경험에서는 문의 30% 감소, 열람 60%, 수기 50% 감소가 PoC 목표입니다. ROI는 자동 증빙 100%, 병원 회수 3.2개월입니다. 사업성은 정직하게 말씀드립니다 — SaaS 기본 매출 연 21.8억은 쐐기일 뿐이고, 본질은 가전 풀스루입니다. 병원당 1억, LG 총 41.8억, 그리고 요양병원에서 병원·학교·오피스 실내공기질로 넓히는 교두보입니다. 병원이 받는 수가 차액은 연 8,447만 원입니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; background:#F4EEE3; padding:72px 80px 68px;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; align-items:center; gap:12px;"><span style="font-size:21px; font-weight:700; color:#fff; background:#B05F3B; border-radius:6px; padding:5px 12px;">P9</span><span style="font-size:23px; font-weight:600; letter-spacing:0.08em; color:#A89F90; text-transform:uppercase;">DX · 성과 + 사업성</span></div>
+    <span style="font-size:22px; font-weight:600; color:#2F4135; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); padding:7px 16px; border-radius:9999px;">성과 측정</span>
+  </div>
+  <h2 style="font-size:48px; font-weight:700; letter-spacing:-0.025em; color:#2F4135; line-height:1.1; margin:18px 0 4px;">우기지 않습니다 — 지표로 측정하고, 가전으로 번집니다</h2>
+  <p style="font-size:26px; font-weight:500; color:#6E675C; margin:0; line-height:1.4;">쉽게 말해, 성과는 자동 집계 지표로, 사업성은 SaaS가 아니라 가전 풀스루로 증명합니다.</p>
+  <div style="flex:1; display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:24px; align-content:center;">
+    <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:16px; padding:26px 26px; display:flex; flex-direction:column; gap:14px;"><div style="display:flex; align-items:baseline; gap:10px;"><span style="font-size:30px; font-weight:700; color:#2F4135;">DX</span><span style="font-size:22px; color:#A89F90;">운영</span></div><div style="height:1px; background:rgba(47,65,53,0.08);"></div><div style="font-size:23px; color:#3A463C; line-height:1.6;">자동제어 0 → <b>주 50건+</b><br>MTTR <b>&lt; 5초</b><br>외부 선행 <b>15~43일</b><br>누적 노출 <b>−93%</b></div></div>
+    <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:16px; padding:26px 26px; display:flex; flex-direction:column; gap:14px;"><div style="display:flex; align-items:baseline; gap:10px;"><span style="font-size:30px; font-weight:700; color:#2F4135;">CX</span><span style="font-size:22px; color:#A89F90;">경험 · PoC 목표</span></div><div style="height:1px; background:rgba(47,65,53,0.08);"></div><div style="font-size:23px; color:#3A463C; line-height:1.6;">문의 <b>−30%</b><br>앱 열람 <b>60%</b><br>수기 기록 <b>−50%</b></div><div style="font-size:20px; color:#A89F90;">CO₂ 1,500→800 · PM 35→12 · 알림 5분</div></div>
+    <div style="background:linear-gradient(155deg,#3A4F42,#2F4135); border-radius:16px; padding:26px 26px; display:flex; flex-direction:column; gap:14px; box-shadow:0 12px 28px rgba(47,65,53,0.20);"><div style="display:flex; align-items:baseline; gap:10px;"><span style="font-size:30px; font-weight:700; color:#fff;">ROI</span><span style="font-size:22px; color:rgba(255,255,255,0.6);">경영</span></div><div style="height:1px; background:rgba(255,255,255,0.16);"></div><div style="font-size:23px; color:#fff; line-height:1.6;">자동 증빙 <b>100%</b><br>병원 회수 <b>3.2개월</b><br>LTV:CAC <b>4.8 : 1</b></div></div>
+  </div>
+  <div style="margin-top:20px; background:#F1E7DA; border:1px solid rgba(176,95,59,0.22); border-radius:14px; padding:18px 28px; display:flex; align-items:center; gap:18px; flex-wrap:wrap;">
+    <span style="font-size:22px; font-weight:700; color:#B05F3B;">사업성 · 정직</span>
+    <span style="font-size:23px; color:#3A463C;">SaaS 기본 <b>21.8억/년</b> = wedge</span><span style="color:#B05F3B;">→</span>
+    <span style="font-size:23px; color:#3A463C;">본질 = 가전 pull-through <b>병원당 1.0억 · LG 총 41.8억/년</b></span><span style="color:#B05F3B;">·</span>
+    <span style="font-size:23px; color:#3A463C;">수가차액 <b>8,447만원/년/병원</b></span>
+  </div>
+  <div style="margin-top:8px; font-size:18px; color:#A89F90; line-height:1.4;">산정 기준 · 200병상 가정 — 감염예방관리료 등급 차액(심평원 수가표) + 가전 풀스루(구독 23종) + 집단감염 1건 손실 회피. 가격은 ‘리스크 보험’으로 역산 · 파일럿으로 WTP 검증 예정.</div>
+  <div style="display:flex; align-items:center; gap:16px; padding-top:16px; border-top:1px solid rgba(47,65,53,0.08); margin-top:12px;"><span style="font-size:25px; color:#B05F3B; font-weight:700;">→</span><span style="font-size:24px; color:#3A463C; font-weight:500;">요양병원을 교두보로 병원·학교·오피스 실내공기질까지 — 다음은 확장입니다.</span></div>
+  <div style="position:absolute; bottom:28px; right:44px; font-size:20px; font-weight:600; color:#C7BCA9; letter-spacing:0.04em;">LG DX School</div>
+</section>
+
+<!-- ===== 15.5 P9+ 사업화 로드맵 & 정부사업 수익구조 ===== -->
+<section data-label="P9 · 사업화 로드맵" data-speaker-notes="사업성은 ‘증명 어려운 효능’이 아니라 ‘즉시 지불 가능한 돈’으로 못박습니다. 핵심은 감염예방관리료입니다. 2024년 10월부터 등급제로 바뀌어서, 감염관리 활동이 곧 수가가 됩니다. 저희는 그 활동을 자동으로 증빙해 입원환자 1일당 매출을 채워 줍니다 — 도입 즉시 매월 수익입니다. 정책 데이터 1만 481건에서 실제 사업명을 뽑아 매칭했더니, 감염예방관리료 254건, 인증평가 286건이 직접·간접 수익 경로로 확인됐고, 권역책임의료기관 742억 공모까지 단계적으로 노립니다. 로드맵은 12개월입니다 — 1분기 검증과 식약처 사전질의, 2분기 MVP, 3분기 파일럿 3곳, 4분기 공모 신청과 파일럿 기반 확대 영업입니다. 정직하게, 수요자 MOU는 아직 0건이고 파일럿 LOI가 다음 마일스톤입니다. 다만 가격은 비용이 아니라 집단감염 1건 손실을 막는 리스크 보험으로 역산했습니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; display:flex; flex-direction:column; background:#F4EEE3; padding:60px 76px 56px;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; align-items:center; gap:12px;"><span style="font-size:21px; font-weight:700; color:#fff; background:#B05F3B; border-radius:6px; padding:5px 12px;">P9+</span><span style="font-size:23px; font-weight:600; letter-spacing:0.08em; color:#A89F90; text-transform:uppercase;">DX · 사업화 로드맵 + 정부사업 수익</span></div>
+    <span style="font-size:22px; font-weight:600; color:#2F4135; background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); padding:7px 16px; border-radius:9999px;">사업성 · B2G 지불근거</span>
+  </div>
+  <h2 style="font-size:44px; font-weight:700; letter-spacing:-0.025em; color:#2F4135; line-height:1.1; margin:14px 0 4px;">‘효능’이 아니라 ‘수가’로 — 도입 즉시 매월 수익</h2>
+  <p style="font-size:24px; font-weight:500; color:#6E675C; margin:0; line-height:1.4;">쉽게 말해, 감염관리 활동을 자동 증빙해 수가를 채웁니다. 정책 1만 481건에서 실제 매칭한 수익 경로입니다.</p>
+  <!-- 3단 수익 -->
+  <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-top:18px;">
+    <div style="background:#B05F3B; border-radius:14px; padding:18px 22px; box-shadow:0 10px 24px rgba(176,95,59,0.18);"><div style="font-size:19px; color:rgba(255,255,255,0.82); font-weight:600;">단기 · 직접 수가 (즉시)</div><div style="font-size:25px; font-weight:700; color:#fff; margin-top:5px; line-height:1.25;">감염예방·관리료 등급제</div><div style="font-size:19px; color:rgba(255,255,255,0.85); margin-top:5px;">언급 254건 · 입원환자 1일당 매월 매출 · 2024.10~</div></div>
+    <div style="background:#2F4135; border-radius:14px; padding:18px 22px;"><div style="font-size:19px; color:rgba(255,255,255,0.7); font-weight:600;">중기 · 간접 가산</div><div style="font-size:25px; font-weight:700; color:#fff; margin-top:5px; line-height:1.25;">인증평가 · 의료질평가</div><div style="font-size:19px; color:rgba(255,255,255,0.78); margin-top:5px;">언급 286건 · 환경·위생 자동 증빙 = 등급 가산</div></div>
+    <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.10); border-radius:14px; padding:18px 22px;"><div style="font-size:19px; color:#A89F90; font-weight:600;">장기 · 정부 공모</div><div style="font-size:25px; font-weight:700; color:#2F4135; margin-top:5px; line-height:1.25;">권역책임의료기관</div><div style="font-size:19px; color:#6E675C; margin-top:5px;">총사업 <b>742억</b> · 중증치료시설 확충 항목 응모</div></div>
+  </div>
+  <!-- 12개월 로드맵 -->
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center; margin-top:16px;">
+    <div style="position:relative; height:4px; background:#E2DACB; border-radius:9999px; margin:0 4% 22px;"><div style="position:absolute; inset:0; background:linear-gradient(90deg,#B05F3B,#2F4135); border-radius:9999px;"></div></div>
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:14px;">
+      <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:14px; padding:18px 20px;"><div style="font-size:21px; font-weight:700; color:#B05F3B;">M1–3 · 검증</div><div style="font-size:20px; color:#3A463C; margin-top:8px; line-height:1.45;">파일럿 3곳 LOI · 식약처 등급 사전질의 · 감염예방관리료 산정요건 매핑</div></div>
+      <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:14px; padding:18px 20px;"><div style="font-size:21px; font-weight:700; color:#B05F3B;">M4–6 · MVP</div><div style="font-size:20px; color:#3A463C; margin-top:8px; line-height:1.45;">위험도 엔진 학습 · 질병청 API 연동 · 인증평가 필수항목 자동 증빙</div></div>
+      <div style="background:#ECE4D6; border:1px solid rgba(47,65,53,0.08); border-radius:14px; padding:18px 20px;"><div style="font-size:21px; font-weight:700; color:#B05F3B;">M7–9 · 파일럿</div><div style="font-size:20px; color:#3A463C; margin-top:8px; line-height:1.45;">3곳 동시 운영 · 거짓양성률 측정 · NPS·등급 변화 추적</div></div>
+      <div style="background:#2F4135; border:1px solid #2F4135; border-radius:14px; padding:18px 20px;"><div style="font-size:21px; font-weight:700; color:#DDB08F;">M10–12 · 확장</div><div style="font-size:20px; color:#fff; margin-top:8px; line-height:1.45;">권역책임의료기관 공모(742억) · 식약처 사전질의(비의료 유지) · 파일럿 확대 영업</div></div>
+    </div>
+  </div>
+  <div style="margin-top:14px; background:#F1E7DA; border:1px solid rgba(176,95,59,0.22); border-radius:14px; padding:14px 24px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+    <span style="font-size:21px; font-weight:700; color:#B05F3B;">정직</span>
+    <span style="font-size:21px; color:#3A463C;">수요자 MOU는 아직 0건 — 파일럿 LOI가 다음 마일스톤. 가격은 ‘집단감염 1건 손실 회피’ 리스크 보험으로 역산.</span>
+  </div>
+  <div style="margin-top:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:18px; color:#A89F90;">
+    <span style="font-weight:700; color:#6E675C;">출처</span>
+    <span>정책·지원금 VOC 10,481건 사업명 매칭 · 심평원 감염예방관리료 등급제(2024.10) · 보건복지부 권역책임의료기관 742억(2026)</span>
+  </div>
+  <div style="position:absolute; bottom:22px; right:44px; font-size:20px; font-weight:600; color:#C7BCA9; letter-spacing:0.04em;">LG DX School</div>
+</section>
+
+<!-- ===== 16 클로징 (다크) ===== -->
+<section data-label="클로징" data-speaker-notes="정리하겠습니다. 선행 예측, 무 BMS, 자율 제어, 안전 폴백, 자동 증빙 — 이 다섯 가지가 우리의 차별점입니다. 하지만 결국 저희가 바꾸는 건 사람입니다. 새벽에 혼자 병동을 도는 간호사의 부담, 부정도 89.9%로 확인된 ‘냄새’ 속의 환자, 멀리서 발만 동동 구르는 보호자의 불안 — 사람이 24시간 지킬 수 없던 그 공간을, 데이터와 가전이 먼저 반응하는 공간으로 바꿉니다. 감사합니다. 질문 받겠습니다." style="font-family:'Pretendard Variable',Pretendard,sans-serif; -webkit-font-smoothing:antialiased; position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:center; background:linear-gradient(155deg,#3A4F42 0%,#2F4135 55%,#23312A 100%); padding:0 130px;">
+  <div style="position:absolute; right:-200px; bottom:-200px; width:720px; height:720px; border-radius:50%; border:1.5px solid rgba(255,255,255,0.07);"></div>
+  <div style="position:absolute; right:-80px; bottom:-80px; width:480px; height:480px; border-radius:50%; border:1.5px solid rgba(176,95,59,0.4);"></div>
+  <div style="font-size:24px; font-weight:600; letter-spacing:0.14em; color:rgba(255,255,255,0.6); text-transform:uppercase;">ThinQ Workspace Sentinel</div>
+  <div style="font-size:66px; font-weight:700; letter-spacing:-0.03em; color:#fff; line-height:1.24; margin-top:26px; max-width:1320px;">사람이 24시간 지킬 수 없는 공간을,<br>데이터와 가전이 <span style="color:#DDB08F;">먼저 반응하는</span> 공간으로.</div>
+  <div style="margin-top:48px; display:flex; gap:12px; flex-wrap:wrap;">
+    <span style="font-size:24px; font-weight:600; color:#fff; background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.18); border-radius:9999px; padding:10px 22px;">선행 예측</span>
+    <span style="font-size:24px; font-weight:600; color:#fff; background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.18); border-radius:9999px; padding:10px 22px;">무 BMS</span>
+    <span style="font-size:24px; font-weight:600; color:#fff; background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.18); border-radius:9999px; padding:10px 22px;">자율 제어</span>
+    <span style="font-size:24px; font-weight:600; color:#fff; background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.18); border-radius:9999px; padding:10px 22px;">안전 Fallback</span>
+    <span style="font-size:24px; font-weight:600; color:#fff; background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.18); border-radius:9999px; padding:10px 22px;">자동 증빙</span>
+  </div>
+  <div style="margin-top:56px; padding-top:30px; border-top:1px solid rgba(255,255,255,0.18); display:flex; align-items:center; gap:26px;">
+    <span style="font-size:40px; font-weight:700; color:#fff;">감사합니다</span>
+    <span style="font-size:24px; color:rgba(255,255,255,0.55);">Q&amp;A · 팀 5분 대기조</span>
+    <span style="font-size:22px; color:rgba(255,255,255,0.4); margin-left:auto;">LG DX School</span>
+  </div>
+</section>
+
+</x-import>
+</x-dc>
+</body>
+</html>

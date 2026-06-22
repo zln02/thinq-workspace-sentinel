@@ -1,0 +1,11 @@
+# 백엔드 런타임 의존성 — 핀 고정(재현 가능 빌드).
+# 현재 검증된 venv(.venv, Python 3.12)에 설치된 known-good 버전과 일치.
+# 갱신 시: .venv 에서 테스트 후 버전만 올리고 커밋. (redis 는 >=5.0 무단 드리프트 방지로 정확 핀)
+fastapi==0.111.0
+uvicorn[standard]==0.30.0
+asyncpg==0.29.0
+redis==8.0.0
+pydantic==2.7.0
+cowayaio==0.2.4
+# cowayaio 가 의존 — 테스트된 버전으로 고정(전이 의존이지만 명시 핀)
+aiohttp==3.14.1

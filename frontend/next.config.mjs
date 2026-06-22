@@ -32,11 +32,11 @@ export default (phase) => {
       return [
         {
           source: "/api/sentinel/:path*",
-          destination: "http://127.0.0.1:8003/api/v1/:path*",
+          destination: "http://127.0.0.1:8103/api/v1/:path*",
         },
         {
           source: "/api/sentinel/stream/:path*",
-          destination: "http://127.0.0.1:8003/api/v1/stream/:path*",
+          destination: "http://127.0.0.1:8103/api/v1/stream/:path*",
         },
       ];
     },
