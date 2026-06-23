@@ -1,8 +1,8 @@
 "use client";
-// 백엔드(:8003) 실연동 데이터 훅 — next.config 프록시(/api/sentinel/*) 경유.
-//   /api/sentinel/...        → http://127.0.0.1:8003/api/v1/...
-//   /api/sentinel/stream/... → http://127.0.0.1:8003/api/v1/stream/...
-import { useEffect, useState } from "react";
+// 백엔드(:8103) 실연동 데이터 훅 — next.config 프록시(/api/sentinel/*) 경유.
+//   /api/sentinel/...        → http://127.0.0.1:8103/api/v1/...
+//   /api/sentinel/stream/... → http://127.0.0.1:8103/api/v1/stream/...
+import { useEffect, useRef, useState } from "react";
 
 // 배포(basePath=/sentinel) 시 fetch/SSE가 /sentinel/api/... 로 나가야 nginx(/sentinel→:3001)를 거쳐 rewrite됨.
 // dev(basePath="")면 빈 문자열이라 기존 /api/... 그대로.
@@ -11,6 +11,13 @@ const API_BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
 export type LiveSensor = {
   space_id: string;
   tier: string;
+  sensor_tier?: string;  // 외부 boost 적용 전 순수 실내센서 판정
+  control_active?: boolean;
+  control_event?: "activated" | "recovered" | "stopped" | null;
+  control_event_id?: number | null;
+  co2_baseline?: number | null;
+  co2_surge_delta?: number | null;
+  recovery_hold_s?: number;
   prev_tier?: string | null;
   poi: number | null;
   rebreathed_fraction?: number | null;
@@ -33,28 +40,34 @@ export function useLiveWard(spaceId = "ward_a") {
   const [data, setData] = useState<LiveSensor | null>(null);
   const [connected, setConnected] = useState(false);
   const [lastTs, setLastTs] = useState<number | null>(null);
+  const lastSse = useRef(0);
 
-  // 초기 1회 REST 폴백 — SSE 첫 이벤트 전(또는 SSE 차단 환경)에도 첫 화면이 뜨도록.
-  // overview에서 실센서 공간 스냅샷을 LiveSensor로 매핑해 채운다. SSE sensor가 오면 그쪽이 우선.
+  // overview 3초 폴링 폴백 — SSE 연결 전/차단/끊김에도 값이 빠르게 뜨고 계속 갱신(실시간 보장).
+  // SSE가 최근 4초 내 푸시했으면 폴은 건너뜀(SSE가 더 신선·rebreathed_fraction 포함).
   useEffect(() => {
     let alive = true;
-    fetch(`${API_BASE}/api/sentinel/sensor/spaces/overview`)
+    const load = () => fetch(`${API_BASE}/api/sentinel/sensor/spaces/overview`)
       .then((r) => r.json())
       .then((j) => {
         if (!alive || !j?.spaces?.length) return;
+        if (Date.now() - lastSse.current < 4000) return;   // SSE 신선 → 폴 무시
         const sp = j.spaces.find((s: SpaceOverview) => s.source === "실센서") ?? j.spaces[0];
         if (!sp) return;
-        setData((prev) =>
-          prev ?? {
-            space_id: sp.space_id, tier: sp.tier, poi: sp.poi,
-            co2_ppm: sp.co2_ppm, pm25: sp.pm25, temp_c: sp.temp_c, humidity: sp.humidity,
-            gas_raw: sp.gas_raw, occupancy: sp.occupancy ?? null, governance: "none", approval_required: false,
-          }
-        );
-        setLastTs((prev) => prev ?? Date.now());
+        setData({
+          space_id: sp.space_id, tier: sp.tier, sensor_tier: sp.sensor_tier, poi: sp.poi,
+          control_active: sp.control_active, control_event: sp.control_event,
+          control_event_id: sp.control_event_id, co2_baseline: sp.co2_baseline,
+          recovery_hold_s: sp.recovery_hold_s,
+          co2_ppm: sp.co2_ppm, pm25: sp.pm25, temp_c: sp.temp_c, humidity: sp.humidity,
+          gas_raw: sp.gas_raw, occupancy: sp.occupancy ?? null, governance: "none", approval_required: false,
+          tier_source: sp.tier_source, boost_region: j.boost_region ?? null,
+        });
+        setLastTs(Date.now());
       })
       .catch(() => { /* ignore */ });
-    return () => { alive = false; };
+    load();
+    const t = setInterval(load, 3000);
+    return () => { alive = false; clearInterval(t); };
   }, [spaceId]);
 
   useEffect(() => {
@@ -64,12 +77,12 @@ export function useLiveWard(spaceId = "ward_a") {
       try {
         setData(JSON.parse((e as MessageEvent).data));
         setConnected(true);
+        lastSse.current = Date.now();
         setLastTs(Date.now());
       } catch {
         /* ignore */
       }
     });
-    // EventSource는 onerror 후 자동 재연결 시도. 끊김만 표시(데이터는 stale로 유지).
     es.onerror = () => setConnected(false);
     return () => es.close();
   }, [spaceId]);
@@ -83,6 +96,12 @@ export type SpaceOverview = {
   area_m2?: number;
   max_occupancy: number;
   tier: string;
+  sensor_tier?: string;
+  control_active?: boolean;
+  control_event?: "activated" | "recovered" | "stopped" | null;
+  control_event_id?: number | null;
+  co2_baseline?: number | null;
+  recovery_hold_s?: number;
   tier_source?: "sensor" | "external";  // 이 공간 tier가 외부 조기경보발(發) 상향이면 "external"
   poi: number | null;
   source: string;       // "실센서" | "시뮬"

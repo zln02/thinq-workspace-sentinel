@@ -50,13 +50,14 @@ function FMFloorPlan({ spaces }: { spaces: SpaceOverview[] }) {
         {spaces.map((s) => {
           const t = tcls(s.tier);
           const isLive = s.source === "실센서";
+          const derived = s.source === "파생";
           const hot = tierRank(s.tier) >= 2;
           return (
             <div key={s.space_id} onClick={() => setSel(s)}
               className={`p-4 rounded-2xl bg-white cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:-translate-y-1 transition-all flex flex-col border border-slate-200 ${hot ? "border-l-4 border-l-[#7a0024]" : ""}`}>
               <div className="flex justify-between items-center mb-3">
                 <span className="font-black text-lg text-slate-900">{s.space_name}</span>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${isLive ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-400"}`}>{isLive ? "실센서 LIVE" : "시뮬"}</span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${isLive ? "bg-emerald-50 text-emerald-700" : derived ? "bg-sky-50 text-sky-700" : "bg-slate-100 text-slate-400"}`}>{isLive ? "실센서 LIVE" : derived ? "파생추정" : "시뮬"}</span>
               </div>
               <div className="flex items-center gap-2 mb-3">
                 <span className={`text-xs font-bold px-2 py-1 rounded-full ${t.cls}`}>{t.ko}</span>

@@ -40,8 +40,8 @@ export default function Splash() {
       {/* 상·하단 가독성용 그라데이션 */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/40 pointer-events-none" />
 
-      {/* 로고 (흰색) — 중앙보다 살짝 아래 */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center -translate-y-[6vh] px-6 pointer-events-none">
+      {/* 로고 (흰색) — 상단으로 올려 일러스트 인물과 겹침 방지 */}
+      <div className="absolute inset-x-0 top-0 flex flex-col items-center pt-[calc(env(safe-area-inset-top)+7vh)] px-6 pointer-events-none">
         <div className="flex items-baseline gap-2 drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]">
           <span className="text-white font-extrabold tracking-tight text-[28px] leading-none">ThinQ</span>
           <span className="text-white/95 font-semibold tracking-[0.3em] text-[22px] leading-none">SENTINEL</span>

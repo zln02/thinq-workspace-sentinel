@@ -46,6 +46,22 @@ export default function HomePage() {
 
       <ConnectionBanner connected={connected} lastTs={lastTs} />
 
+      {/* 지역 감염병 확산 알림 — 위험 상승 시 */}
+      {rank >= 2 && (
+        <section className="px-4 mt-3">
+          <div className="rounded-2xl px-4 py-3 flex items-start gap-3 care-enter"
+               style={{ background: "rgba(226,84,59,0.10)", border: "1px solid rgba(226,84,59,0.4)" }}>
+            <span className="text-2xl">🛡️</span>
+            <div>
+              <p className="text-[14px] font-extrabold" style={{ color: "#c0392b" }}>지역 감염병 확산 감지</p>
+              <p className="text-[13px] text-care-ink-2 mt-0.5 leading-relaxed">
+                LG ThinQ 가전이 <b>병동 환경 관리를 시작</b>했어요. 환기·공기청정이 자동으로 강화됩니다 — 따로 하실 일은 없습니다.
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* 안심 메인 카드 — 상태 라벨 최우선, 이모지 보조 */}
       <section className="px-4 mt-4">
         {hasData ? (

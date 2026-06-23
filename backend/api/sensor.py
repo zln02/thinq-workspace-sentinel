@@ -39,7 +39,18 @@ _APPROVAL_TIERS = {"CRITICAL"}                 # 관리자 승인 필요 (위급
 _ACTIVE_TIERS = {"ALERT", "HIGH_RISK", "CRITICAL"}  # 강(强) 자동제어: 급속+송풍
 _GENTLE_TIERS = {"CAUTION"}                    # 약(弱) 선제대응: 공기청정 LOW (외부 ORANGE/YELLOW 포함)
 _last_tier: dict[str, str] = {}
+_last_control_tier: dict[str, str] = {}
+_control_active: dict[str, bool] = {}
+_co2_baseline: dict[str, float] = {}
+_recovery_since: dict[str, float] = {}
+_control_event_state: dict[str, dict] = {}  # 최근 전이 이벤트를 12초 유지해 SSE 프레임 유실 방지
 _pending_approval: dict[str, dict] = {}
+
+# 2단계 시연 상태기계: 외부 경보는 판정 기준만 상향하고, 실제 CO₂ 급상승 때만 가전 가동.
+_CO2_SURGE_MIN = 1000.0       # ppm: 입김/밀집으로 명확히 상승한 구간
+_CO2_SURGE_DELTA = 300.0      # ppm: 평상 baseline 대비 급상승 최소폭
+_CO2_RECOVERY_MAX = 800.0     # ppm: 정상 복귀 상한
+_CO2_RECOVERY_HOLD = 5.0      # 초: 5초 연속 정상이어야 복귀
 _control_mode: dict[str, str] = {}             # space_id -> "auto"|"manual" (기본 auto). manual이면 자동 액추에이션 보류
 # space별 거버넌스 직렬화 락 — 같은 공간에 reading이 빠르게 연속 유입돼도
 # tier 전이 판정~가전 액추에이션(await 다수)이 인터리브되어 명령이 뒤섞이지 않도록 보장.
@@ -142,7 +153,7 @@ def _env_tier(temp: Optional[float], humidity: Optional[float]) -> str:
 
 
 def compute_tier(co2, gas_raw, temp=None, humidity=None, occupancy=None,
-                 pathogen=None, quanta=None):
+                 pathogen=None, quanta=None, infectors=None):
     """감염위험(CO2 재호흡률/가스) + 환경위험(온습도)을 종합해 더 높은 tier 채택.
 
     occupancy(재실 인원): None이면 시연 가정 DEMO_OCCUPANCY 사용. 0이면 빈 병실 →
@@ -154,11 +165,14 @@ def compute_tier(co2, gas_raw, temp=None, humidity=None, occupancy=None,
     """
     n = DEMO_OCCUPANCY if occupancy is None else occupancy
     q = quanta if quanta is not None else (quanta_for(pathogen) if pathogen else DEMO_QUANTA)
+    # PoI(전파 위험확률)는 항상 "감염자 1명 노출 가정"의 조건부 위험으로 계산·표시(CO2 따라 변동).
+    # 단 등급(tier)은 감염맥락(ctx>0, 외부 조기경보 발령)일 때만 PoI로 격상 — 평상시는 감염원 없어 정상.
+    ctx = DEMO_INFECTORS if infectors is None else infectors
     if co2 is not None:
         poi, f = infection_probability(
             co2, DEMO_INFECTORS, n, q, DEMO_EXPOSURE_H
         )
-        base = tier_from_poi(poi)
+        base = tier_from_poi(poi) if (ctx and ctx > 0) else "MONITOR"
     elif gas_raw is not None:
         poi, f = None, None
         if gas_raw >= 700:
@@ -214,7 +228,16 @@ async def _coway_aq() -> Optional[dict]:
     return _coway_cache["data"]  # type: ignore[return-value]  # 신선하면 최신, 아니면 직전값(또는 None)
 
 
+def _actuation_on() -> bool:
+    """실기기 작동 마스터 스위치. 기본 OFF — 센서 ingest마다 제어가 걸려 공청기가
+    ON/OFF·풍량을 난무하던 문제 방지(데모 안정화). 상태 조회/대시보드 표시는 영향 없음.
+    완성 후 `.env` 에 SENTINEL_ACTUATE=1 넣고 백엔드 재기동하면 완전 제어 복원."""
+    return os.getenv("SENTINEL_ACTUATE", "0") == "1"
+
+
 async def _control_coway(wind: str) -> Optional[dict]:
+    if not _actuation_on():
+        return None  # 실기기 미작동(마스터 스위치 OFF) — 표시/로직은 유지
     try:
         from backend.api.main import state
 
@@ -229,6 +252,8 @@ async def _control_coway(wind: str) -> Optional[dict]:
 
 
 async def _power_coway(on: bool) -> Optional[dict]:
+    if not _actuation_on():
+        return None  # 실기기 미작동(마스터 스위치 OFF)
     try:
         from backend.api.main import state
 
@@ -248,6 +273,8 @@ async def _control_ac(on: bool, mode: str = "WIND", wind: str = "HIGH") -> Optio
 
     SMARTTHINGS_TOKEN 미설정 시 어댑터 None → 조용히 skip(데모는 오케스트레이션 표시).
     """
+    if not _actuation_on():
+        return None  # 실기기 미작동(마스터 스위치 OFF)
     try:
         from backend.api.main import state
 
@@ -337,9 +364,7 @@ async def ingest_reading(r: SensorReading):
     # n_eff = 유효 재실(미측정 시 DEMO 폴백). tier 판정·DB 적재·KPI 모두 이 단일값 사용.
     # (compute_tier도 내부적으로 같은 폴백을 적용하지만, 소스를 하나로 명시해 혼동 제거.)
     n_eff = DEMO_OCCUPANCY if occ_eff is None else occ_eff
-    tier, poi, f = compute_tier(co2, r.gas_raw, r.temp_c, r.humidity, occupancy=n_eff)
-    # 외부신호 선제 boost — 선택 지역 감염병 확산이 심하면 센서 정상이어도 tier 상향(사전예방).
-    # tier_source: 최종 tier가 센서발(sensor)인지 외부 조기경보발(external)인지 — 대시보드 인과 표시용.
+    # 외부 조기경보 상태 먼저 확인 — 감염자 가정수 I 결정에 사용.
     tier_source = "sensor"
     ext_boost = "MONITOR"
     ext_region = None
@@ -349,12 +374,70 @@ async def ingest_reading(r: SensorReading):
         bi = external_boost_info()
         ext_boost = bi.get("tier", "MONITOR")
         ext_region = bi.get("region")
-        if _TIER_RANK.get(ext_boost, 0) > _TIER_RANK.get(tier, 0):
-            tier = ext_boost
-            tier_source = "external"
     except Exception:  # noqa: BLE001
         pass
+    # Rudnick-Milton PoI = 1−exp(−f·(I/n)·q·t). 감염원 I가 0이면 PoI 0(평상시=정상).
+    # 평상시(외부 경보 없음): I=0 → 감염위험 0. 외부 지역경보 시: 예방적 I=DEMO_INFECTORS.
+    inf = DEMO_INFECTORS if ext_boost != "MONITOR" else 0
+    tier, poi, f = compute_tier(co2, r.gas_raw, r.temp_c, r.humidity, occupancy=n_eff, infectors=inf)
+    sensor_tier = tier  # 외부 boost 적용 전 순수 실내센서 판정 — 2단계 시연/음성 트리거용
+    # 외부신호 선제 boost floor — 센서 정상이어도 tier 상향(사전예방).
+    if _TIER_RANK.get(ext_boost, 0) > _TIER_RANK.get(tier, 0):
+        tier = ext_boost
+        tier_source = "external"
     exceed = iaq_exceedances(co2=co2, pm25=pm25)
+
+    # 2.5) 외부 경보 대기 → 실제 CO₂ 급상승 가동 → 5초 연속 회복 종료.
+    # 공기청정기는 CO₂를 제거하지 않으므로, 복귀는 가전 명령 시간이 아니라 실제 센서값으로만 판정한다.
+    active_before = _control_active.get(r.space_id, False)
+    baseline = _co2_baseline.get(r.space_id, float(co2) if co2 is not None else 450.0)
+    control_event = None
+    if not active_before and co2 is not None and float(co2) < _CO2_SURGE_MIN:
+        # 평상 구간에서만 완만하게 baseline 갱신. 입김 피크가 baseline을 끌어올리지 않게 한다.
+        baseline = baseline * 0.85 + float(co2) * 0.15
+        _co2_baseline[r.space_id] = baseline
+    surge = bool(
+        ext_boost != "MONITOR" and co2 is not None
+        and float(co2) >= _CO2_SURGE_MIN
+        and float(co2) - baseline >= _CO2_SURGE_DELTA
+        and _TIER_RANK.get(sensor_tier, 0) >= 3
+    )
+    control_active = active_before
+    if not active_before and surge:
+        control_active = True
+        control_event = "activated"
+        _recovery_since.pop(r.space_id, None)
+    elif active_before:
+        recovered_now = bool(
+            co2 is not None
+            and float(co2) <= max(_CO2_RECOVERY_MAX, baseline + 150.0)
+            and poi is not None and float(poi) <= 0.10
+        )
+        if recovered_now:
+            since = _recovery_since.setdefault(r.space_id, now)
+            if now - since >= _CO2_RECOVERY_HOLD:
+                control_active = False
+                control_event = "recovered"
+                _recovery_since.pop(r.space_id, None)
+        else:
+            _recovery_since.pop(r.space_id, None)
+    if ext_boost == "MONITOR" and control_active:
+        control_active = False
+        control_event = "stopped"
+        _recovery_since.pop(r.space_id, None)
+    _control_active[r.space_id] = control_active
+    if control_event:
+        prev_event = _control_event_state.get(r.space_id, {})
+        _control_event_state[r.space_id] = {
+            "event": control_event, "id": int(prev_event.get("id", 0)) + 1, "t": now,
+        }
+    recent_event = _control_event_state.get(r.space_id)
+    if recent_event and now - float(recent_event["t"]) <= 12.0:
+        control_event_out = recent_event["event"]
+        control_event_id = int(recent_event["id"])
+    else:
+        control_event_out = None
+        control_event_id = None
 
     # 3) DB 적재 (best-effort)
     try:
@@ -385,38 +468,31 @@ async def ingest_reading(r: SensorReading):
     except Exception as e:  # noqa: BLE001
         logger.warning("sensor 적재 실패(데모 진행): %s", e)
 
-    # 4) 하이브리드 거버넌스 — 위험도 '비례' 차등제어(항상 최대 아님).
-    #    idle(MONITOR)=대기 / gentle(CAUTION)=공청 약 / strong(ALERT↑)=급속+송풍 / approval(CRITICAL)=승인.
-    #    외부 ORANGE/YELLOW→CAUTION 도 gentle로 '실제' 가동 → 표시-작동 일치(정직성).
-    #    space별 락으로 직렬화 — 같은 공간에 reading이 연속 유입돼도 tier 전이~액추에이션이
-    #    인터리브되지 않아 가전 명령 순서가 보장됨(중복/역전 방지).
+    # 4) 가전 제어 — 외부 경보 자체는 armed 상태일 뿐 실제 가전을 켜지 않는다.
+    #    CO₂ 급상승으로 control_active가 전이될 때 TURBO, 5초 회복 시 OFF.
     coway_action = None
     approval_required = False
-    governance = "none"
+    governance = "armed" if ext_boost != "MONITOR" and not control_active else "none"
 
     async with _space_locks[r.space_id]:
         prev = _last_tier.get(r.space_id)
         _last_tier[r.space_id] = tier
-
-        cur_lv, prev_lv = _gov_level(tier), _gov_level(prev)
+        control_tier = "HIGH_RISK" if control_active else "MONITOR"
+        # 프로세스 재시작 뒤 실제 기기 상태가 남아 있을 수 있어 첫 inactive reading은 OFF로 동기화한다.
+        prev_control_tier = _last_control_tier.get(
+            r.space_id, "MONITOR" if control_active else "HIGH_RISK"
+        )
+        _last_control_tier[r.space_id] = control_tier
         mode = _control_mode.get(r.space_id, "auto")
         if mode == "manual":
-            governance = "manual"                            # 수동 모드 — 자동 액추에이션 보류(관리자 직접 제어). tier/로그/SSE는 그대로.
-        elif cur_lv != prev_lv:                              # 단계가 바뀔 때만 액추에이션(중복 호출 방지)
-            if cur_lv == "approval":
-                _pending_approval[r.space_id] = {"tier": tier, "wind": "TURBO"}
-                approval_required = True                      # 위급(CRITICAL) → 관리자 승인 대기
-                governance = "approval_required"
-            elif cur_lv == "strong":
-                await _power_coway(True)                      # 전원 ON
-                coway_action = await _control_coway("TURBO") # ALERT/HIGH_RISK → 급속
-                await _control_ac(True, mode="WIND", wind="HIGH")  # 에어컨 송풍 → 환기 보조(Q_aux)
-                governance = "auto"
-            elif cur_lv == "gentle":
-                await _power_coway(True)                      # 경계(CAUTION) 선제 약대응
-                coway_action = await _control_coway("LOW")   # 공기청정 약(LOW) — 에어컨은 과대응 방지 위해 미가동
-                governance = "auto_gentle"
-            else:                                            # idle(MONITOR) → 정상 복귀
+            governance = "manual"
+        elif control_tier != prev_control_tier:
+            if control_active:
+                await _power_coway(True)
+                coway_action = await _control_coway("TURBO")
+                await _control_ac(True, mode="WIND", wind="HIGH")
+                governance = "auto_sensor_surge"
+            else:
                 coway_action = await _power_coway(False)
                 await _control_ac(False)
                 _pending_approval.pop(r.space_id, None)
@@ -426,8 +502,15 @@ async def ingest_reading(r: SensorReading):
     payload = {
         "space_id": r.space_id,
         "tier": tier,
+        "sensor_tier": sensor_tier,
         "tier_source": tier_source,        # sensor=실내센서 감지 / external=외부 조기경보 상향
         "boost_region": ext_region,        # external일 때 발령 지역(예: 부산광역시)
+        "control_active": control_active,
+        "control_event": control_event_out,
+        "control_event_id": control_event_id,
+        "co2_baseline": round(baseline, 1),
+        "co2_surge_delta": round(float(co2) - baseline, 1) if co2 is not None else None,
+        "recovery_hold_s": _CO2_RECOVERY_HOLD,
         "prev_tier": prev,
         "poi": poi,
         "rebreathed_fraction": f,
@@ -449,7 +532,11 @@ async def ingest_reading(r: SensorReading):
     }
     publish_live(r.space_id, payload)
     return {
-        "ok": True, "tier": tier, "poi": poi,
+        "ok": True, "tier": tier, "sensor_tier": sensor_tier, "tier_source": tier_source,
+        "co2_ppm": co2, "rebreathed_fraction": f, "poi": poi,
+        "control_active": control_active, "control_event": control_event_out,
+        "control_event_id": control_event_id,
+        "co2_baseline": round(baseline, 1),
         "governance": governance, "approval_required": approval_required,
         "coway": coway_action,
     }
@@ -687,6 +774,47 @@ def _sim_reading(space_name: str, space_type: str) -> dict:
             "humidity": round(hum, 1), "co2_ppm": round(co2, 0), "pm25": round(15 + (seed % 25), 0)}
 
 
+def _derive_reading(base, base_occ, space_name: str, space_type: str) -> dict:
+    """타 호실값을 201호 '실측'에서 파생(추정) — 온습도는 실측 앵커, CO2/인원은 룸별 모델.
+
+    센서 미설치 호실을 실센서로 위장하지 않기 위함(라벨='파생'). 실측 환경(온습도)을
+    건물 공통 기준으로 깔고, 공간 타입별 밀집/환기 특성으로 CO2·재실을 변형한다.
+    """
+    import math
+
+    seed = sum(ord(c) for c in space_name)
+    t = time.time() / 60.0
+    wave = math.sin(t + seed)  # 분 단위 완만 변동(라이브감)
+
+    b_temp = base["temperature"] if base and base["temperature"] is not None else 23.5
+    b_hum = base["humidity"] if base and base["humidity"] is not None else 50.0
+
+    # 온습도: 201호 실측에 룸별 미세 편차(건물 공통 환경 반영)
+    temp = round(b_temp + (seed % 3 - 1) * 0.4 + wave * 0.3, 1)
+    hum = round(b_hum + (seed % 5 - 2) * 0.8 + wave * 1.5, 1)
+
+    # CO2: 룸 타입별 baseline(실측 201호는 입김 포화 outlier라 직접 앵커 대신 모델) + 변동
+    base_co2 = 480 + (seed % 200)
+    if space_type == "ISOLATION":
+        base_co2 += 700   # 환기 제한 격리실 → 고위험
+    elif space_type == "DINING":
+        base_co2 += 550   # 식사 밀집
+    elif space_type == "LOUNGE":
+        base_co2 += 120
+    co2 = round(max(420, base_co2 + wave * 140), 0)
+
+    gas = round(max(60, 140 + (seed % 60) + (220 if space_type == "ISOLATION" else 0) + wave * 50), 0)
+
+    # 재실: 카메라 실측 인원(201호)을 기준으로 룸별 변형(빈 병실/밀집 다양성)
+    if base_occ is not None:
+        occ = max(0, int(base_occ) + (seed % 5 - 2))
+    else:
+        occ = (seed % 6)
+
+    return {"gas_raw": gas, "temp_c": temp, "humidity": hum,
+            "co2_ppm": co2, "pm25": round(15 + (seed % 25), 0), "occupancy": occ}
+
+
 def _season_now_kst() -> str:
     """KST 현재 월 → 계절 (가전 정책 게이팅용)."""
     m = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9))).month
@@ -721,10 +849,27 @@ async def control_plan(space_id: str = "ward_a", pathogen: str | None = None,
         tier = _last_tier.get(space_id, "MONITOR")
         tier_source = "live" if space_id in _last_tier else "default"
     season = season or _season_now_kst()
-    pathogen = pathogen or _SEASON_DEFAULT_PATHOGEN.get(season, "COVID-19")
+    pathogen_source = "explicit" if pathogen else None
+    if pathogen is None:
+        # 데모 일관성: 외부 조기경보로 선택된 병원체(예: 광주 influenza)를 계절기본보다 우선 반영
+        # → "외부 인플루엔자 경보 → 인플루엔자 프로토콜" 이 한 화면에서 일치.
+        try:
+            from backend.api.external_live import external_boost_info
+            from backend.services.uis_reader import UIS_TO_SENTINEL
+            binfo = external_boost_info() or {}
+            disease = (binfo.get("disease") or "").lower()
+            if binfo.get("tier") and binfo.get("tier") != "MONITOR" and disease in UIS_TO_SENTINEL:
+                pathogen = UIS_TO_SENTINEL[disease]
+                pathogen_source = "external"
+        except Exception:
+            pass
+    if pathogen is None:
+        pathogen = _SEASON_DEFAULT_PATHOGEN.get(season, "COVID-19")
+        pathogen_source = "season"
     plan = explain_plan(pathogen, tier, season)
     plan["space_id"] = space_id
     plan["tier_source"] = tier_source
+    plan["pathogen_source"] = pathogen_source
     return plan
 
 
@@ -750,6 +895,17 @@ async def spaces_overview():
     if not pool:
         return {"spaces": [], "boost": boost}
     async with pool.acquire() as con:
+        # 실측 앵커 — 실센서(201호) 최신 온습도/CO2 + 카메라 최신 재실. 타 호실 '파생'의 기준값.
+        base = await con.fetchrow(
+            "SELECT co2_ppm, temperature, humidity FROM sentinel.sensor_readings "
+            "WHERE temperature IS NOT NULL AND time > NOW() - INTERVAL '5 min' "
+            "ORDER BY time DESC LIMIT 1"
+        )
+        base_occ = await con.fetchval(
+            "SELECT occupancy FROM sentinel.sensor_readings "
+            "WHERE occupancy IS NOT NULL AND time > NOW() - INTERVAL '5 min' "
+            "ORDER BY time DESC LIMIT 1"
+        )
         spaces = await con.fetch(
             "SELECT id, space_name, space_type, area_m2, max_occupancy "
             "FROM sentinel.spaces ORDER BY space_type, space_name"
@@ -766,24 +922,48 @@ async def spaces_overview():
                         "humidity": r["humidity"], "co2_ppm": r["co2_ppm"], "pm25": r["pm25_ugm3"],
                         "occupancy": r["occupancy"]}
                 source = "실센서"
+            elif base:
+                # 센서 미설치 호실 — 201호 실측 기반 파생(추정). 실센서로 위장하지 않음(정직 라벨).
+                vals = _derive_reading(base, base_occ, s["space_name"], s["space_type"])
+                source = "파생"
             else:
                 vals = _sim_reading(s["space_name"], s["space_type"])
                 source = "시뮬"
             # 실재실(카메라/센서 적재값)로 tier 계산 — /reading 의 실제 의사결정과 정합.
             # 빈 병실(occupancy 0)이면 PoI 0 → 정상(MONITOR). 미측정(None)이면 내부 DEMO 폴백(시뮬 공간).
+            # 감염자 가정 I: 평상시 0(감염원 없음→PoI 0→정상), 외부 경보 시 예방적 I=DEMO_INFECTORS.
             tier, poi, _f = compute_tier(
                 vals["co2_ppm"], vals["gas_raw"], vals["temp_c"], vals["humidity"],
                 occupancy=vals.get("occupancy"),
+                infectors=(DEMO_INFECTORS if boost != "MONITOR" else 0),
             )
+            sensor_tier = tier
             tier_source = "sensor"
             if _TIER_RANK.get(boost, 0) > _TIER_RANK.get(tier, 0):
                 tier = boost
                 tier_source = "external"          # 이 공간 tier는 외부 조기경보발(發) 상향
+            # 표시 전용 클램프: 재실 인원은 물리 정원을 넘을 수 없음.
+            # (카메라 미실행 시 DEMO_OCCUPANCY=10 폴백이 1인실 격리실에 10명처럼 보이는 것 방지.
+            #  tier/poi는 위에서 원시값으로 이미 계산됨 — 의사결정엔 영향 없음.)
+            if vals.get("occupancy") is not None and s["max_occupancy"]:
+                vals["occupancy"] = min(int(vals["occupancy"]), int(s["max_occupancy"]))
+            control_fields = {}
+            if source == "실센서":
+                event_state = _control_event_state.get("ward_a")
+                event_fresh = bool(event_state and time.time() - float(event_state["t"]) <= 12.0)
+                control_fields = {
+                    "control_active": _control_active.get("ward_a", False),
+                    "control_event": event_state["event"] if event_fresh else None,
+                    "control_event_id": int(event_state["id"]) if event_fresh else None,
+                    "co2_baseline": round(_co2_baseline.get("ward_a", 450.0), 1),
+                    "recovery_hold_s": _CO2_RECOVERY_HOLD,
+                }
             out.append({
                 "space_id": str(s["id"]),
                 "space_name": s["space_name"], "space_type": s["space_type"],
                 "area_m2": s["area_m2"], "max_occupancy": s["max_occupancy"],
-                "tier": tier, "tier_source": tier_source, "poi": poi, "source": source, **vals,
+                "tier": tier, "sensor_tier": sensor_tier,
+                "tier_source": tier_source, "poi": poi, "source": source, **vals, **control_fields,
             })
     return {"spaces": out, "boost": boost, "boost_region": boost_region, "count": len(out)}
 

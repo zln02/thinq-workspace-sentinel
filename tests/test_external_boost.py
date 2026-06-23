@@ -10,6 +10,7 @@ from backend.api.external_live import (
     _boost_from_level,
     _downgrade,
     _level_from_score,
+    _replay_boost_from_level,
     _trend_adjust,
 )
 
@@ -33,6 +34,17 @@ def test_boost_from_level(level, expected):
 ])
 def test_level_from_score(score, expected):
     assert _level_from_score(score) == expected
+
+
+@pytest.mark.parametrize("level,expected", [
+    ("RED", "ALERT"),
+    ("ORANGE", "ALERT"),
+    ("YELLOW", "CAUTION"),
+    ("GREEN", "MONITOR"),
+    (None, "MONITOR"),
+])
+def test_replay_boost_from_level(level, expected):
+    assert _replay_boost_from_level(level) == expected
 
 
 def test_downgrade():

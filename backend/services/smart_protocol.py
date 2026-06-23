@@ -58,16 +58,32 @@ TIER_INTENSITY = {
 }
 
 
+def _purifier_strength(policy: dict, intensity: float) -> tuple[str, str]:
+    """티어 강도 → 공청 풍량. 평소(저강도)엔 약/대기로 내려 경보(TURBO)와 대비를 명확히.
+    returns (strength, mode): mode ∈ {idle, down, bump, base}.
+      - MONITOR(평소)   → 대기      (idle)   : 위협 없음, 에너지 절약
+      - CAUTION         → LOW       (down)   : 약하게
+      - ALERT+ & 정책HIGH → TURBO   (bump)   : 인플루엔자류 상향
+      - ALERT+ & 정책TURBO → 정책값  (base)   : 코로나/결핵 등 이미 최대
+    """
+    base = policy.get("purifier", "MED")
+    if intensity <= 0.3:
+        return "대기", "idle"
+    if intensity < 1.0:
+        return "LOW", "down"
+    if base == "HIGH":
+        return "TURBO", "bump"
+    return base, "base"
+
+
 def plan_actions(pathogen: str, tier: str, season: str = "summer") -> list[dict]:
     """병원체 + 등급 + 계절 → 가전별 제어 명령 리스트."""
     policy = PATHOGEN_POLICY.get(pathogen, PATHOGEN_POLICY["COVID-19"])
     intensity = TIER_INTENSITY.get(tier, 1.0)
     actions = []
 
-    # 1. 공기청정기
-    strength = policy.get("purifier", "MED")
-    if intensity >= 1.0 and strength == "HIGH":
-        strength = "TURBO"
+    # 1. 공기청정기 — 평소 대기 → 경보 TURBO (강도별 풍량)
+    strength, _ = _purifier_strength(policy, intensity)
     actions.append({
         "device_type": DeviceType.AIR_PURIFIER.value,
         "body": {"airFlow": {"windStrength": strength}},
@@ -159,13 +175,15 @@ def explain_plan(pathogen: str, tier: str, season: str = "summer") -> dict:
     def _off(dev, reason):
         off.append({"device": dev, "name_kr": DEVICE_KR[dev], "reason": reason})
 
-    # 1. 공기청정기 — 항상
-    strength = policy.get("purifier", "MED")
-    bumped = intensity >= 1.0 and strength == "HIGH"
-    if bumped:
-        strength = "TURBO"
-    _on("AIR_PURIFIER", f"바람 {strength}",
-        "PM2.5 제거(CADR)" + (" · tier↑로 TURBO 상향" if bumped else ""))
+    # 1. 공기청정기 — 항상 (평소 대기 → 경보 TURBO)
+    strength, pmode = _purifier_strength(policy, intensity)
+    _reason = {
+        "idle": "평상시 대기 — 위협 없음(에너지 절약)",
+        "down": "PM2.5 제거(CADR) · 약하게",
+        "bump": "PM2.5 제거(CADR) · tier↑로 TURBO 선제 상향",
+        "base": "PM2.5 제거(CADR) · 최대 가동",
+    }[pmode]
+    _on("AIR_PURIFIER", f"바람 {strength}", _reason)
 
     # 2. 에어컨 — 여름·환절기
     if season in ("summer", "autumn"):

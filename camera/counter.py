@@ -33,7 +33,7 @@ import time
 
 import requests
 
-API = os.getenv("SENTINEL_API", "http://100.96.227.23:8003/api/v1/sensor/reading")
+API = os.getenv("SENTINEL_API", "http://100.116.57.11:8103/api/v1/sensor/reading")
 API_KEY = os.getenv("SENTINEL_API_KEY", "")
 SPACE = os.getenv("SPACE_ID", "ward_a")
 CAM_INDEX = int(os.getenv("CAM_INDEX", "0"))

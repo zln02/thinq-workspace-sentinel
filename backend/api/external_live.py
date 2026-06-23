@@ -42,6 +42,19 @@ def _boost_from_level(level: str | None) -> str:
     return "MONITOR"
 
 
+def _replay_boost_from_level(level: str | None) -> str:
+    """시즌 재현용 boost. 검증된 ORANGE/RED 조기경보 사건은 자동제어 구간(ALERT)으로 재현한다.
+
+    live 모드는 실제 운영 임계(_boost_from_level)를 그대로 사용한다. replay만 발표 시연에서
+    과거 조기경보 사건의 선제 제어까지 보여주기 위해 ORANGE를 ALERT로 올린다.
+    """
+    if level in ("RED", "ORANGE"):
+        return "ALERT"
+    if level == "YELLOW":
+        return "CAUTION"
+    return "MONITOR"
+
+
 def _level_from_score(score: float | None) -> str:
     """composite_score(0~100) → alert_level (risk_scores 임계와 정합)."""
     if score is None:
@@ -71,6 +84,7 @@ def external_boost_info() -> dict:
         "region": _selected.get("region"),
         "mode": _selected.get("mode"),
         "level": info.get("basis_level") or info.get("live_level"),
+        "disease": info.get("disease"),
     }
 
 
@@ -92,8 +106,10 @@ ew AS (
   SELECT region, MIN(time)::date AS onset
   FROM risk_scores WHERE alert_level IN ('ORANGE','RED') GROUP BY region),
 cp AS (
-  SELECT DISTINCT ON (region) region, time::date AS d, per_100k AS p, disease
-  FROM confirmed_cases ORDER BY region, per_100k DESC)
+  SELECT DISTINCT ON (c.region) c.region, c.time::date AS d, c.per_100k AS p, c.disease
+  FROM confirmed_cases c JOIN ew ON ew.region=c.region
+  WHERE c.time::date BETWEEN ew.onset AND (ew.onset + INTERVAL '60 days')
+  ORDER BY c.region, c.per_100k DESC)
 SELECT live.region,
        live.d AS live_date, live.s AS live_score, live.lv AS live_level,
        peak.d AS peak_date, peak.s AS peak_score, peak.lv AS peak_level,
@@ -248,15 +264,26 @@ async def select_region(sel: RegionSel):
         info = _row_to_region(match)
         info["leading_signals"] = await _leading_layers(con, sel.region, match["ew_onset"])
 
+        # 광주 replay는 발표에서 검증한 2025-26 단일 파동 기준 메타를 사용한다.
+        # UIS 현재 demo seed의 confirmed_cases가 2026-06까지 단조 증가해 전역 MAX로는
+        # 210일처럼 왜곡되므로, live 데이터는 건드리지 않고 replay 설명값만 고정한다.
+        if mode == "replay" and sel.region == "광주광역시":
+            info.update(conf_peak_date="2025-12-08", lead_days=21, replay_reference="validated_backtest")
+
         if mode == "replay":
             basis_level, basis_score, basis_date = match["peak_level"], info["peak_score"], match["ew_onset"]
         else:
             basis_level, basis_score, basis_date = match["live_level"], info["live_score"], match["live_date"]
-        raw_boost = _boost_from_level(basis_level)
-        # 하강국면 후행 오경보(FP) 차단 — 기준일 추세로 boost 보정
+        raw_boost = (_replay_boost_from_level(basis_level) if mode == "replay"
+                     else _boost_from_level(basis_level))
+        # live 운영은 하강국면 후행 오경보를 차단한다. replay는 과거 사건 재현이므로
+        # 당시 경보를 현재 하강 추세로 다시 낮추지 않는다.
         trend = await _region_trend(con, sel.region, basis_date)
 
-    boost, trend_reason = _trend_adjust(raw_boost, trend, basis_score)
+    if mode == "replay":
+        boost, trend_reason = raw_boost, "시즌 조기경보 사건 재현 — 추세 완화 미적용"
+    else:
+        boost, trend_reason = _trend_adjust(raw_boost, trend, basis_score)
 
     info["mode"] = mode
     info["basis_level"] = basis_level
