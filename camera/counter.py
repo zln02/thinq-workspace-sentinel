@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""ThinQ Workspace Sentinel — 노트북 카메라 재실 인원 카운터 (YOLO).
+"""ThinQ Space Sentinel — 노트북 카메라 재실 인원 카운터 (YOLO).
 
 역할분리 설계:
   - 카메라(이 모듈, 노트북) = 실측 '재실 인원수' 주력 제공

@@ -1,4 +1,4 @@
-# ThinQ Workspace Sentinel · 요양병원 도메인 PoC
+# ThinQ Space Sentinel · 요양병원 도메인 PoC
 
 > **컨셉**: "요양병원이 못 막던 RSV·인플루엔자·노로를, 가전이 3주 전에 알고 자동으로 막는다"
 

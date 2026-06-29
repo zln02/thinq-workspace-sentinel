@@ -15,6 +15,7 @@ import {
 import { FloorPlan, type SpaceCard } from "@/components/domain/FloorPlan";
 import { useLiveWard, useSpacesOverview, useReport, useExternalSignal, useExternalMeta, useCowayStatus, useAcStatus, useControlPlan, sendControl, sendApprove, selectRegion, clearRegion, useBoostState, setControlMode, useControlMode, useSensorSeries, useRiskSeries, type SpaceOverview, type DirectorReport } from "@/lib/useSentinel";
 import FlowPanel from "@/components/domain/FlowPanel";
+import CenterAlert from "@/components/CenterAlert";
 import { getSession, canAccess, clearSession } from "@/lib/auth";
 import { tierRank, autoResponse } from "@/lib/wardData";
 import { tierMeta, TIER_META, TIER_ORDER, type Tier } from "@/lib/tier";
@@ -225,6 +226,7 @@ export default function DashboardPage() {
 
   return (
     <div className={`min-h-screen bg-[#F3F7FB] text-slate-700 flex font-sans ${dark ? "dash-dark" : ""}`}>
+      {(role === "NURSE" || role === "FM") && <CenterAlert space="ward_a" variant="nurse" />}
       <DashSidebar role={role} account={account} userName={userName} onSelect={selectView} onLogout={handleLogout} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="flex-1 md:ml-64 flex flex-col min-h-screen min-w-0">

@@ -1,5 +1,5 @@
 -- =============================================================
--- ThinQ Workspace Sentinel · 002 — 요양병원 도메인 피벗
+-- ThinQ Space Sentinel · 002 — 요양병원 도메인 피벗
 -- 사무실 → 요양병원 8종 가전 + 8종 병원체 + 5종 페르소나
 -- 적용: docker exec -i uis-timescaledb psql -U postgres -d uis < 002_nursing_home_pivot.sql
 -- =============================================================

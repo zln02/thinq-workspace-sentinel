@@ -1,4 +1,4 @@
-"""ThinQ Workspace Sentinel · FastAPI 엔트리포인트.
+"""ThinQ Space Sentinel · FastAPI 엔트리포인트.
 
 엔드포인트:
   GET /health                          - 헬스체크 (DB·Redis·시뮬레이터 상태)
@@ -95,7 +95,7 @@ async def lifespan(app: FastAPI):
         await state["redis"].aclose()
 
 
-app = FastAPI(title="ThinQ Workspace Sentinel", version="0.3.0", lifespan=lifespan)
+app = FastAPI(title="ThinQ Space Sentinel", version="0.3.0", lifespan=lifespan)
 
 # 배포·발표장 도메인은 CORS_ORIGINS 환경변수(콤마분리)로 추가. 미설정 시 로컬 기본값만.
 _cors_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]

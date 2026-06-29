@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Space Sentinel — 10분 발표 대본</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet"/>
+<style>
+  :root{ --green:#2F4135; --terra:#B05F3B; --beige:#F4EEE3; --card:#ECE4D6; --muted:#6E675C; --line:#E0D6C4; }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; }
+  body{ font-family:'Pretendard Variable',Pretendard,system-ui,sans-serif; background:#EDE6D8; color:var(--green); -webkit-font-smoothing:antialiased; line-height:1.6; }
+  .page{ max-width:880px; margin:0 auto; padding:56px 56px 80px; background:#FBF8F1; min-height:100vh; box-shadow:0 0 40px rgba(47,65,53,0.06); }
+  .top{ display:flex; justify-content:space-between; align-items:flex-end; border-bottom:3px solid var(--green); padding-bottom:18px; margin-bottom:8px; flex-wrap:wrap; gap:12px; }
+  .top h1{ font-size:30px; font-weight:800; letter-spacing:-0.02em; margin:0; }
+  .top .meta{ font-size:15px; font-weight:600; color:var(--muted); text-align:right; }
+  .top .meta b{ color:var(--terra); }
+  .howto{ font-size:14px; color:var(--muted); background:var(--card); border-radius:10px; padding:13px 18px; margin:22px 0 30px; line-height:1.5; }
+  .howto b{ color:var(--green); }
+  .sec{ display:flex; align-items:center; gap:14px; margin:34px 0 18px; }
+  .sec .tag{ font-size:13px; font-weight:800; letter-spacing:0.12em; color:#fff; background:var(--terra); padding:5px 12px; border-radius:6px; }
+  .sec .name{ font-size:20px; font-weight:800; }
+  .sec .rule{ flex:1; height:2px; background:var(--line); }
+  .slide{ background:#fff; border:1px solid var(--line); border-left:5px solid var(--terra); border-radius:12px; padding:18px 22px; margin:14px 0; box-shadow:0 2px 8px rgba(47,65,53,0.05); break-inside:avoid; }
+  .slide.divider{ border-left-color:#C2B49C; background:#F6F1E7; }
+  .slide .head{ display:flex; align-items:baseline; gap:12px; margin-bottom:9px; flex-wrap:wrap; }
+  .slide .no{ font-size:16px; font-weight:800; color:var(--terra); background:rgba(176,95,59,0.1); width:30px; height:30px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .slide .ttl{ font-size:18px; font-weight:800; }
+  .slide .time{ margin-left:auto; font-size:13px; font-weight:700; color:var(--muted); white-space:nowrap; }
+  .slide .time .cum{ color:#A89F90; font-weight:600; }
+  .slide p{ margin:0; font-size:16px; color:#3A463C; }
+  .slide p b{ color:var(--green); font-weight:700; background:linear-gradient(transparent 62%, rgba(176,95,59,0.18) 62%); padding:0 1px; }
+  .box{ margin-top:38px; background:var(--card); border-radius:12px; padding:22px 26px; }
+  .box h3{ font-size:17px; font-weight:800; margin:0 0 12px; color:var(--green); }
+  .box h3:not(:first-child){ margin-top:22px; }
+  .box ol,.box ul{ margin:0; padding-left:20px; }
+  .box li{ font-size:15px; color:#3A463C; margin:5px 0; }
+  .box .stat{ display:flex; gap:10px; flex-wrap:wrap; font-size:15px; font-weight:700; }
+  .box .stat span{ background:#fff; border:1px solid var(--line); border-radius:8px; padding:7px 13px; }
+  .box .stat b{ color:var(--terra); }
+  @media print{ body{ background:#fff; } .page{ box-shadow:none; max-width:100%; padding:24px 28px; } .slide{ box-shadow:none; } }
+  @media (max-width:640px){ .page{ padding:28px 20px 60px; } .top h1{ font-size:24px; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="top">
+    <h1>Space Sentinel — 10분 발표 대본</h1>
+    <div class="meta">팀 ‘5분 대기조’ · 총 25장<br/>목표 <b>9:55</b> (버퍼 포함 10분)</div>
+  </div>
+  <div class="howto">사용법 — 굵은 <b>[n]</b>에서 다음 장으로 넘기세요. 우측 시간은 <b>소요(누적)</b>. 섹션 표지·팀·클로징은 짧게, BX/CX/DX 본문은 또박또박.</div>
+
+  <div class="sec"><span class="tag">BX</span><span class="name">왜 바꿔야 하는가</span><span class="rule"></span></div>
+
+  <div class="slide"><div class="head"><span class="no">1</span><span class="ttl">표지</span><span class="time">0:25 <span class="cum">(0:25)</span></span></div><p>“코로나 사망자 넷 중 하나는 큰 병원이 아니라, 요양병원 같은 감염취약시설에서 나왔습니다. 사람이 24시간 지킬 수 없는 곳이죠. 안녕하세요, 팀 ‘5분 대기조’입니다. 저희가 만든 ThinQ Space Sentinel은 <b>공간이 사람보다 먼저 반응하고, 그 증빙이 자동으로 남는</b> 시스템입니다. 진단도 치료도 아닙니다 — 이미 깔린 가전과 외부 데이터로 ‘비의료적 안전’을 더합니다.”</p></div>
+
+  <div class="slide"><div class="head"><span class="no">2</span><span class="ttl">WBS</span><span class="time">0:20 <span class="cum">(0:45)</span></span></div><p>“6주 동안 기획부터 검증까지 직접 했습니다. VOC 7만 8천 건을 LDA로 분석하고, 엣지·백엔드·프론트를 개발해 통합했습니다. 모든 과정이 깃허브에 남아 있어 <b>과정 자체가 증빙</b>입니다.”</p></div>
+
+  <div class="slide divider"><div class="head"><span class="no">3</span><span class="ttl">— BX —</span><span class="time">0:08 <span class="cum">(0:53)</span></span></div><p>“먼저 BX, 왜 바꿔야 하는가입니다.”</p></div>
+
+  <div class="slide"><div class="head"><span class="no">4</span><span class="ttl">SWOT · 현위치</span><span class="time">0:45 <span class="cum">(1:38)</span></span></div><p>“SWOT으로 현위치를 봅니다. 강점 — LG가전은 2024년 33조로 사상 최대, 센서·제어 인프라가 <b>이미 깔려 있어</b> 새 하드웨어 없이 안전 SaaS를 얹을 수 있는 유일한 위치입니다. 약점 — 가전 마진은 한 자릿수 레드오션. 기회 — ‘선제로 움직이는 안전 신호’는 경쟁사 어디에도 없고, SaaS 매출총이익은 70%대입니다. 위협 — 모니터링·인프라·공조 부품은 많은데 <b>잇는 자가 없습니다.</b> 그래서 강점×기회로, 이미 깔린 가전 위에 통합 안전 SaaS를 얹어 요양병원부터 선점합니다.”</p></div>
+
+  <div class="slide"><div class="head"><span class="no">5</span><span class="ttl">왜 요양병원</span><span class="time">0:32 <span class="cum">(2:10)</span></span></div><p>“깔대기의 끝이 왜 요양병원인지 데이터로 못 박습니다. 첫째, 국내 코로나 사망자의 약 1/3, <b>35%</b>가 요양병원·노인요양시설 관련 — 사망이 가장 몰린 곳입니다. 둘째, 밀집·고령·기저질환이 겹쳐 한 명의 감염이 병동 전체로 번지고, 야간엔 감시가 비어 있습니다. 셋째, 감염 증빙이 <b>제도적 의무</b>인데 수기로는 끊깁니다. 가장 절실한 한 곳, 그래서 요양병원입니다.”</p></div>
+
+  <div class="slide"><div class="head"><span class="no">6</span><span class="ttl">시장 규모</span><span class="time">0:28 <span class="cum">(2:38)</span></span></div><p>“시장은 세 층위입니다. TAM, 실내공기질 의무관리 시설 전체 약 5,000억. SAM, 집단감염 위험 시설 약 700억. SOM, 12개월 안에 확보할 첫 시장 약 65억. 핵심은 <b>요양병원이 교두보</b>이고, 여기서 병원·학교·오피스로 넓어진다는 점입니다.”</p></div>
+
+  <div class="slide"><div class="head"><span class="no">7</span><span class="ttl">목표</span><span class="time">0:28 <span class="cum">(3:06)</span></span></div><p>“지금은 답답함을 느낀 뒤에야 사람이 대응하고, 수기로 기록합니다. 이걸 <b>선제 자동 대응</b>으로 바꿉니다 — 미리 인지하고, 가전이 자동 대응하고, 증빙이 자동으로 남습니다. 집중 과제는 한 문장 — <b>지역 감염이 병원에 닿기 전에, 공간을 자동으로 준비시킨다.</b>”</p></div>
+
+  <div class="slide"><div class="head"><span class="no">8</span><span class="ttl">데이터</span><span class="time">0:30 <span class="cum">(3:36)</span></span></div><p>“데이터는 두 축입니다. 정성 — 4채널 51키워드로 7만 8천 건을 모아 7만 5천 건을 LDA로 분석, 네 페르소나의 Pain을 도출했습니다. 정량 — 질병청·하수·검색·약국·기온 <b>다섯 외부 레이어</b>에 코웨이 실내 센서를 더해 공간 위험을 계산합니다. 출처는 전부 명기했고, <b>전건 재현 가능</b>합니다.”</p></div>
+
+  <div class="slide"><div class="head"><span class="no">9</span><span class="ttl">전처리</span><span class="time">0:18 <span class="cum">(3:54)</span></span></div><p>“7만 8천 건을 정제해 7만 5천 건 확정, Kiwi로 명사만 추출했습니다. LDA 토픽 수는 Perplexity 스캔으로 <b>n=5</b>에서 결정 — 임의가 아니라 근거로 정했습니다.”</p></div>
+
+  <div class="sec"><span class="tag">CX</span><span class="name">누구의, 어떤 경험인가</span><span class="rule"></span></div>
+
+  <div class="slide divider"><div class="head"><span class="no">10</span><span class="ttl">— CX —</span><span class="time">0:08 <span class="cum">(4:02)</span></span></div><p>“다음은 CX, 누구의 어떤 경험인가입니다.”</p></div>
+
+  <div class="slide"><div class="head"><span class="no">11</span><span class="ttl">페르소나 LDA</span><span class="time">0:26 <span class="cum">(4:28)</span></span></div><p>“교두보 안의 네 사람 — 병원장·시설관리자·간호사·보호자 — 의 발화를 각각 LDA로 분석했습니다. 그중 <b>대표 페르소나</b>는 야간 1차 대응자인 간호사 — 시스템 가치가 가장 먼저 닿는 액터입니다. 역할은 달라도 Pain은 두 곳으로 수렴합니다: <b>사람이 지킬 수 없는 빈 시간</b>, 그리고 <b>손으로 적어 끊기는 증빙.</b>”</p></div>
+
+  <div class="slide"><div class="head"><span class="no">12</span><span class="ttl">핵심 경험 컨셉</span><span class="time">0:26 <span class="cum">(4:54)</span></span></div><p>“관찰 — Pain이 한 점으로 모입니다. 고찰 — 공간의 위험은 연속적인데 사람의 감시는 단속적이기 때문입니다. 통찰 — 그래서 핵심 경험은 <b>공간이 먼저 반응</b>하는 것입니다. 감시·대응·기록 셋 모두를 사람에서 공간으로 넘깁니다.”</p></div>
+
+  <div class="slide"><div class="head"><span class="no">13</span><span class="ttl">4D-CX</span><span class="time">0:25 <span class="cum">(5:19)</span></span></div><p>“같은 안전이라도 사람마다 다르게 느낍니다. 보호자는 <b>심리적 안심</b>, 시설관리자는 <b>물리적 제어</b>, 직원·환자는 <b>관계적 투명성</b>, 시설장은 <b>시스템적 거버넌스</b> — 네 차원이 맞물려 하나의 안전 경험을 만듭니다.”</p></div>
+
+  <div class="slide"><div class="head"><span class="no">14</span><span class="ttl">CAM 여정</span><span class="time">0:24 <span class="cum">(5:43)</span></span></div><p>“감염관리간호사의 하루입니다. 빨간 곡선이 현재 Pain — <b>위험 인지와 대응</b> 두 단계에서 폭발합니다. 초록 곡선이 Sentinel 개입 후 — 선제 경보·자율 대응·자동 증빙으로 곡선이 평탄해집니다. 가장 아픈 그 두 지점에 정확히 개입합니다.”</p></div>
+
+  <div class="slide"><div class="head"><span class="no">15</span><span class="ttl">CX 실행 설계</span><span class="time">0:26 <span class="cum">(6:09)</span></span></div><p>“CX는 컨셉이 아니라 <b>실제로 완료되는 경험</b>이어야 합니다. 인지–확인–대응–제어–증빙–안심, 여섯 단계마다 구체적 행동과 피드백을 붙였고, <b>12개 CX 체크리스트를 전부 통과</b>합니다. 처음 온 사용자도 망설임 없이 끝냅니다.”</p></div>
+
+  <div class="slide"><div class="head"><span class="no">16</span><span class="ttl">컨셉</span><span class="time">0:22 <span class="cum">(6:31)</span></span></div><p>“컨셉은 한 문장 — <b>공간이 사람보다 먼저 반응하고, 증빙이 자동으로 남는다.</b> 창의는 세 전환입니다: 예측을 면책 근거로, 쾌적함을 증빙으로, 새 가전 대신 <b>이미 깔린 가전</b>을 묶습니다. 가격 월 89·129·399만 원, 시연 75초.”</p></div>
+
+  <div class="slide"><div class="head"><span class="no">17</span><span class="ttl">외부신호 추종</span><span class="time">0:24 <span class="cum">(6:55)</span></span></div><p>“말이 아니라 실데이터로 증명합니다. 검정 선이 WHO 인플루엔자 실측, 주황 선이 우리 통합신호 — 겨울 유행기에 동시 급상승, <b>상관 0.82</b>입니다. 합성의 가짜 1.0이 아니라 실데이터 추종값이고, 외부 실측을 truth로 써 <b>순환 위험이 없습니다.</b>”</p></div>
+
+  <div class="sec"><span class="tag">DX</span><span class="name">만들고, 증명한다</span><span class="rule"></span></div>
+
+  <div class="slide divider"><div class="head"><span class="no">18</span><span class="ttl">— DX —</span><span class="time">0:08 <span class="cum">(7:03)</span></span></div><p>“마지막 DX. 만들고, 증명합니다.”</p></div>
+
+  <div class="slide"><div class="head"><span class="no">19</span><span class="ttl">아키텍처</span><span class="time">0:26 <span class="cum">(7:29)</span></span></div><p>“실제로 돌아가는 시스템입니다. 수집 → Wells-Riley·5-Tier 위험 계산 → ThinQ 가전 자율 대응 → 자동 증빙. 스택은 FastAPI·TimescaleDB·Next.js·scikit-learn — <b>전부 깃허브에 있습니다.</b>”</p></div>
+
+  <div class="slide"><div class="head"><span class="no">20</span><span class="ttl">설계 산출물</span><span class="time">0:24 <span class="cum">(7:53)</span></span></div><p>“가장 큰 배점이 ‘설계 충실성’입니다. 요약이 아니라 <b>산출물 5종</b>으로 증명합니다 — 요구사항정의서는 기능 8개를 API와 1:1 매핑, DB·화면설계서·분석정의서까지 코드와 스키마로 실재하고 전건 재현됩니다.”</p></div>
+
+  <div class="slide"><div class="head"><span class="no">21</span><span class="ttl">실제 제품</span><span class="time">0:32 <span class="cum">(8:25)</span></span></div><p>“설계로 끝이 아닙니다. 저희 <b>DX Key Accelerator</b>는 ThinQ 멀티벤더 자율제어 — <b>지금 서버에서 돌아가는</b> 통합 관제 화면입니다. 병동별 CO₂·습도·감염 위험이 실시간으로 뜨고, 평상시–외부신호–경보–가전제어–개선결과까지 <b>여덟 단계 시나리오를 라이브로</b> 시연합니다. 화면 6개·기능 8개 전부 동작합니다.”</p></div>
+
+  <div class="slide"><div class="head"><span class="no">22</span><span class="ttl">보호자 앱</span><span class="time">0:24 <span class="cum">(8:49)</span></span></div><p>“멀리 있는 보호자용 PWA도 실제로 동작합니다. 부모님 병동의 안심 상태가 <b>큰 글씨·색·이모지</b> 세 가지로 동시에 떠 고령 보호자도 한눈에 압니다. 보호자는 <b>조회만</b>, 카메라는 저장 없이 인원수만 — 정직한 안심입니다.”</p></div>
+
+  <div class="slide"><div class="head"><span class="no">23</span><span class="ttl">Performance Tracker</span><span class="time">0:28 <span class="cum">(9:17)</span></span></div><p>“성과는 자동 집계됩니다. 고객 가치 — 대응 시간 5분 → <b>5초 미만</b>, 외부신호 추종 r=0.82, 누적 노출 <b>93.5% 감소</b>. 경영 성과 — 자동 증빙 100%, <b>ROI 3.2개월</b>. 중요한 건, 사람이 계산하는 게 아니라 시스템이 집계한다는 점입니다.”</p></div>
+
+  <div class="slide"><div class="head"><span class="no">24</span><span class="ttl">클로징</span><span class="time">0:25 <span class="cum">(9:42)</span></span></div><p>“정리합니다. 선행 예측, 무(無) BMS, 자율 제어, 안전 폴백, 자동 증빙 — 다섯 가지가 차별점입니다. 하지만 결국 저희가 바꾸는 건 <b>사람</b>입니다. 새벽에 혼자 병동을 도는 간호사, 멀리서 발 구르는 보호자 — 사람이 24시간 지킬 수 없던 공간을, <b>데이터와 가전이 먼저 반응하는 공간</b>으로 바꿉니다. 감사합니다. 질문 받겠습니다.”</p></div>
+
+  <div class="slide"><div class="head"><span class="no">25</span><span class="ttl">팀 · 오대기</span><span class="time">0:13 <span class="cum">(9:55)</span></span></div><p>“이 시스템은 <b>사람이 직접 만들었습니다.</b> 다섯 명이 6주간 기획·데이터·엣지·백엔드·프론트·배포를 분담했고, 모든 커밋이 깃허브에 — 과정 자체가 증빙입니다.”</p></div>
+
+  <div class="box">
+    <h3>타이밍 요약</h3>
+    <div class="stat"><span>BX(1–9) <b>~3:54</b></span><span>CX(10–17) <b>~3:01</b></span><span>DX(18–25) <b>~2:52</b></span><span>총 <b>9:55</b></span></div>
+    <h3>시간이 부족할 때 먼저 줄일 곳</h3>
+    <ol>
+      <li><b>[13] 4D-CX</b> → “네 차원이 하나의 안전 경험을 만듭니다” 한 줄로</li>
+      <li><b>[9] 전처리</b> → “n=5는 근거로 정했습니다” 한 줄로</li>
+      <li><b>[15] CX 실행</b> → “체크리스트 12개 전부 통과” 한 줄로</li>
+      <li>섹션 표지(3·10·18)는 멘트 생략하고 바로 넘겨도 됨</li>
+    </ol>
+    <h3>시간이 남을 때 더 말할 거리</h3>
+    <ul>
+      <li><b>[21] 실제 제품</b>에서 라이브 시연 한 단계(경보→가전제어) 실제 클릭</li>
+      <li><b>[17] 외부신호</b>에서 “3계층 교차확인으로 오경보를 줄인다” 추가</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

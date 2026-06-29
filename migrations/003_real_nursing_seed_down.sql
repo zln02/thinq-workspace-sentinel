@@ -1,5 +1,5 @@
 -- =============================================================
--- ThinQ Workspace Sentinel · 003 ROLLBACK
+-- ThinQ Space Sentinel · 003 ROLLBACK
 -- 003_real_nursing_seed.sql 의 역방향 (실 요양병원 6곳 + 시연 병동 시드 제거).
 -- 실행: docker exec -i uis-timescaledb psql -U postgres -d uis < 003_real_nursing_seed_down.sql
 -- ※ 순수 시드 데이터라 down 도 데이터 삭제만 수행. FK(spaces→sites ON DELETE CASCADE) 주의.

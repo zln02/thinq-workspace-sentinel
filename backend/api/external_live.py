@@ -190,6 +190,34 @@ async def list_regions():
     }
 
 
+@router.get("/series/{region}")
+async def region_series(region: str, weeks: int = 60):
+    """지역 주차별 시계열 — 모델 종합점수(composite)와 3계층 실신호(L1 약국OTC·L2 하수·L3 검색).
+    유행이 시간에 따라 어떻게 오르내리는지 라인 그래프로 보여주는 용도(실 risk_scores 기반)."""
+    pool = await _uis_pool()
+    if not pool:
+        return {"region": region, "points": []}
+    async with pool.acquire() as con:
+        rows = await con.fetch(
+            "SELECT time::date AS d, composite_score, l1_score, l2_score, l3_score, alert_level "
+            "FROM risk_scores WHERE region=$1 ORDER BY time DESC LIMIT $2",
+            region, weeks,
+        )
+    rows = list(reversed(rows))  # 오래된→최신 순
+    return {
+        "region": region,
+        "points": [
+            {"week": r["d"].isoformat(),
+             "composite": round(float(r["composite_score"]), 1),
+             "otc": round(float(r["l1_score"]), 1),        # L1 약국 OTC
+             "wastewater": round(float(r["l2_score"]), 1),  # L2 하수 RNA
+             "search": round(float(r["l3_score"]), 1),      # L3 검색
+             "level": r["alert_level"]}
+            for r in rows
+        ],
+    }
+
+
 async def _leading_layers(con, region: str, onset) -> list[dict]:
     """조기경보 발령 시점 전후 2주간 가장 먼저 뜬 선행지표 (데모 내러티브)."""
     if not onset:

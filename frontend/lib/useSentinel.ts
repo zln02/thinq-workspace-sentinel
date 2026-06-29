@@ -2,7 +2,7 @@
 // 백엔드(:8103) 실연동 데이터 훅 — next.config 프록시(/api/sentinel/*) 경유.
 //   /api/sentinel/...        → http://127.0.0.1:8103/api/v1/...
 //   /api/sentinel/stream/... → http://127.0.0.1:8103/api/v1/stream/...
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 // 배포(basePath=/sentinel) 시 fetch/SSE가 /sentinel/api/... 로 나가야 nginx(/sentinel→:3001)를 거쳐 rewrite됨.
 // dev(basePath="")면 빈 문자열이라 기존 /api/... 그대로.
@@ -40,17 +40,16 @@ export function useLiveWard(spaceId = "ward_a") {
   const [data, setData] = useState<LiveSensor | null>(null);
   const [connected, setConnected] = useState(false);
   const [lastTs, setLastTs] = useState<number | null>(null);
-  const lastSse = useRef(0);
 
-  // overview 3초 폴링 폴백 — SSE 연결 전/차단/끊김에도 값이 빠르게 뜨고 계속 갱신(실시간 보장).
-  // SSE가 최근 4초 내 푸시했으면 폴은 건너뜀(SSE가 더 신선·rebreathed_fraction 포함).
+  // 폴링 전용(2026-06-24) — SSE처럼 연결을 계속 붙들지 않아 세션이 많아져도 연결 누수·고갈로
+  // 인한 리로드가 없다. overview 가 control_event/poi 등 필요한 필드를 모두 포함하고,
+  // 백엔드가 전이 이벤트를 12초 유지하므로 3초 폴링으로 activated/recovered 도 놓치지 않는다.
   useEffect(() => {
     let alive = true;
     const load = () => fetch(`${API_BASE}/api/sentinel/sensor/spaces/overview`)
       .then((r) => r.json())
       .then((j) => {
         if (!alive || !j?.spaces?.length) return;
-        if (Date.now() - lastSse.current < 4000) return;   // SSE 신선 → 폴 무시
         const sp = j.spaces.find((s: SpaceOverview) => s.source === "실센서") ?? j.spaces[0];
         if (!sp) return;
         setData({
@@ -62,29 +61,13 @@ export function useLiveWard(spaceId = "ward_a") {
           gas_raw: sp.gas_raw, occupancy: sp.occupancy ?? null, governance: "none", approval_required: false,
           tier_source: sp.tier_source, boost_region: j.boost_region ?? null,
         });
+        setConnected(true);
         setLastTs(Date.now());
       })
-      .catch(() => { /* ignore */ });
+      .catch(() => { if (alive) setConnected(false); });
     load();
     const t = setInterval(load, 3000);
     return () => { alive = false; clearInterval(t); };
-  }, [spaceId]);
-
-  useEffect(() => {
-    const es = new EventSource(`${API_BASE}/api/sentinel/stream/live/${spaceId}`);
-    es.addEventListener("live_init", () => setConnected(true));
-    es.addEventListener("sensor", (e) => {
-      try {
-        setData(JSON.parse((e as MessageEvent).data));
-        setConnected(true);
-        lastSse.current = Date.now();
-        setLastTs(Date.now());
-      } catch {
-        /* ignore */
-      }
-    });
-    es.onerror = () => setConnected(false);
-    return () => es.close();
   }, [spaceId]);
   return { data, connected, lastTs };
 }

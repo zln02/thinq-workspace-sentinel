@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""ThinQ Workspace Sentinel — 요양병원 VOC 텍스트마이닝 파이프라인 (재현 가능).
+"""ThinQ Space Sentinel — 요양병원 VOC 텍스트마이닝 파이프라인 (재현 가능).
 
 서브커맨드:
   ingest  : stdin(JSON: [{query,persona,channel,items:[{title,description,pubDate,link}]}]) → data/nursing/raw.csv 누적(중복 제거)

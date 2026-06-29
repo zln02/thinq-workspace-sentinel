@@ -1,4 +1,4 @@
-# 📁 문서 지도 — ThinQ Workspace Sentinel
+# 📁 문서 지도 — ThinQ Space Sentinel
 
 > 요양병원 공기감염 조기경보 + LG ThinQ 가전 자동방역 (B2G PoC · LG DX School 5기 "오대기")
 > **이 파일 하나로 모든 산출물을 찾는다.** 상태: ⭐정본 · 📄참고 · 🗄️구버전(archive)

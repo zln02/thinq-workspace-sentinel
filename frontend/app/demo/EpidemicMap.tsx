@@ -3,7 +3,7 @@
  * 전 17개 시도 실시간 레벨 색칠 + 이름 + 전 지역 tier 색깔별 펄스(깜빡) + 색깔 분류 +
  * 실데이터 기반 AI 조기경보 리포트(라이브 폴링 10초) + 광주 클릭→경보 발령 데모 + 레이어 신호.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useExternalSignal, useBoostState, selectRegion, clearRegion } from "@/lib/useSentinel";
 
 const CARD = "#1d2a3a", LINE = "#2c3a4d", MUTE = "#8aa0b6", FAINT = "#5d7088", ACCENT = "#36d399", GOLD = "#ffcf6b";
@@ -62,6 +62,13 @@ export default function EpidemicMap() {
     fetch(`${API_BASE}/api/sentinel/external/regional/${code}`).then((r) => r.json()).then(setDetail).catch(() => {});
   }, [selName, on, tick]);
 
+  // 주차별 시계열(모델 종합점수 + 약국OTC·하수·검색 실신호) — 유행 곡선 라인그래프용
+  const [series, setSeries] = useState<any[]>([]);
+  useEffect(() => {
+    fetch(`${API_BASE}/api/sentinel/external/series/${encodeURIComponent(selName)}?weeks=52`)
+      .then((r) => r.json()).then((d) => setSeries(d?.points || [])).catch(() => {});
+  }, [selName]);
+
   const sel = regions.find((r: any) => r.region === selName) as any;
   const selTier = effTier(selName);
   const layers = detail?.layers || {};
@@ -87,11 +94,34 @@ export default function EpidemicMap() {
   };
 
   const gz = map?.provinces?.find((p: any) => p.name === "광주광역시");
-  const ZS = 2.6;
-  const zoomStyle: any = gz
-    ? { transformOrigin: "0 0", transition: "transform 1.2s cubic-bezier(.4,0,.2,1)",
-        transform: on ? `translate(${310 - gz.cx * ZS}px, ${360 - gz.cy * ZS}px) scale(${ZS})` : "translate(0px,0px) scale(1)" }
-    : {};
+  // 발령 시 SVG viewBox 를 광주 중심으로 부드럽게 줌 — CSS transform 과 달리 클리핑이 전혀 없다(고도화).
+  // 경계 클램프로 지도가 프레임 밖으로 나가지 않아 어떤 화면비에서도 유연하게 들어맞는다.
+  const vbRef = useRef<number[] | null>(null);
+  const [vb, setVb] = useState<string | null>(null);
+  useEffect(() => {
+    if (!map) return;
+    const full = (map.viewBox as string).split(/\s+/).map(Number);
+    if (!vbRef.current) { vbRef.current = full.slice(); setVb(full.join(" ")); }
+    let target = full;
+    if (on && gz) {
+      const Z = 1.7, w = full[2] / Z, h = full[3] / Z;
+      let x = gz.cx - w / 2, y = gz.cy - h / 2;
+      x = Math.max(full[0], Math.min(x, full[0] + full[2] - w));
+      y = Math.max(full[1], Math.min(y, full[1] + full[3] - h));
+      target = [x, y, w, h];
+    }
+    const start = (vbRef.current ?? full).slice();
+    const t0 = performance.now(), dur = 1100;
+    let raf = 0;
+    const tick = (t: number) => {
+      const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);  // easeOutCubic
+      const cur = start.map((s, i) => s + (target[i] - s) * e);
+      vbRef.current = cur; setVb(cur.join(" "));
+      if (k < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [on, map, gz]);
 
   return (
     <div style={{ padding: 20, height: "100%", display: "flex", flexDirection: "column", gap: 12, boxSizing: "border-box", color: "#fff" }}>
@@ -115,12 +145,12 @@ export default function EpidemicMap() {
         </button>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 420px", gap: 14, flex: 1, minHeight: 0 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0,720px) minmax(380px,560px)", justifyContent: "center", gap: 16, flex: 1, minHeight: 0, width: "100%" }}>
         {/* 지도 */}
         <div style={{ background: CARD, border: `1px solid ${on ? "#e2543b" : LINE}`, borderRadius: 14, padding: 8, position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
           {!map ? <div style={{ display: "grid", placeItems: "center", height: "100%", color: FAINT }}>지도 로딩…</div> : (
-            <svg viewBox={map.viewBox} style={{ height: "100%", maxHeight: 560, width: "auto", maxWidth: "100%" }} preserveAspectRatio="xMidYMid meet">
-            <g style={zoomStyle}>
+            <svg viewBox={vb ?? map.viewBox} style={{ width: "100%", height: "100%" }} preserveAspectRatio="xMidYMid meet">
+            <g>
               {map.provinces.map((p: any) => {
                 const lv = effTier(p.name);
                 const isGwangju = p.name === "광주광역시";
@@ -215,33 +245,76 @@ export default function EpidemicMap() {
             </div>
           </div>
 
-          {/* 레이어 신호 그래프 */}
-          <div style={{ background: CARD, border: `1px solid ${LINE}`, borderRadius: 14, padding: 16, flex: 1, minHeight: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>이상 신호 레이어 — {SHORT(selName)}</div>
-            {layerRows.map((r) => {
-              const v = typeof r.v === "number" ? r.v : 0;
-              const hi = v >= 70;
-              return (
-                <div key={r.k} style={{ marginBottom: 14 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
-                    <span style={{ color: "#dfe7f0" }}>{r.label}</span>
-                    <span style={{ color: hi ? "#ff9b85" : MUTE, fontWeight: 700 }}>{v ? v.toFixed(1) : "—"}{hi ? " ▲" : ""}</span>
-                  </div>
-                  <div style={{ height: 12, background: "#0f1722", borderRadius: 6, overflow: "hidden" }}>
-                    <div style={{ width: `${Math.min(100, v)}%`, height: "100%", borderRadius: 6,
-                                  background: hi ? "linear-gradient(90deg,#f08c43,#e2543b)" : "linear-gradient(90deg,#3a6,#36d399)",
-                                  animation: "grow 1.2s ease" }} />
-                  </div>
-                </div>
-              );
-            })}
-            <div style={{ fontSize: 12, color: FAINT, marginTop: 8, lineHeight: 1.5 }}>
-              호흡기=병의원·약국, 행동=네이버 검색·약국 OTC, 환경=하수 RNA·기온. <b>70↑ = 이상 상승</b>. (외부 UIS 실데이터)
+          {/* 유행 추이 — 모델 종합점수 + 약국OTC·하수·검색 실신호 (시계열 라인) */}
+          <div style={{ background: CARD, border: `1px solid ${LINE}`, borderRadius: 14, padding: 16, flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+            <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 2 }}>유행 추이 — {SHORT(selName)}
+              <span style={{ fontSize: 11, color: FAINT, fontWeight: 500 }}> · 최근 1년 실데이터</span></div>
+            <div style={{ display: "flex", gap: 10, fontSize: 11, fontWeight: 700, margin: "2px 0 6px" }}>
+              <span style={{ color: "#e2543b" }}>━ 종합(모델)</span>
+              <span style={{ color: "#ffcf6b" }}>━ 약국OTC</span>
+              <span style={{ color: "#5b9dff" }}>━ 하수</span>
+              <span style={{ color: "#36d399" }}>━ 검색</span>
+            </div>
+            <TrendChart points={series} />
+            <div style={{ fontSize: 11, color: FAINT, marginTop: 4, lineHeight: 1.5 }}>
+              모델 종합점수가 3계층 실신호(약국·하수·검색)로 유행을 추종 — <b>겨울 피크 → 현재 비수기</b>. 점선=RED 임계(75). (외부 UIS 실데이터)
             </div>
           </div>
         </div>
       </div>
       <div style={{ fontSize: 12, color: FAINT }}>정직 고지: 예측 모델(F1 0.907)은 외부 UIS 소유 · 우리는 라스트마일(병동 선제대응). 검색 단독 선행성은 미주장. L1·L3는 전국값 17지역 broadcast(L2 하수만 지역차).</div>
+    </div>
+  );
+}
+
+// 주차별 유행 추이 — 모델 종합점수(굵은 빨강 area)와 3계층 실신호(약국OTC·하수·검색).
+// 5주 이동평균으로 스무딩 → 노이즈·세로스파이크 제거, 자연스러운 유행 곡선.
+function TrendChart({ points }: { points: any[] }) {
+  if (!points || !points.length)
+    return <div style={{ flex: 1, display: "grid", placeItems: "center", color: FAINT, fontSize: 12 }}>시계열 로딩…</div>;
+  const W = 320, H = 144, PADL = 20, PADT = 6, PADB = 2;
+  const iw = W - PADL, ih = H - PADT - PADB;
+  const n = points.length;
+  const smooth = (key: string, w = 5) => points.map((_p, i) => {
+    const a = Math.max(0, i - (w >> 1)), b = Math.min(n, i + (w >> 1) + 1);
+    let s = 0, c = 0;
+    for (let j = a; j < b; j++) { s += points[j][key] ?? 0; c++; }
+    return c ? s / c : 0;
+  });
+  const xs = (i: number) => PADL + (n <= 1 ? iw / 2 : (i / (n - 1)) * iw);
+  const ys = (v: number) => PADT + (1 - Math.max(0, Math.min(100, v)) / 100) * ih;
+  const toLine = (arr: number[]) => arr.map((v, i) => `${xs(i).toFixed(1)},${ys(v).toFixed(1)}`).join(" ");
+  const comp = smooth("composite");
+  const sig = [{ k: "otc", c: "#ffcf6b" }, { k: "wastewater", c: "#5b9dff" }, { k: "search", c: "#36d399" }]
+    .map((s) => ({ ...s, arr: smooth(s.k) }));
+  let pi = 0; comp.forEach((v, i) => { if (v > comp[pi]) pi = i; });
+  const area = `${PADL.toFixed(1)},${ys(0).toFixed(1)} ${toLine(comp)} ${xs(n - 1).toFixed(1)},${ys(0).toFixed(1)}`;
+  return (
+    <div style={{ flex: 1, minHeight: 90, display: "flex", flexDirection: "column" }}>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: "100%", flex: 1, minHeight: 0 }}>
+        <defs>
+          <linearGradient id="trendComp" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#e2543b" stopOpacity="0.38" />
+            <stop offset="100%" stopColor="#e2543b" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        {/* RED 임계선 75 */}
+        <line x1={PADL} x2={W} y1={ys(75)} y2={ys(75)} stroke="#e2543b" strokeWidth="0.6" strokeDasharray="3 3" opacity="0.5" />
+        <text x={1} y={ys(75) + 3} fontSize="7.5" fill="#e2543b">75</text>
+        {/* 종합(모델) area */}
+        <polygon points={area} fill="url(#trendComp)" />
+        {/* 실신호 3종(얇게·반투명) */}
+        {sig.map((s) => (
+          <polyline key={s.k} points={toLine(s.arr)} fill="none" stroke={s.c} strokeWidth="1"
+            vectorEffect="non-scaling-stroke" opacity="0.42" />
+        ))}
+        {/* 종합(모델) 굵은 라인 + 피크 */}
+        <polyline points={toLine(comp)} fill="none" stroke="#e2543b" strokeWidth="2.6" vectorEffect="non-scaling-stroke" />
+        <circle cx={xs(pi)} cy={ys(comp[pi])} r="3" fill="#e2543b" stroke="#fff" strokeWidth="1.2" />
+      </svg>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#5d7088", paddingLeft: 20, marginTop: 2 }}>
+        <span>1년 전</span><span>겨울 피크 ▲</span><span>현재</span>
+      </div>
     </div>
   );
 }

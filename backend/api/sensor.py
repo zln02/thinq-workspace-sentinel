@@ -23,7 +23,9 @@ import time
 from collections import defaultdict
 from typing import Optional
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from backend.api.auth import require_api_key
@@ -34,6 +36,29 @@ from pipeline.simulator.rebreathed import infection_probability, tier_from_poi, 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/sensor", tags=["sensor"])
 
+
+@router.get("/camera/stream")
+async def camera_stream():
+    """노트북 카메라 MJPEG를 VM이 중계(proxy) — 브라우저는 VM(공인IP)만 닿으면 영상을 본다.
+    노트북은 Tailnet 안에 있고 VM은 거기 닿으므로, 시청 기기가 Tailnet이 아니어도 영상이 뜬다.
+    소스는 CAM_SOURCE 환경변수(기본 노트북 Tailscale IP)."""
+    src = os.getenv("CAM_SOURCE", "http://100.79.201.49:8089/video.mjpg")
+
+    async def gen():
+        try:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(5.0, read=None)) as client:
+                async with client.stream("GET", src) as r:
+                    async for chunk in r.aiter_raw():
+                        yield chunk
+        except Exception as e:  # noqa: BLE001
+            logger.warning("camera 중계 실패: %s", e)
+            return
+
+    return StreamingResponse(
+        gen(), media_type="multipart/x-mixed-replace; boundary=frame",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
 _AUTO_TIER = "ALERT"                           # 자동 제어 허용 tier
 _APPROVAL_TIERS = {"CRITICAL"}                 # 관리자 승인 필요 (위급만 — ALERT/HIGH_RISK는 자동)
 _ACTIVE_TIERS = {"ALERT", "HIGH_RISK", "CRITICAL"}  # 강(强) 자동제어: 급속+송풍
@@ -42,15 +67,21 @@ _last_tier: dict[str, str] = {}
 _last_control_tier: dict[str, str] = {}
 _control_active: dict[str, bool] = {}
 _co2_baseline: dict[str, float] = {}
+_prev_boost_space: dict[str, str] = {}  # space별 직전 외부boost — 발령 순간 baseline 재기준 감지용
 _recovery_since: dict[str, float] = {}
+_co2_active_peak: dict[str, float] = {}  # 가동 중 CO₂ 피크 — 회복은 '피크 대비 하강'으로 신속 판정(시연)
+_co2_cooldown: dict[str, float] = {}  # 회복 직후 재가동 억제(같은 입김 잔류 CO₂로 깜빡임 방지)
 _control_event_state: dict[str, dict] = {}  # 최근 전이 이벤트를 12초 유지해 SSE 프레임 유실 방지
 _pending_approval: dict[str, dict] = {}
 
 # 2단계 시연 상태기계: 외부 경보는 판정 기준만 상향하고, 실제 CO₂ 급상승 때만 가전 가동.
-_CO2_SURGE_MIN = 1000.0       # ppm: 입김/밀집으로 명확히 상승한 구간
+_CO2_SURGE_MIN = 700.0        # ppm: 입김/밀집으로 명확히 상승한 구간(평상 ~440 대비; 실측 입김이 ~900까지 도달)
 _CO2_SURGE_DELTA = 300.0      # ppm: 평상 baseline 대비 급상승 최소폭
 _CO2_RECOVERY_MAX = 800.0     # ppm: 정상 복귀 상한
-_CO2_RECOVERY_HOLD = 5.0      # 초: 5초 연속 정상이어야 복귀
+_CO2_RECOVERY_HOLD = 3.0      # 초: 3초 연속 하강이면 복귀(시연 대기시간 단축)
+_CO2_RECOVERY_DROP = 100.0    # ppm: 가동 피크 대비 이만큼 떨어지면(하강 전환) 회복 후보 — 입김 멈춘 뒤 ~10초에 포착(시연 리듬)
+_CO2_RECOVERY_CEIL = 2000.0   # ppm: 회복은 이 수준 이하까지 내려와야 인정 — 포화가 고농도에서 꺼지는 어색함 방지(가볍게 불면 무관)
+_CO2_REARM_COOLDOWN = 15.0    # 초: 회복 후 재가동 억제(입김 잔류 CO₂로 즉시 재발동·깜빡임 방지)
 _control_mode: dict[str, str] = {}             # space_id -> "auto"|"manual" (기본 auto). manual이면 자동 액추에이션 보류
 # space별 거버넌스 직렬화 락 — 같은 공간에 reading이 빠르게 연속 유입돼도
 # tier 전이 판정~가전 액추에이션(await 다수)이 인터리브되어 명령이 뒤섞이지 않도록 보장.
@@ -165,12 +196,12 @@ def compute_tier(co2, gas_raw, temp=None, humidity=None, occupancy=None,
     """
     n = DEMO_OCCUPANCY if occupancy is None else occupancy
     q = quanta if quanta is not None else (quanta_for(pathogen) if pathogen else DEMO_QUANTA)
-    # PoI(전파 위험확률)는 항상 "감염자 1명 노출 가정"의 조건부 위험으로 계산·표시(CO2 따라 변동).
-    # 단 등급(tier)은 감염맥락(ctx>0, 외부 조기경보 발령)일 때만 PoI로 격상 — 평상시는 감염원 없어 정상.
+    # PoI(전파 위험확률) = 1−exp(−f·(I/n)·q·t). 감염원 I=ctx(평상시 0 → PoI 0 → 정상,
+    # 외부 경보 시 DEMO_INFECTORS). PoI 값과 등급(tier)이 같은 가정을 공유해 "56%인데 정상" 모순 제거.
     ctx = DEMO_INFECTORS if infectors is None else infectors
     if co2 is not None:
         poi, f = infection_probability(
-            co2, DEMO_INFECTORS, n, q, DEMO_EXPOSURE_H
+            co2, ctx, n, q, DEMO_EXPOSURE_H
         )
         base = tier_from_poi(poi) if (ctx and ctx > 0) else "MONITOR"
     elif gas_raw is not None:
@@ -391,27 +422,47 @@ async def ingest_reading(r: SensorReading):
     # 공기청정기는 CO₂를 제거하지 않으므로, 복귀는 가전 명령 시간이 아니라 실제 센서값으로만 판정한다.
     active_before = _control_active.get(r.space_id, False)
     baseline = _co2_baseline.get(r.space_id, float(co2) if co2 is not None else 450.0)
+    # ★발령(MONITOR→armed) 순간 baseline을 현재 CO₂로 재기준 — 평상값이 뒤처져 있어도(예: CO₂가
+    #   막 급등) 발령만으로 즉시 오발동하지 않게(delta=0에서 시작 → 입김 불어야만 발동).
+    _prev_b = _prev_boost_space.get(r.space_id, "MONITOR")
+    _prev_boost_space[r.space_id] = ext_boost
+    if _prev_b == "MONITOR" and ext_boost != "MONITOR" and co2 is not None:
+        baseline = float(co2)
+        _co2_baseline[r.space_id] = baseline
     control_event = None
-    if not active_before and co2 is not None and float(co2) < _CO2_SURGE_MIN:
-        # 평상 구간에서만 완만하게 baseline 갱신. 입김 피크가 baseline을 끌어올리지 않게 한다.
+    # baseline = 이 공간의 평상시 평균 CO₂(처음 켜진 값에서 EMA로 적응). 환경마다 절대농도가
+    # 달라(어떤 방은 500, 어떤 방은 1100) 절대 임계 대신 '이 방 평균 대비 상승폭'으로 급상승 판정.
+    # ★발령(armed) 전 평상 구간에서만 baseline 갱신 → 발령되면 그 순간 평상값으로 동결되어
+    #   입김 상승을 baseline이 쫓아가며 흡수하지 못한다(고ambient 방에서도 입김이 확실히 잡힘).
+    if not active_before and ext_boost == "MONITOR" and co2 is not None and (float(co2) - baseline) < _CO2_SURGE_DELTA:
         baseline = baseline * 0.85 + float(co2) * 0.15
         _co2_baseline[r.space_id] = baseline
     surge = bool(
         ext_boost != "MONITOR" and co2 is not None
-        and float(co2) >= _CO2_SURGE_MIN
-        and float(co2) - baseline >= _CO2_SURGE_DELTA
-        and _TIER_RANK.get(sensor_tier, 0) >= 3
+        and float(co2) - baseline >= _CO2_SURGE_DELTA   # 이 방 평균 대비 상승 → 환경 무관(절대 floor 없음)
+        and _TIER_RANK.get(sensor_tier, 0) >= 2  # ALERT 이상(감염위험확률 PoI 상승)
+        and now >= _co2_cooldown.get(r.space_id, 0.0)  # 회복 직후 쿨다운 중엔 재가동 금지(깜빡임 방지)
     )
     control_active = active_before
     if not active_before and surge:
         control_active = True
         control_event = "activated"
         _recovery_since.pop(r.space_id, None)
+        _co2_active_peak[r.space_id] = float(co2)  # 가동 시작 CO₂를 피크 초기값으로
     elif active_before:
+        # 가동 중 CO₂ 피크 추적 → 회복은 '피크 대비 하강' 또는 '평상 근접'으로 신속 판정.
+        # 공기청정기는 CO₂를 직접 제거하지 않으므로 절대 baseline 복귀를 기다리면 시연이 길어진다.
+        if co2 is not None:
+            _co2_active_peak[r.space_id] = max(_co2_active_peak.get(r.space_id, float(co2)), float(co2))
+        peak = _co2_active_peak.get(r.space_id, float(co2) if co2 is not None else baseline)
+        # 회복: '피크 대비 명확한 하강'(환기 효과) + '믿을 만한 절대수준'을 함께 만족해야 OFF.
+        #   - peak-DROP: 입김 멈춘 뒤 하강 전환을 ~15~20초에 신속 포착(시연 리듬).
+        #   - CEIL 동반조건: 5000 포화 시 4800에서 꺼지는 어색함 방지(실제로 내려와야 OFF).
         recovered_now = bool(
             co2 is not None
-            and float(co2) <= max(_CO2_RECOVERY_MAX, baseline + 150.0)
-            and poi is not None and float(poi) <= 0.10
+            and (float(co2) <= baseline + 150.0                      # 평상 근접(절대)
+                 or (float(co2) <= peak - _CO2_RECOVERY_DROP         # 피크 대비 하강(하강 전환)
+                     and float(co2) <= _CO2_RECOVERY_CEIL))          # 동시에 믿을만한 수준까지 내려옴
         )
         if recovered_now:
             since = _recovery_since.setdefault(r.space_id, now)
@@ -419,12 +470,18 @@ async def ingest_reading(r: SensorReading):
                 control_active = False
                 control_event = "recovered"
                 _recovery_since.pop(r.space_id, None)
+                _co2_active_peak.pop(r.space_id, None)
+                _co2_cooldown[r.space_id] = now + _CO2_REARM_COOLDOWN  # 잔류 CO₂ 재발동 억제
         else:
             _recovery_since.pop(r.space_id, None)
-    if ext_boost == "MONITOR" and control_active:
-        control_active = False
-        control_event = "stopped"
-        _recovery_since.pop(r.space_id, None)
+    if ext_boost == "MONITOR":
+        # 발령 해제(평상시) → 다음 시연을 위해 쿨다운/회복상태 깨끗이 정리
+        _co2_cooldown.pop(r.space_id, None)
+        if control_active:
+            control_active = False
+            control_event = "stopped"
+            _recovery_since.pop(r.space_id, None)
+            _co2_active_peak.pop(r.space_id, None)
     _control_active[r.space_id] = control_active
     if control_event:
         prev_event = _control_event_state.get(r.space_id, {})

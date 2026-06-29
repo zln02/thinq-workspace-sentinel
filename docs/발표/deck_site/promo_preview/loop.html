@@ -1,0 +1,12 @@
+<!doctype html><meta charset="utf-8"><title>ThinQ Space Sentinel — 시연 루프</title>
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}video{width:100vw;height:100vh;object-fit:contain;background:#000}#s{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#000;color:#fff;font-family:sans-serif;font-size:28px;cursor:pointer;z-index:9}</style>
+<body>
+<video id="v" src="PROMO_v13.mp4" loop autoplay playsinline></video>
+<div id="s" onclick="go()">▶ 클릭해서 시연 시작 (무한 반복)</div>
+<script>
+const v=document.getElementById('v'),s=document.getElementById('s');
+function go(){v.muted=false;v.play();s.style.display='none'}
+v.muted=true;v.play().then(()=>{}).catch(()=>{});
+v.addEventListener('playing',()=>{ if(!v.muted) s.style.display='none'; });
+</script>
+</body>

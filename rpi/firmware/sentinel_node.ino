@@ -1,5 +1,5 @@
 /*
- * ThinQ Workspace Sentinel — 병동 센서 노드 (Arduino Uno / Nano, AVR)
+ * ThinQ Space Sentinel — 병동 센서 노드 (Arduino Uno / Nano, AVR)
  * ----------------------------------------------------------------------
  * 라즈베리파이 bridge.py 와 USB 시리얼로 양방향 통신한다.
  *

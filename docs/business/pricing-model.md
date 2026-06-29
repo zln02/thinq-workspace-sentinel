@@ -1,4 +1,4 @@
-# ThinQ Workspace Sentinel — 가격 모델 (3-tier)
+# ThinQ Space Sentinel — 가격 모델 (3-tier)
 
 > B2G 요양병원 감염관리 SaaS + 가전 자동방역. 구독 / 건당 / PoC 3-tier.
 > 실제 금액은 심평원 수가·LG 가전 단가·운영비 확정 후 채운다([확정필요]).

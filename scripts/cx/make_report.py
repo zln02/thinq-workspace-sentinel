@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""ThinQ Workspace Sentinel — CX 재현 분석 보고서 PDF 생성.
+"""ThinQ Space Sentinel — CX 재현 분석 보고서 PDF 생성.
 
 data/nursing/analysis/result.json + raw.csv 를 읽어 14쪽 분석 보고서를 만든다.
 모든 수치는 raw.csv 재계산 또는 result.json 에서만 가져온다 (주장 아님·재현).
@@ -98,7 +98,7 @@ def p1(pdf, res):
     c = res["corpus"]
     ax.text(15.5, 9.62, f"01 / {TOTAL_PAGES}", ha="right", va="center", **F(11, False, LGRAY))
     ax.text(0.9, 7.5, "CX PROJECT · NURSING HOSPITAL  ·  재현 가능 분석", **F(14, True, CORAL))
-    ax.text(0.85, 6.55, "ThinQ Workspace Sentinel", **F(48, True, NAVY))
+    ax.text(0.85, 6.55, "ThinQ Space Sentinel", **F(48, True, NAVY))
     ax.text(0.85, 5.55, "요양병원 VOC 78,087건 직접 크롤·재현 분석", **F(36, True, CORAL))
     ax.add_patch(Rectangle((0.9, 5.05), 4.6, 0.08, fc=CORAL, ec="none"))
     ax.text(0.9, 4.35, "공기청정기는 청정만, 웨어러블은 측정만 합니다.", **F(17, False, GRAY))
@@ -112,7 +112,7 @@ def p1(pdf, res):
     stat(6.0, "METHOD", "LDA · CAM · Lexicon", "Kiwi 형태소 + scikit-learn")
     stat(11.2, "VERDICT", "종사자 84.0%", "PM 4.8만건 분석값과 일치 · 통합공백 재현")
     ax.add_patch(Rectangle((0.9, 1.4), 13.5, 0.02, fc=LINE, ec="none"))
-    ax.text(0.9, 0.55, "ThinQ Workspace Sentinel · scripts/cx (run.py · lexicon.py · make_report.py) 재현", **F(11, False, LGRAY))
+    ax.text(0.9, 0.55, "ThinQ Space Sentinel · scripts/cx (run.py · lexicon.py · make_report.py) 재현", **F(11, False, LGRAY))
     ax.text(15.3, 0.55, "2026-06-22", ha="right", **F(11, False, LGRAY))
     close(fig, pdf)
 
@@ -529,7 +529,7 @@ def p13(pdf, res):
             "시장의 통합·증빙은 14,194건 중 사실상 0으로 비어 있다. "
             "센티넬은 그 빈칸 — 일상 신호를 자동 기록·증빙하는 라스트마일 — 을 채운다.", 64),
             **F(13.5, False, INK), va="top", linespacing=1.6)
-    footer(ax, "ThinQ Workspace Sentinel · CX 재현 분석 (본 보고서 01–13)", "13 결론")
+    footer(ax, "ThinQ Space Sentinel · CX 재현 분석 (본 보고서 01–13)", "13 결론")
     close(fig, pdf)
 
 # ============================================================ MAIN

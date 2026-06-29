@@ -1,5 +1,5 @@
 "use client";
-/* ThinQ Workspace Sentinel — 3분할 키오스크 데모 대시보드
+/* ThinQ Space Sentinel — 3분할 키오스크 데모 대시보드
  *
  * 모니터마다 같은 URL + 다른 screen 파라미터로 띄운다:
  *   /demo?screen=sensor     (모니터1) 실시간 센서 + 알고리즘 파이프라인
@@ -22,13 +22,15 @@ import {
 import { tierMeta, tierRank } from "@/lib/tier";
 import ControlRoom from "./ControlRoom";
 import EpidemicMap from "./EpidemicMap";
+import CenterAlert from "@/components/CenterAlert";
 
 // ── 데모 상수 ───────────────────────────────────────────────
 const DEMO_REGION = "광주광역시";
 const SPACE = "ward_a";
 const REAL_DEVICE = "AIR_PURIFIER"; // 코웨이 = 유일한 실연동 기기
 // 노트북 카메라 YOLO MJPEG 스트림(Tailscale). camera_laptop.py 실행 시 활성.
-const CAM_URL = process.env.NEXT_PUBLIC_CAM_URL || "http://100.79.201.49:8089/video.mjpg";
+// VM이 노트북 카메라 MJPEG를 중계 — 브라우저는 VM(공인IP)만 닿으면 영상이 보인다(Tailnet 무관).
+const CAM_URL = process.env.NEXT_PUBLIC_CAM_URL || "/api/sentinel/sensor/camera/stream";
 
 const INK = "#0f1722", PANEL = "#16212e", CARD = "#1d2a3a", LINE = "#2c3a4d";
 const MUTE = "#8aa0b6", FAINT = "#5d7088", ACCENT = "#36d399", BLUE = "#5b9dff";
@@ -120,9 +122,9 @@ function TopBar({ screen, connected, boostOn, busy, onToggle }: {
     { k: "sensor", label: "③ 센서·알고리즘" },
   ];
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "14px 26px", borderBottom: `1px solid ${LINE}`, background: PANEL }}>
+    <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 16, padding: "14px 26px", borderBottom: `1px solid ${LINE}`, background: PANEL }}>
       <div style={{ fontWeight: 800, fontSize: 22, color: "#fff", letterSpacing: -0.4 }}>
-        ThinQ <span style={{ color: ACCENT }}>Workspace Sentinel</span>
+        ThinQ <span style={{ color: ACCENT }}>Space Sentinel</span>
       </div>
       <div style={{ display: "flex", gap: 8, marginLeft: 8 }}>
         {tabs.map((t) => (
@@ -172,7 +174,7 @@ function SensorScreen({ live, series, risk, boostActive }: any) {
   const Arrow = () => <div style={{ color: ACCENT, fontSize: 26, alignSelf: "center", padding: "0 2px" }}>→</div>;
 
   return (
-    <div style={{ padding: 26, display: "flex", flexDirection: "column", gap: 20, height: "100%", boxSizing: "border-box" }}>
+    <div style={{ padding: "18px 24px", display: "flex", flexDirection: "column", gap: 14, height: "100%", boxSizing: "border-box", overflow: "hidden" }}>
       {/* 대형 티어 배지 */}
       <div style={{ display: "flex", alignItems: "center", gap: 22 }}>
         <div style={{ background: tm.border, color: "#fff", borderRadius: 18, padding: "20px 34px",
@@ -227,14 +229,14 @@ function SensorScreen({ live, series, risk, boostActive }: any) {
       </div>
 
       {/* 카메라(YOLO) + 그래프 2종 */}
-      <div style={{ display: "flex", gap: 16, flex: 1 }}>
+      <div style={{ display: "flex", gap: 16, flex: 1, minHeight: 0 }}>
         <CameraPanel occ={live?.occupancy} />
         <div style={{ flex: 1, background: CARD, border: `1px solid ${LINE}`, borderRadius: 14, padding: 18, display: "flex", flexDirection: "column" }}>
           <div style={{ fontSize: 15, color: "#fff", fontWeight: 700 }}>CO₂ 추이 <span style={{ color: FAINT, fontSize: 12 }}>({series?.source || "실측"})</span></div>
           <Chart values={(series?.points ?? []).map((p: any) => p.co2).filter((v: any) => v != null)} color={BLUE} unit="ppm" fix={0} />
         </div>
         <div style={{ flex: 1, background: CARD, border: `1px solid ${LINE}`, borderRadius: 14, padding: 18, display: "flex", flexDirection: "column" }}>
-          <div style={{ fontSize: 15, color: "#fff", fontWeight: 700 }}>감염확률 PoI 추이 <span style={{ color: FAINT, fontSize: 12 }}>(Rudnick-Milton)</span></div>
+          <div style={{ fontSize: 15, color: "#fff", fontWeight: 700 }}>감염확률 PoI 추이 <span style={{ color: FAINT, fontSize: 12 }}>(감염자 노출 시 · 평상 0)</span></div>
           <Chart values={(risk?.points ?? []).map((p: any) => (p.poi ?? 0)).filter((v: any) => v != null)} color={ACCENT} unit="%" fix={1} />
         </div>
       </div>
@@ -244,17 +246,30 @@ function SensorScreen({ live, series, risk, boostActive }: any) {
 
 // 노트북 카메라 YOLO 실시간 영상 (MJPEG 임베드 + 끊김 폴백)
 function CameraPanel({ occ }: { occ?: number | null }) {
+  // MJPEG 스트림은 끝없는 multipart라 자동 로드 시 브라우저(특히 모바일) 메모리를 계속 먹어
+  // 탭이 리로드/멈추는 원인이 된다. → 기본은 안 켜고, 사용자가 누를 때만 스트림을 연다.
+  const [on, setOn] = useState(false);
   const [err, setErr] = useState(false);
-  const [ok, setOk] = useState(false);
-  useEffect(() => { const t = setTimeout(() => { if (!ok) setErr(true); }, 4000); return () => clearTimeout(t); }, [ok]);
   return (
     <div style={{ flex: 1.25, background: CARD, border: `1px solid ${LINE}`, borderRadius: 14, padding: 18, display: "flex", flexDirection: "column" }}>
       <div style={{ fontSize: 15, color: "#fff", fontWeight: 700 }}>실시간 카메라 <span style={{ color: ACCENT, fontSize: 12 }}>● YOLO 사람 검출</span>
         {occ != null && <span style={{ float: "right", color: ACCENT, fontWeight: 800 }}>재실 {occ}명</span>}</div>
-      <div style={{ flex: 1, marginTop: 10, borderRadius: 10, overflow: "hidden", background: "#0a0f16", display: "grid", placeItems: "center", minHeight: 130 }}>
-        {err
-          ? <div style={{ textAlign: "center", color: FAINT, fontSize: 13, lineHeight: 1.6 }}>📷 카메라 스트림 대기<br /><span style={{ fontSize: 11 }}>노트북에서 camera_laptop.py 실행 시<br />YOLO 실시간 영상(박스)이 표시됩니다</span></div>
-          : <img src={CAM_URL} onLoad={() => setOk(true)} onError={() => setErr(true)} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="YOLO" />}
+      <div style={{ flex: 1, marginTop: 10, borderRadius: 10, overflow: "hidden",
+                    background: on ? "#0a0f16" : "radial-gradient(circle at 50% 38%, #182a36 0%, #0c131c 68%)",
+                    display: "grid", placeItems: "center", minHeight: 130, position: "relative" }}>
+        {!on
+          ? <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+              <div style={{ fontSize: 48, opacity: 0.55, filter: "grayscale(0.2)", lineHeight: 1 }}>📹</div>
+              <button onClick={() => { setErr(false); setOn(true); }}
+                style={{ background: "rgba(54,211,153,0.18)", border: `1.5px solid ${ACCENT}`, color: "#fff", borderRadius: 999, padding: "10px 24px", fontSize: 14, fontWeight: 800, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8, boxShadow: "0 0 0 5px rgba(54,211,153,0.07)" }}>
+                <span style={{ fontSize: 15 }}>▶</span> 실시간 영상 보기
+              </button>
+              <span style={{ fontSize: 11, color: MUTE, fontWeight: 500 }}>YOLO 사람 검출 · 재실 인원은 위에 실시간 표시 중</span>
+            </div>
+          : err
+          ? <div style={{ textAlign: "center", color: FAINT, fontSize: 13, lineHeight: 1.6 }}>📷 카메라 연결 안 됨<br /><span style={{ fontSize: 11 }}>노트북 camera_laptop.py 실행 + 방화벽 8089 허용 필요</span>
+              <br /><button onClick={() => { setErr(false); setOn(false); }} style={{ marginTop: 8, background: "transparent", border: `1px solid ${LINE}`, color: MUTE, borderRadius: 8, padding: "4px 12px", fontSize: 12, cursor: "pointer" }}>닫기</button></div>
+          : <img src={CAM_URL} onError={() => setErr(true)} style={{ width: "100%", height: "100%", objectFit: "cover" }} alt="YOLO" />}
       </div>
       <div style={{ fontSize: 12, color: FAINT, marginTop: 6 }}>재실 인원 = YOLO person 검출 수 (실측 → PoI 분모)</div>
     </div>
@@ -313,7 +328,7 @@ function ApplianceScreen({ plan, coway, tier }: any) {
   };
 
   return (
-    <div style={{ padding: 26, display: "flex", flexDirection: "column", gap: 18, height: "100%", boxSizing: "border-box" }}>
+    <div style={{ padding: "18px 24px", display: "flex", flexDirection: "column", gap: 14, height: "100%", boxSizing: "border-box", overflow: "hidden" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
         <div style={{ fontSize: 22, fontWeight: 800, color: "#fff" }}>가전 자동 제어 — {plan?.pathogen ?? "—"} 프로토콜</div>
         <span style={{ background: tm.border, color: "#fff", borderRadius: 8, padding: "5px 14px", fontWeight: 800 }}>{tm.emoji} {tm.label}</span>
@@ -450,8 +465,8 @@ function Cell({ children, head, hl, dim }: any) {
 function DemoInner() {
   const params = useSearchParams();
   const screen = params.get("screen") || "sensor";
-  // 외부역학 조작 화면은 기본 음성 ON. 명시적으로 voice=0일 때만 끈다.
-  const voice = params.get("voice") === "1" || (screen === "epidemic" && params.get("voice") !== "0");
+  // 모든 데모 화면 기본 음성 ON(발령·가동·회복 내레이션). 다중 모니터로 한 화면만 소리 낼 땐 나머지에 voice=0.
+  const voice = params.get("voice") !== "0";
 
   const { data: live, connected, lastTs } = useLiveWard(SPACE);
   const series = useSensorSeries(SPACE, 5000);
@@ -459,7 +474,9 @@ function DemoInner() {
   const boost = useBoostState(3000);
   const regions = useExternalSignal(60000);
   const coway = useCowayStatus(5000);
-  const plan = useControlPlan(SPACE, live?.tier ?? null);
+  // 가전 제어 플랜은 control_active(실측 CO₂ 급상승 = 입김) 때만 가동 플랜, 아니면 대기(MONITOR).
+  // 방의 ambient CO₂/PoI가 높아도 '불기 전'엔 가전이 안 켜지게 — 발령만으로는 대기 상태.
+  const plan = useControlPlan(SPACE, live?.control_active ? (live?.sensor_tier ?? live?.tier ?? null) : "MONITOR");
   const [busy, setBusy] = useState(false);
   const [, force] = useState(0);
   // 1.5s 틱 — 데이터 신선도(연결 표시)·시계 갱신용 (SSE 이벤트 사이에도 상태가 늙지 않게)
@@ -491,17 +508,23 @@ function DemoInner() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: INK, color: "#fff", fontFamily: "'Pretendard',system-ui,sans-serif" }}>
+    <div style={{ height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column", background: INK, color: "#fff", fontFamily: "'Pretendard',system-ui,sans-serif" }}>
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
         @keyframes rise { from{height:0} }
         * { box-sizing: border-box; }
+        html, body { margin: 0; height: 100%; overflow: hidden; }
       `}</style>
       <TopBar screen={screen} connected={fresh} boostOn={boostOn} busy={busy} onToggle={onToggle} />
-      {screen === "control" ? <div style={{ height: "calc(100vh - 62px)" }}><ControlRoom /></div>
-        : screen === "appliance" ? <ApplianceScreen plan={plan} coway={coway} tier={live?.tier} />
-        : screen === "epidemic" ? <div style={{ height: "calc(100vh - 62px)" }}><EpidemicMap /></div>
-          : <SensorScreen live={live} series={series} risk={risk} boostActive={boostOn} />}
+      {/* 대시보드별 알림 문구 — 역학=지역경보 / 센서=알고리즘 / 관제·가전=가전제어 */}
+      <CenterAlert space={SPACE} variant={screen === "epidemic" ? "epidemic" : screen === "sensor" ? "sensor" : "control"} />
+      {/* TopBar 높이에 무관하게 남는 공간을 정확히 채움(flex) → 어떤 해상도·전체화면(F11)에서도 짤림/스크롤 없음 */}
+      <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+        {screen === "control" ? <ControlRoom />
+          : screen === "appliance" ? <ApplianceScreen plan={plan} coway={coway} tier={live?.tier} />
+          : screen === "epidemic" ? <EpidemicMap />
+            : <SensorScreen live={live} series={series} risk={risk} boostActive={boostOn} />}
+      </div>
       {voice && <div style={{ position: "fixed", bottom: 14, right: 18, zIndex: 40, fontSize: 12, color: FAINT }}>🔊 녹음 내레이션 ON</div>}
     </div>
   );

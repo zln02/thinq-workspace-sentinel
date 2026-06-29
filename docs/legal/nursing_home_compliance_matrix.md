@@ -1,4 +1,4 @@
-# 요양병원 법적 규제 매트릭스 (ThinQ Workspace Sentinel)
+# 요양병원 법적 규제 매트릭스 (ThinQ Space Sentinel)
 
 > 9개 법령·고시·평가 기준 매핑. 모든 자동 증빙은 `sentinel.legal_mappings` 테이블에 영구 저장.
 

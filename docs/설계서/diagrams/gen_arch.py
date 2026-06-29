@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+"""ThinQ Space Sentinel — 최신 시스템 아키텍처 다이어그램 (실 구성 기반)."""
+import os, subprocess
+
+ACCENT="#7a0024"; BLUE="#1d4ed8"; GREEN="#047857"; GRAY="#475569"
+dot = f'''digraph ARCH {{
+  rankdir=TB;
+  graph [fontname="NanumGothic", bgcolor="white", nodesep=0.45, ranksep=0.8, compound=true];
+  node  [fontname="NanumGothic", shape=box, style="rounded,filled", fontsize=11, color="#cbd5e1", fillcolor="white", penwidth=1.2];
+  edge  [fontname="NanumGothic", color="{GRAY}", fontsize=9, fontcolor="{GRAY}", penwidth=1.3];
+
+  subgraph cluster_edge {{
+    label="① 엣지 계층 (현장 IoT)"; fontsize=14; color="{GREEN}"; style="rounded"; fontname="NanumGothic";
+    rpi   [label="라즈베리파이 브리지\\n(rpi/bridge.py)\\nArduino 시리얼 수신", fillcolor="#ecfdf5"];
+    ard   [label="Arduino Uno\\nDHT11 온습도 · MH-Z19 CO2\\nLED 5-tier 게이지 · I2C LCD", fillcolor="#ecfdf5"];
+    cam   [label="노트북 카메라\\n(occupancy_cam.py · YOLOv8)\\n재실 인원수만 전송(영상 비저장)", fillcolor="#ecfdf5"];
+    coway [label="코웨이 IoCare / 삼성 SmartThings\\n(실기기 어댑터)\\nPM2.5·CO2 실측 / 제어", fillcolor="#ecfdf5"];
+    ard -> rpi [label="USB 시리얼\\n온습도·CO2"];
+  }}
+
+  subgraph cluster_api {{
+    label="② 백엔드 API 계층 — FastAPI :8103"; fontsize=14; color="{ACCENT}"; style="rounded"; fontname="NanumGothic";
+    ingest [label="센서 Ingest\\nPOST /sensor/reading\\n(코웨이 병합·carry-forward)", fillcolor="#fbe9ee"];
+    model  [label="감염위험 모델\\nRudnick-Milton 재호흡 f\\n→ Wells-Riley PoI → 5-Tier", fillcolor="#fbe9ee"];
+    gov    [label="하이브리드 거버넌스\\nidle→gentle→strong→approval\\n가전 차등 자동제어", fillcolor="#fbe9ee"];
+    ext    [label="외부 조기경보\\n/external/* (UIS 소비)\\n지역 선택→선제 tier boost", fillcolor="#fbe9ee"];
+    sse    [label="실시간 스트림\\nSSE /stream/live/{{space}}\\n대시보드 1초 push", fillcolor="#fbe9ee"];
+    api    [label="조회·리포트 API\\noverview · kpi · report\\nseries · control-plan · legal", fillcolor="#fbe9ee"];
+    ingest -> model -> gov; model -> sse; ext -> model [label="boost"]; ingest -> api [style=invis];
+  }}
+
+  subgraph cluster_db {{
+    label="③ 데이터 저장 계층 — PostgreSQL :5432"; fontsize=14; color="{BLUE}"; style="rounded"; fontname="NanumGothic";
+    sdb [label="sentinel 스키마 (자사)\\nsensor_readings · rehva_results\\nspaces/sites/users · device_actions\\npathogens · legal_mappings · alerts", fillcolor="#eff6ff"];
+    udb [label="urban_immune (UIS, read-only)\\nrisk_scores · layer_signals\\nconfirmed_cases\\n(KOWAS·DataLab·OTC·KDCA)", fillcolor="#eff6ff"];
+  }}
+
+  subgraph cluster_fe {{
+    label="④ 프론트엔드 계층 — Next.js :3100"; fontsize=14; color="{GRAY}"; style="rounded"; fontname="NanumGothic";
+    dash [label="통합 대시보드 /dashboard\\n간호사 · 시설가전 · 경영리포트 · 추이분석", fillcolor="#f8fafc"];
+    grd  [label="보호자 앱 /guardian (PWA)\\n홈·병동·알림·설정\\n안심 상태 + 푸시", fillcolor="#f8fafc"];
+    wm   [label="3D 병동 위험맵\\n/wardmap", fillcolor="#f8fafc"];
+  }}
+
+  // 계층 간 흐름
+  rpi   -> ingest [label="POST 환경센서", lhead=cluster_api, ltail=cluster_edge];
+  cam   -> ingest [label="POST occupancy"];
+  coway -> ingest [label="실측 병합/제어"];
+  gov   -> coway  [label="자동 제어 명령", constraint=false, color="{ACCENT}"];
+  ingest -> sdb   [label="적재"];
+  api   -> sdb    [label="조회", dir=back];
+  ext   -> udb    [label="조기경보 읽기", dir=both];
+  sse   -> dash   [label="SSE 라이브"];
+  api   -> dash   [label="REST"];
+  api   -> grd    [label="REST/SSE"];
+  api   -> wm;
+}}
+'''
+here=os.path.dirname(os.path.abspath(__file__))
+open(os.path.join(here,"arch.dot"),"w").write(dot)
+r=subprocess.run(["dot","-Tpng","-Gdpi=140",os.path.join(here,"arch.dot"),"-o",os.path.join(here,"ThinQ-Sentinel_아키텍처.png")],capture_output=True,text=True)
+print("render:", "OK" if r.returncode==0 else r.stderr[:400])

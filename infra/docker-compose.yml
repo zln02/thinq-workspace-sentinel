@@ -1,4 +1,4 @@
-# ThinQ Workspace Sentinel · Docker Compose
+# ThinQ Space Sentinel · Docker Compose
 # 기존 UIS의 TimescaleDB·Kafka 재사용 (external network)
 # 신규 컨테이너 7개
 

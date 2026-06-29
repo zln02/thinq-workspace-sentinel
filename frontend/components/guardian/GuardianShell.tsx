@@ -7,6 +7,7 @@ import { Home, Activity, Bell, Settings as SettingsIcon } from "lucide-react";
 import { useLiveWard } from "@/lib/useSentinel";
 import { getSession, pushAlert, TIER_STATE, getNotifEnabled } from "@/lib/guardian";
 import type { Tier } from "@/lib/tier";
+import CenterAlert from "@/components/CenterAlert";
 
 const TABS = [
   { href: "/guardian/home", label: "홈", icon: Home },
@@ -52,12 +53,17 @@ export default function GuardianShell({ children }: { children: React.ReactNode 
     if (prevTier.current && t !== prevTier.current) {
       pushAlert(t, Date.now());
       const rank: Record<Tier, number> = { MONITOR: 0, CAUTION: 1, ALERT: 2, HIGH_RISK: 3, CRITICAL: 4 };
-      if (rank[t] >= 2 && getNotifEnabled() && Notification?.permission === "granted") {
+      if (rank[t] >= 2 && getNotifEnabled() && typeof Notification !== "undefined" && Notification.permission === "granted") {
         const s = TIER_STATE[t];
-        try {
-          new Notification(`${s.emoji} ${session?.room ?? "병동"} — ${s.st}`, { body: s.msg });
-        } catch {
-          /* ignore */
+        const title = `${s.emoji} ${session?.room ?? "병동"} — ${s.st}`;
+        // 모바일(안드로이드 크롬)은 new Notification() 미지원 → 서비스워커 showNotification() 사용 + 진동.
+        const opts: NotificationOptions = { body: s.msg, tag: "sentinel-alert", renotify: true, vibrate: [200, 100, 200], requireInteraction: rank[t] >= 3 } as NotificationOptions;
+        if (navigator.serviceWorker?.ready) {
+          navigator.serviceWorker.ready
+            .then((reg) => reg.showNotification(title, opts))
+            .catch(() => { try { new Notification(title, opts); } catch { /* ignore */ } });
+        } else {
+          try { new Notification(title, opts); } catch { /* ignore */ }
         }
       }
     }
@@ -65,8 +71,9 @@ export default function GuardianShell({ children }: { children: React.ReactNode 
   }, [data?.tier, session?.room]);
 
   return (
-    <div className="guardian-app min-h-screen w-full flex justify-center bg-zinc-200 dark:bg-black">
-      <div className="relative w-full max-w-[430px] min-h-screen bg-care-bg flex flex-col shadow-xl">
+    <div className="guardian-app min-h-screen w-full flex justify-center bg-care-bg sm:bg-zinc-200 dark:bg-black">
+      {/* 모바일=풀블리드(회색 외곽·그림자 없음), 데스크탑(sm↑)=중앙 폰 프레임 */}
+      <div className="relative w-full sm:max-w-[430px] min-h-screen bg-care-bg flex flex-col shadow-none sm:shadow-xl">
         <div key={pathname} className="guardian-scroll care-enter flex-1 overflow-y-auto" style={{ paddingBottom: isAuthPage ? 0 : "calc(4.5rem + env(safe-area-inset-bottom))" }}>
           {children}
         </div>
@@ -86,6 +93,7 @@ export default function GuardianShell({ children }: { children: React.ReactNode 
             })}
           </nav>
         )}
+        {!isAuthPage && <CenterAlert space={session?.space_id ?? "ward_a"} compact variant="guardian" />}
       </div>
     </div>
   );

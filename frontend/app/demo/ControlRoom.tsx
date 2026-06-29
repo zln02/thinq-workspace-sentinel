@@ -145,19 +145,7 @@ export default function ControlRoom() {
         </span>
       </div>
 
-      {/* 토스트 */}
-      <div style={{ position: "absolute", top: 64, right: 18, zIndex: 20, display: "flex", flexDirection: "column", gap: 8 }}>
-        {toasts.map((t) => (
-          <div key={t.id} style={{ width: 320, background: t.kind === "calm" ? "#16352a" : t.kind === "alert" ? "#3a1f1a" : "#2a2410",
-                                   border: `1px solid ${t.kind === "calm" ? ACCENT : t.kind === "alert" ? CORAL : GOLD}`,
-                                   borderRadius: 12, padding: "12px 14px", animation: "slideIn 0.4s ease", boxShadow: "0 8px 24px rgba(0,0,0,0.4)" }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: t.kind === "calm" ? ACCENT : t.kind === "alert" ? "#ff9b85" : GOLD }}>
-              {t.kind === "calm" ? "🟢" : t.kind === "alert" ? "🚨" : "⚙️"} {t.title}
-            </div>
-            <div style={{ fontSize: 13, color: "#dfe7f0", marginTop: 3 }}>{t.body}</div>
-          </div>
-        ))}
-      </div>
+      {/* 알림은 공용 중앙 대형 알림(CenterAlert)으로 표시 — 여기 우상단 토스트는 중복이라 제거 */}
 
       {/* 본문: 간호사 | 병동(시설관리자) */}
       <div style={{ flex: 1, display: "grid", gridTemplateColumns: "300px 1fr 300px", gap: 14, padding: 16, minHeight: 0 }}>
