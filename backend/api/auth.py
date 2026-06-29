@@ -11,6 +11,7 @@
 """
 from __future__ import annotations
 
+import hmac
 import logging
 import os
 
@@ -44,5 +45,5 @@ async def require_api_key(x_api_key: str | None = Header(default=None)) -> None:
         # fail-closed: 키도 없고 데모도 아님 → 무인증으로 열지 않는다.
         logger.warning("SENTINEL_API_KEY 미설정 & 비데모 — 제어 API 거부(fail-closed). 키를 설정하거나 SENTINEL_DEMO=1 로 데모 활성.")
         raise HTTPException(status_code=401, detail="제어 API 비활성: SENTINEL_API_KEY 미설정(운영 fail-closed)")
-    if not x_api_key or x_api_key != expected:
+    if not x_api_key or not hmac.compare_digest(x_api_key, expected):
         raise HTTPException(status_code=401, detail="유효한 X-API-Key 필요")

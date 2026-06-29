@@ -18,11 +18,12 @@ from contextlib import asynccontextmanager
 
 import asyncpg
 import redis.asyncio as redis
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from backend.api.auth import require_api_key
 from backend.api.external_live import router as external_router
 from backend.api.sensor import router as sensor_router
 from backend.api.sse import router as sse_router
@@ -134,14 +135,13 @@ _NOCACHE = {"Cache-Control": "no-cache, no-store, must-revalidate"}
 
 
 def _serve_html(filename: str):
-    """HTML 서빙 — 변경 API 인증키(SENTINEL_API_KEY)를 placeholder 에 주입.
+    """HTML 서빙(GET, 무인증). 보안키는 절대 클라이언트 HTML에 주입하지 않는다.
 
-    데모(키 미설정)면 빈 문자열 → 인증 비활성과 정합. 운영(키 설정)이면
-    브라우저 제어 fetch 가 동일 키를 X-API-Key 로 전송(same-origin)."""
+    /wardmap 등은 무인증 GET이므로, 여기에 SENTINEL_API_KEY 를 끼워넣으면
+    키가 노출된다 → 주입 금지. 제어 fetch 의 키는 클라이언트가 별도로 주입."""
     from fastapi.responses import HTMLResponse
 
     html = (_STATIC_DIR / filename).read_text(encoding="utf-8")
-    html = html.replace("__SENTINEL_API_KEY__", os.getenv("SENTINEL_API_KEY", ""))
     return HTMLResponse(html, headers=_NOCACHE)
 
 
@@ -258,7 +258,7 @@ class SimRequest(BaseModel):
     dt: float = Field(1.0, ge=0.5, le=60.0)   # step 0.5~60분
 
 
-@app.post("/api/v1/simulate")
+@app.post("/api/v1/simulate", dependencies=[Depends(require_api_key)])
 async def simulate(req: SimRequest):
     if req.scenario not in SCENARIO_SEASON:
         raise HTTPException(400, f"Unknown scenario. Use one of {list(SCENARIO_SEASON.keys())}")

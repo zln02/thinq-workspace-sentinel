@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime
+import hmac
 import logging
 import math
 import os
@@ -671,7 +672,7 @@ async def set_control_mode(req: ModeReq):
             # fail-closed: 비번 미설정 + 비데모 → 제어모드 전환 거부.
             logger.warning("ADMIN_CONTROL_PW 미설정 & 비데모 — 제어모드 전환 거부(fail-closed).")
             raise HTTPException(status_code=403, detail="제어모드 전환 비활성: ADMIN_CONTROL_PW 미설정(운영 fail-closed)")
-    if not req.password or req.password != admin_pw:
+    if not req.password or not hmac.compare_digest(req.password, admin_pw):
         raise HTTPException(status_code=403, detail="관리자 비밀번호가 올바르지 않습니다")
     mode = "manual" if req.mode == "manual" else "auto"
     _control_mode[req.space_id] = mode

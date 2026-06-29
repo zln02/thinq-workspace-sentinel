@@ -96,3 +96,26 @@ def test_admin_pw_set_enforced(monkeypatch):
     assert e.value.status_code == 403
     res = _run(set_control_mode(ModeReq(space_id="ward_test2", mode="auto", password="s3cret")))
     assert res["ok"] is True and res["mode"] == "auto"
+
+
+# ── 통합: 의존성이 실제 라우트에 결선됐는지 (TestClient, 거부 경로 = DB 불필요) ────
+
+def test_control_route_wired_to_dependency(monkeypatch):
+    """/control 라우트에 require_api_key 가 실제로 결선됐는지 검증.
+
+    키 설정 + 유효 본문 + 헤더 없음 → 핸들러(코웨이/DB) 도달 전에 401.
+    만약 라우트에서 dependencies=[Depends(require_api_key)] 가 빠지면
+    핸들러가 실행돼 401 이 아닌 다른 코드가 나오므로 이 테스트가 실패한다.
+    """
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    from backend.api.sensor import router as sensor_router
+
+    monkeypatch.setenv("SENTINEL_API_KEY", "routekey")
+    monkeypatch.delenv("SENTINEL_DEMO", raising=False)
+    app = FastAPI()
+    app.include_router(sensor_router)
+    client = TestClient(app)
+    r = client.post("/api/v1/sensor/control", json={"space_id": "ward_a", "action": "off"})
+    assert r.status_code == 401  # 의존성이 핸들러보다 먼저 실행되어 차단
