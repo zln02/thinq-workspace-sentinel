@@ -50,10 +50,18 @@ def _warn_insecure_defaults() -> None:
 
     데모를 깨뜨리지 않도록 차단이 아닌 '가시성'만 제공(미설정이면 로그에 명확히 남김).
     """
+    from backend.api.auth import demo_mode
+    demo = demo_mode()
     if not os.getenv("SENTINEL_API_KEY"):
-        logger.warning("[보안] SENTINEL_API_KEY 미설정 — POST API가 인증 없이 열려 있음(데모 모드). 운영 배포 전 설정 필수.")
+        if demo:
+            logger.warning("[보안] SENTINEL_API_KEY 미설정 + 데모 모드(SENTINEL_DEMO) — POST API 무인증 통과. 운영 배포 전 키 설정 필수.")
+        else:
+            logger.warning("[보안] SENTINEL_API_KEY 미설정 — POST 제어 API 거부(fail-closed). 키를 설정하거나 데모는 SENTINEL_DEMO=1.")
     if not os.getenv("ADMIN_CONTROL_PW"):
-        logger.warning("[보안] ADMIN_CONTROL_PW 미설정 — 제어모드 전환 비번이 기본값('admin'). 운영 배포 전 설정 필수.")
+        if demo:
+            logger.warning("[보안] ADMIN_CONTROL_PW 미설정 + 데모 모드 — 제어모드 비번 데모 기본값('admin'). 운영 배포 전 설정 필수.")
+        else:
+            logger.warning("[보안] ADMIN_CONTROL_PW 미설정 — 제어모드 전환 거부(fail-closed). 운영 배포 전 설정 필수.")
 
 
 @asynccontextmanager

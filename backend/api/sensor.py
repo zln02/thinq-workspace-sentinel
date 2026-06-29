@@ -28,7 +28,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from backend.api.auth import require_api_key
+from backend.api.auth import demo_mode, require_api_key
 from backend.api.sse import publish_live
 from pipeline.simulator.iaq import iaq_exceedances
 from pipeline.simulator.rebreathed import infection_probability, tier_from_poi, quanta_for
@@ -654,12 +654,23 @@ class ModeReq(BaseModel):
 
 @router.post("/mode", dependencies=[Depends(require_api_key)])
 async def set_control_mode(req: ModeReq):
-    """자동/수동 제어 모드 전환 — 관리자 비밀번호 필요(ADMIN_CONTROL_PW, 데모 기본 'admin').
+    """자동/수동 제어 모드 전환 — 관리자 비밀번호 필요(ADMIN_CONTROL_PW).
 
     manual: 자동 거버넌스(코웨이/에어컨 자동 가동) 보류 → 관리자가 콘솔로 직접 제어.
     auto:   외부신호·센서 기반 자동 차등제어 재개.
+
+    보안: ADMIN_CONTROL_PW 미설정 시 하드코딩 기본값('admin')으로 열리지 않는다(fail-closed).
+          명시적 데모 모드(SENTINEL_DEMO=1)에서만 데모 전용 기본 비번('admin')을 임시 허용.
     """
-    admin_pw = os.getenv("ADMIN_CONTROL_PW", "admin")
+    admin_pw = os.getenv("ADMIN_CONTROL_PW")
+    if not admin_pw:
+        if demo_mode():
+            admin_pw = "admin"  # 데모 전용 임시 기본 — 운영에선 절대 사용 안 됨
+            logger.warning("ADMIN_CONTROL_PW 미설정 — 데모 모드 기본 비번('admin') 사용. 운영 배포 전 설정 필수.")
+        else:
+            # fail-closed: 비번 미설정 + 비데모 → 제어모드 전환 거부.
+            logger.warning("ADMIN_CONTROL_PW 미설정 & 비데모 — 제어모드 전환 거부(fail-closed).")
+            raise HTTPException(status_code=403, detail="제어모드 전환 비활성: ADMIN_CONTROL_PW 미설정(운영 fail-closed)")
     if not req.password or req.password != admin_pw:
         raise HTTPException(status_code=403, detail="관리자 비밀번호가 올바르지 않습니다")
     mode = "manual" if req.mode == "manual" else "auto"
