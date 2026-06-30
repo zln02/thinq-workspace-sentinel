@@ -25,7 +25,7 @@
 |---|---|---|
 | 🎨 **BX** 브랜드 경험 | 네이밍·슬로건, 5단계 위험 컬러 시스템, 발표덱 디자인 시스템, 부스 홍보영상(v13) | **[01_BX_브랜드경험](docs/portfolio/01_BX_브랜드경험.md)** |
 | 💚 **CX** 고객 경험 | 페르소나 4종, 75,633건 LDA 시장검증, 고객여정 맵, 역할별 UX, 감염예방관리료 ROI | **[02_CX_고객경험](docs/portfolio/02_CX_고객경험.md)** |
-| ⚙️ **DX** 기술·배포 | Wells-Riley PoI 엔진, 2단계 상태기계, 실제 가전 연동, TimescaleDB, CI/CD, GCP 배포 | **[03_DX_기술과배포](docs/portfolio/03_DX_기술과배포.md)** |
+| ⚙️ **DX** 기술·배포 | Wells-Riley PoI 엔진, 2단계 상태기계, 실제 가전 연동, TimescaleDB, CI/CD, AWS EC2 배포 | **[03_DX_기술과배포](docs/portfolio/03_DX_기술과배포.md)** |
 
 ---
 
@@ -41,7 +41,7 @@
 |---|---|
 | <img src="docs/설계서/img/screen_admin.png" width="420"> | <img src="docs/설계서/img/screen_demo.png" width="420"> |
 
-> **라이브 데모**: 시연용 GCP 인스턴스는 대회 종료 후 비활성화되었습니다. 데모 영상·시연 대본·발표덱은 `docs/발표/` 및 `ad-video/`에 있으며, 재기동은 요청 시 가능합니다.
+> **라이브 데모**: 최종 배포는 AWS EC2(서울, systemd + nginx)였으며 대회 종료 후 비활성화(아카이브)되었습니다. 데모 영상·시연 대본·발표덱은 `docs/발표/` 및 `ad-video/`에 있으며, 재기동은 요청 시 가능합니다.
 
 ---
 
@@ -147,7 +147,7 @@ flowchart LR
 | **프론트엔드** | Next.js 14 (App Router), React 18, TypeScript, Tailwind CSS |
 | **엣지/IoT** | Arduino(MH-Z19C·DHT11), Raspberry Pi 시리얼 브리지, YOLOv8n 재실 카운팅 |
 | **가전 연동** | Coway IoCare(`cowayaio`), Samsung SmartThings REST API |
-| **인프라** | Docker Compose(7 서비스), Prometheus + Grafana, GitHub Actions CI, GCP VM + nginx |
+| **인프라** | Docker Compose(7 서비스), Prometheus + Grafana, GitHub Actions CI, AWS EC2(서울, systemd + nginx, 아카이브) |
 | **모델** | Wells-Riley(Rudnick-Milton) PoI, Edwards 2024 비정상상태 확장 |
 
 ---
