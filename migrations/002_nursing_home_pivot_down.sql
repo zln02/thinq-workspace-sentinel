@@ -1,5 +1,5 @@
 -- =============================================================
--- ThinQ Workspace Sentinel · 002 ROLLBACK
+-- ThinQ Space Sentinel · 002 ROLLBACK
 -- 002_nursing_home_pivot.sql 의 역방향 (요양병원 피벗 되돌림).
 -- 실행: docker exec -i uis-timescaledb psql -U postgres -d uis < 002_nursing_home_pivot_down.sql
 -- ⚠️ NURSING_HOSPITAL 타입 sites/spaces/users 가 이미 존재하면 CHECK 복원이 실패한다.

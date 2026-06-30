@@ -7,6 +7,7 @@ const config: Config = {
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./lib/**/*.{js,ts,jsx,tsx,mdx}",   // tier 토큰 등 lib 내 className 문자열 스캔(누락 시 bg-tier-* 미생성)
   ],
   // ... (나머지 기존 코드 유지)
   theme: {
@@ -23,6 +24,15 @@ const config: Config = {
           bg: "#0B1120",       // 대시보드 전체 배경 (Deep Navy)
           panel: "#111827",    // 카드, 네비게이션 바 등 패널 배경
           border: "#1F2937",   // 패널 테두리
+        },
+        // 5단계 위험 티어 — 단일 색 토큰(임상 대시보드 UX 리서치 반영).
+        //  · 긴급도 단조 증가: 정상(그린)→심각(크림슨), 명도↓·채도↑
+        //  · 순수 red 는 '위험/심각'에만 예약(ISA-101). 색맹 대비: 이모지+라벨 중복 인코딩(lib/tier).
+        //  · base=솔리드 배경(흰 글자 AA), -bg=연한 틴트, -fg=흰 배경 위 텍스트(AA ≥4.5:1)
+        tier: {
+          monitor: "#15803d",      caution: "#facc15",      alert: "#ea580c",      high: "#dc2626",      critical: "#9f1239",
+          "monitor-bg": "#ecfdf3", "caution-bg": "#fefbeb", "alert-bg": "#fff4ec", "high-bg": "#fdecec", "critical-bg": "#fbe9ee",
+          "monitor-fg": "#15803d", "caution-fg": "#a16207", "alert-fg": "#c2410c", "high-fg": "#b91c1c", "critical-fg": "#9f1239",
         },
         // 보호자 앱(LG ThinQ 케어) — globals.css :root 토큰 참조
         care: {

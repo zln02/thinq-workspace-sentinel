@@ -1,5 +1,5 @@
 -- =============================================================
--- ThinQ Workspace Sentinel · TimescaleDB schema 초기화
+-- ThinQ Space Sentinel · TimescaleDB schema 초기화
 -- 실행: docker exec -i uis-timescaledb psql -U postgres -d uis < 001_init_sentinel.sql
 -- =============================================================
 

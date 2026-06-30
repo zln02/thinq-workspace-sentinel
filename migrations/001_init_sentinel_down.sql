@@ -1,5 +1,5 @@
 -- =============================================================
--- ThinQ Workspace Sentinel · 001 ROLLBACK
+-- ThinQ Space Sentinel · 001 ROLLBACK
 -- 001_init_sentinel.sql 의 역방향. sentinel schema 전체 제거.
 -- 실행: docker exec -i uis-timescaledb psql -U postgres -d uis < 001_init_sentinel_down.sql
 -- ⚠️ sentinel schema 의 모든 테이블·데이터가 삭제된다. 002~004 의 객체도 함께 제거됨.

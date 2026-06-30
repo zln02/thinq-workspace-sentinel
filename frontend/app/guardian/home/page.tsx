@@ -1,7 +1,7 @@
 "use client";
 // 안심 홈 — 상태 라벨 우선 + "지금 병원이 하는 일" + 실시간/끊김 처리(P0)
 import { useEffect, useState } from "react";
-import { Wind, Fan, Eye, Droplets } from "lucide-react";
+import { Wind, Fan, ShieldCheck, Droplets } from "lucide-react";
 import { useLiveWard } from "@/lib/useSentinel";
 import { getSession, tierState, TIER_RANK } from "@/lib/guardian";
 import { PageHeader, Card, SectionTitle, ConnectionBanner, Skeleton } from "@/components/guardian/ui";
@@ -27,7 +27,7 @@ export default function HomePage() {
   const acts = [
     { icon: Wind, n: "공기청정기", on: rank >= 2 ? "급속 가동" : rank >= 1 ? "자동 가동" : "대기", active: rank >= 1 },
     { icon: Fan, n: "환기 시스템", on: rank >= 2 ? "강화 환기" : rank >= 1 ? "환기 중" : "기본", active: rank >= 1 },
-    { icon: Eye, n: "24시간 감시", on: "가동 중", active: true },
+    { icon: ShieldCheck, n: "24시간 안심 케어", on: "보호 중", active: true },
     { icon: Droplets, n: "습도 관리", on: rank >= 1 ? "보정 중" : "유지", active: rank >= 1 },
   ];
 
@@ -45,6 +45,22 @@ export default function HomePage() {
       />
 
       <ConnectionBanner connected={connected} lastTs={lastTs} />
+
+      {/* 지역 감염병 확산 알림 — 위험 상승 시 */}
+      {rank >= 2 && (
+        <section className="px-4 mt-3">
+          <div className="rounded-2xl px-4 py-3 flex items-start gap-3 care-enter"
+               style={{ background: "rgba(226,84,59,0.10)", border: "1px solid rgba(226,84,59,0.4)" }}>
+            <span className="text-2xl">🛡️</span>
+            <div>
+              <p className="text-[14px] font-extrabold" style={{ color: "#c0392b" }}>지역 감염병 확산 감지</p>
+              <p className="text-[13px] text-care-ink-2 mt-0.5 leading-relaxed">
+                LG ThinQ 가전이 <b>병동 환경 관리를 시작</b>했어요. 환기·공기청정이 자동으로 강화됩니다 — 따로 하실 일은 없습니다.
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* 안심 메인 카드 — 상태 라벨 최우선, 이모지 보조 */}
       <section className="px-4 mt-4">

@@ -1,140 +1,125 @@
-// frontend/app/page.tsx
+// frontend/app/page.tsx — 통합 로그인 v9 (Stitch 하이테크 다크글래스 · 감염관리 통합 관제 센터)
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ShieldAlert, ArrowRight, HeartPulse, Wrench, Briefcase, Smartphone,
-  Radio, Activity, Wind, User, Lock, ChevronDown,
-} from "lucide-react";
+import { HOSPITALS, ROLE_HOME, authenticate, setSession, bindRegion } from "@/lib/auth";
+import ParticlesBg from "@/components/ParticlesBg";
 
-// 역할 원클릭 진입(데모 동선) — 카드 클릭 시 role 세팅 후 해당 제품 라인으로 이동
-const ROLES = [
-  { id: "nurse", role: "NURSE", name: "김민수 간호사", label: "간호사 (ICN)", desc: "실시간 병동 감염 감시", href: "/dashboard", Icon: HeartPulse },
-  { id: "fm", role: "FM", name: "정욱현 시설관리자", label: "시설 관리자", desc: "ThinQ 가전 자동 방역", href: "/dashboard", Icon: Wrench },
-  { id: "director", role: "DIRECTOR", name: "박원장 병원장", label: "병원장", desc: "ESG·ROI 경영 리포트", href: "/dashboard", Icon: Briefcase },
-  { id: "guardian", role: null, name: "보호자", label: "보호자 앱", desc: "떨어져도 가족 안심", href: "/guardian/home", Icon: Smartphone },
-] as const;
-
-const STATS = [
-  { Icon: Activity, value: "12", unit: "병실", label: "실시간 감염 감시" },
-  { Icon: Radio, value: "201호", unit: "LIVE", label: "실센서 IoT 가동" },
-  { Icon: ShieldAlert, value: "5", unit: "Tier", label: "AI 위험 등급" },
-  { Icon: Wind, value: "Rudnick", unit: "–Milton", label: "CO₂ 감염확률 모델" },
-];
-
-export default function LandingPage() {
+export default function LoginPage() {
   const router = useRouter();
-  const [showLogin, setShowLogin] = useState(false);
+  const [hospitalId, setHospitalId] = useState(HOSPITALS[0].id);
   const [id, setId] = useState("");
-  const [password, setPassword] = useState("");
+  const [pw, setPw] = useState("");
+  const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  const enter = (r: (typeof ROLES)[number]) => {
-    if (r.role) {
-      localStorage.setItem("role", r.role);
-      localStorage.setItem("userName", r.name);
-    }
-    router.push(r.href);
-  };
-
-  // 데모 PW는 환경변수로 주입(NEXT_PUBLIC_DEMO_PW). 미설정 시 로컬 개발 폴백.
-  const DEMO_PW = process.env.NEXT_PUBLIC_DEMO_PW || "1234";
-
-  const handleLogin = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password !== DEMO_PW) { setError("비밀번호가 일치하지 않습니다."); return; }
-    const r = ROLES.find((x) => x.id === id);
-    if (r) enter(r);
-    else setError("존재하지 않는 계정입니다. (nurse, director, fm 중 입력)");
+    setError("");
+    const acc = authenticate(id, pw);
+    if (!acc) { setError("아이디 또는 비밀번호가 올바르지 않습니다."); return; }
+    const hospital = HOSPITALS.find((h) => h.id === hospitalId) ?? HOSPITALS[0];
+    setBusy(true);
+    setSession({
+      account: acc.role, role: acc.role, name: acc.name,
+      hospital: hospital.name, hospitalId: hospital.id, region: hospital.region,
+    });
+    if (acc.role !== "GUARDIAN") await bindRegion(hospital.region);
+    router.push(ROLE_HOME[acc.role]);
   };
 
   return (
-    <main className="min-h-screen bg-[#0B1120] text-white flex flex-col relative overflow-hidden">
-      {/* 배경 글로우 */}
-      <div className="pointer-events-none absolute -top-40 -right-40 w-[36rem] h-[36rem] rounded-full bg-[#A50034]/20 blur-[120px]" />
-      <div className="pointer-events-none absolute -bottom-40 -left-40 w-[32rem] h-[32rem] rounded-full bg-blue-600/10 blur-[120px]" />
-
-      <div className="relative flex-1 flex flex-col items-center justify-center px-4 py-10 max-w-6xl mx-auto w-full">
-        {/* 히어로 */}
-        <div className="text-center mb-10 animate-in slide-in-from-bottom-4 duration-700">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#A50034]/15 border border-[#A50034]/40 text-[#ff5c7a] text-xs font-bold mb-5">
-            <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#A50034] opacity-75" /><span className="relative inline-flex rounded-full h-2 w-2 bg-[#A50034]" /></span>
-            LG ThinQ · 스마트 요양병원 감염관리 플랫폼
-          </div>
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <ShieldAlert size={44} className="text-[#A50034]" strokeWidth={1.6} />
-            <h1 className="text-4xl md:text-6xl font-black tracking-tight">
-              ThinQ Space <span className="text-[#A50034]">Sentinel</span>
-            </h1>
-          </div>
-          <p className="text-slate-300 text-base md:text-xl font-medium">
-            요양병원 <span className="text-white font-bold">공기감염 조기경보</span> + ThinQ <span className="text-white font-bold">자동 방역</span>
-          </p>
-          <p className="text-slate-500 text-sm mt-2">CO₂·재실 실센서 → AI 5-Tier 판정 → 가전 자동제어 → 보호자 안심 알림</p>
+    <main className="bg-[#0a0508] h-screen w-screen overflow-hidden flex">
+      {/* 배경: 하이테크 관제 센터 + 그리드/스캔 오버레이 */}
+      <div className="w-full h-full relative flex items-center justify-center p-6 sm:p-12 overflow-hidden">
+        {/* 배경: tsParticles NET (노드 연결망) — 감염 확산/역학 네트워크 관제 컨셉. Canvas라 WebGL 경고 없음 */}
+        <div className="absolute inset-0 z-0 pointer-events-auto">
+          <ParticlesBg />
         </div>
+        {/* 가독성 오버레이 — Spline 은은히 비치게 + 그리드/스캔. 클릭은 맵으로 통과(인터랙티브 유지) */}
+        <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/45 to-[#7a0024]/25 pointer-events-none z-0" />
+        <div className="absolute inset-0 login-grid-overlay pointer-events-none z-0" />
+        <div className="absolute inset-0 login-scan-overlay pointer-events-none z-0 w-full h-[200vh] -top-[50vh]" />
 
-        {/* 핵심 지표 스트립 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full mb-10 animate-in fade-in duration-1000">
-          {STATS.map((s, i) => (
-            <div key={i} className="bg-[#111827]/80 border border-slate-800 rounded-2xl p-4 flex items-center gap-3 backdrop-blur-sm">
-              <div className="w-10 h-10 rounded-xl bg-[#A50034]/15 border border-[#A50034]/30 flex items-center justify-center text-[#ff5c7a] shrink-0"><s.Icon size={20} /></div>
-              <div className="min-w-0">
-                <p className="text-lg font-black leading-tight truncate">{s.value}<span className="text-xs font-medium text-slate-400 ml-1">{s.unit}</span></p>
-                <p className="text-[11px] text-slate-500 font-medium truncate">{s.label}</p>
+        {/* 다크 글래스 카드 */}
+        <form
+          onSubmit={onSubmit}
+          className="dark-glass rounded-2xl w-full max-w-md p-8 sm:p-12 relative z-10 flex flex-col border-t-4 border-t-[#7a0024] shadow-2xl animate-in fade-in zoom-in-95 duration-500"
+        >
+          <div className="mb-8 flex justify-between items-start">
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined fill text-[#7a0024] text-3xl">coronavirus</span>
+              <h1 className="text-xl font-bold text-white tracking-tight">ThinQ Sentinel</h1>
+            </div>
+          </div>
+
+          <div className="mb-9">
+            <h2 className="text-2xl font-bold text-white mb-1 leading-snug">감염관리 통합 관제 센터</h2>
+            <p className="text-sm text-gray-400 font-normal">Infection Control Command Center</p>
+          </div>
+
+          <div className="flex flex-col gap-5">
+            {/* 관제 거점 (병원) */}
+            <div>
+              <label className="block text-[12px] font-semibold tracking-wider text-gray-400 mb-2">관제 거점</label>
+              <div className="relative">
+                <select
+                  value={hospitalId} onChange={(e) => setHospitalId(e.target.value)}
+                  className="input-glass w-full rounded-lg px-4 py-3 appearance-none text-sm cursor-pointer [&>option]:bg-[#160c11]"
+                >
+                  {HOSPITALS.map((h) => <option key={h.id} value={h.id}>{h.name} · {h.region}</option>)}
+                </select>
+                <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
               </div>
             </div>
-          ))}
-        </div>
 
-        {/* 역할 진입 카드 */}
-        <div className="w-full animate-in slide-in-from-bottom-8 duration-700">
-          <p className="text-center text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">역할을 선택해 입장</p>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {ROLES.map((r) => (
-              <button
-                key={r.id}
-                onClick={() => enter(r)}
-                className="group text-left bg-[#111827] border border-slate-800 rounded-2xl p-5 transition-all hover:-translate-y-1 hover:border-[#A50034]/60 hover:shadow-xl hover:shadow-[#A50034]/10 flex flex-col gap-3"
-              >
-                <div className="w-12 h-12 rounded-xl bg-slate-800 group-hover:bg-[#A50034] flex items-center justify-center text-slate-300 group-hover:text-white transition-colors"><r.Icon size={24} /></div>
-                <div>
-                  <h3 className="font-bold text-base text-white">{r.label}</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">{r.desc}</p>
-                </div>
-                <span className="mt-auto inline-flex items-center gap-1 text-xs font-bold text-slate-500 group-hover:text-[#ff5c7a] transition-colors">
-                  입장 <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
-                </span>
-              </button>
-            ))}
+            {/* 보안 인가 ID */}
+            <div>
+              <label className="block text-[12px] font-semibold tracking-wider text-gray-400 mb-2">보안 인가 ID</label>
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-[20px]">badge</span>
+                <input
+                  value={id} onChange={(e) => setId(e.target.value)} autoComplete="username" placeholder="관리자 ID 입력" required
+                  className="input-glass w-full rounded-lg pl-12 pr-4 py-3 text-sm placeholder-gray-500 transition-all"
+                />
+              </div>
+            </div>
+
+            {/* 인증 키 */}
+            <div>
+              <label className="block text-[12px] font-semibold tracking-wider text-gray-400 mb-2">인증 키</label>
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-[20px]">enhanced_encryption</span>
+                <input
+                  type={showPw ? "text" : "password"} value={pw} onChange={(e) => setPw(e.target.value)}
+                  autoComplete="current-password" placeholder="••••••••" required
+                  className="input-glass w-full rounded-lg pl-12 pr-12 py-3 text-sm placeholder-gray-500 transition-all"
+                />
+                <button type="button" onClick={() => setShowPw((v) => !v)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+                  <span className="material-symbols-outlined text-[20px]">{showPw ? "visibility_off" : "visibility"}</span>
+                </button>
+              </div>
+            </div>
+
+            {error && (
+              <p className="text-xs text-red-300 font-semibold bg-red-500/10 border border-red-500/25 rounded-lg px-3 py-2">{error}</p>
+            )}
+
+            <button
+              type="submit" disabled={busy}
+              className="mt-2 text-white font-semibold text-sm py-4 rounded-lg flex items-center justify-center gap-2 transition-all group shadow-[0_4px_14px_rgba(122,0,36,0.4)] bg-gradient-to-r from-[#5e001b] to-[#7a0024] hover:from-[#7a0024] hover:to-[#92002c] disabled:opacity-60 relative overflow-hidden"
+            >
+              <span className="material-symbols-outlined text-[18px]">lock_person</span>
+              {busy ? "세션 생성 중…" : "암호화 세션 시작"}
+              <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+            </button>
           </div>
-        </div>
 
-        {/* 직원 사번 로그인 (보조) */}
-        <div className="w-full max-w-sm mt-8">
-          <button onClick={() => setShowLogin((v) => !v)} className="mx-auto flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors">
-            <Lock size={12} /> 사번으로 로그인 <ChevronDown size={14} className={`transition-transform ${showLogin ? "rotate-180" : ""}`} />
-          </button>
-          {showLogin && (
-            <form onSubmit={handleLogin} className="mt-4 bg-[#111827] border border-slate-800 rounded-2xl p-5 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-                <input type="text" value={id} onChange={(e) => setId(e.target.value)} placeholder="nurse / director / fm" className="w-full bg-[#0B1120] border border-slate-700 text-white text-sm px-9 py-2.5 rounded-lg focus:outline-none focus:border-[#A50034]" required />
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="비밀번호" className="w-full bg-[#0B1120] border border-slate-700 text-white text-sm px-9 py-2.5 rounded-lg focus:outline-none focus:border-[#A50034]" required />
-              </div>
-              {error && <p className="text-red-500 text-xs font-medium text-center">{error}</p>}
-              <button type="submit" className="w-full bg-[#A50034] hover:bg-red-700 text-white text-sm font-bold py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors">로그인 <ArrowRight size={16} /></button>
-            </form>
-          )}
-        </div>
+        </form>
       </div>
-
-      <footer className="relative text-center text-[11px] text-slate-600 pb-6">
-        © 2026 LG DX School · ThinQ Workspace Sentinel — B2G 요양병원 감염관리 PoC
-      </footer>
     </main>
   );
 }

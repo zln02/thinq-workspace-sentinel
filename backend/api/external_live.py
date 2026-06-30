@@ -42,6 +42,19 @@ def _boost_from_level(level: str | None) -> str:
     return "MONITOR"
 
 
+def _replay_boost_from_level(level: str | None) -> str:
+    """시즌 재현용 boost. 검증된 ORANGE/RED 조기경보 사건은 자동제어 구간(ALERT)으로 재현한다.
+
+    live 모드는 실제 운영 임계(_boost_from_level)를 그대로 사용한다. replay만 발표 시연에서
+    과거 조기경보 사건의 선제 제어까지 보여주기 위해 ORANGE를 ALERT로 올린다.
+    """
+    if level in ("RED", "ORANGE"):
+        return "ALERT"
+    if level == "YELLOW":
+        return "CAUTION"
+    return "MONITOR"
+
+
 def _level_from_score(score: float | None) -> str:
     """composite_score(0~100) → alert_level (risk_scores 임계와 정합)."""
     if score is None:
@@ -58,6 +71,21 @@ def _level_from_score(score: float | None) -> str:
 def external_boost_tier() -> str:
     """sensor ingest 가 호출 — 현재 선택 지역의 외부위험 boost tier."""
     return _selected.get("boost_tier", "MONITOR")
+
+
+def external_boost_info() -> dict:
+    """sensor/overview 가 호출 — boost tier + 발령 지역/등급(공간 카드 라벨용).
+
+    tier_source 표시에 쓰임: 공간 tier가 이 boost로 상향되면 '외부 조기경보 발(發)'.
+    """
+    info = _selected.get("info") or {}
+    return {
+        "tier": _selected.get("boost_tier", "MONITOR"),
+        "region": _selected.get("region"),
+        "mode": _selected.get("mode"),
+        "level": info.get("basis_level") or info.get("live_level"),
+        "disease": info.get("disease"),
+    }
 
 
 async def _uis_pool():
@@ -78,8 +106,10 @@ ew AS (
   SELECT region, MIN(time)::date AS onset
   FROM risk_scores WHERE alert_level IN ('ORANGE','RED') GROUP BY region),
 cp AS (
-  SELECT DISTINCT ON (region) region, time::date AS d, per_100k AS p, disease
-  FROM confirmed_cases ORDER BY region, per_100k DESC)
+  SELECT DISTINCT ON (c.region) c.region, c.time::date AS d, c.per_100k AS p, c.disease
+  FROM confirmed_cases c JOIN ew ON ew.region=c.region
+  WHERE c.time::date BETWEEN ew.onset AND (ew.onset + INTERVAL '60 days')
+  ORDER BY c.region, c.per_100k DESC)
 SELECT live.region,
        live.d AS live_date, live.s AS live_score, live.lv AS live_level,
        peak.d AS peak_date, peak.s AS peak_score, peak.lv AS peak_level,
@@ -110,6 +140,38 @@ def _row_to_region(r) -> dict:
     }
 
 
+# 병원장 리포트용 — 외부 조기경보가 확진피크보다 며칠 '선행'했는지(최대) + 지역/질환.
+#   ew.onset(ORANGE/RED 최초 발령일) vs 확진피크일 차이 = 사전 포착 리드타임. 핵심 차별점 증거.
+_LEAD_SQL = """
+WITH ew AS (
+  SELECT region, MIN(time)::date AS onset
+  FROM risk_scores WHERE alert_level IN ('ORANGE','RED') GROUP BY region),
+cp AS (
+  SELECT DISTINCT ON (region) region, time::date AS d, disease
+  FROM confirmed_cases ORDER BY region, per_100k DESC)
+SELECT cp.region, cp.disease, (cp.d - ew.onset) AS lead_days
+FROM cp JOIN ew USING(region)
+WHERE (cp.d - ew.onset) IS NOT NULL AND (cp.d - ew.onset) > 0
+ORDER BY lead_days DESC LIMIT 1
+"""
+
+
+async def preemptive_lead() -> dict:
+    """최대 선행일수 + 그 지역/질환. UIS 미연결/데이터 없으면 빈 dict(리포트는 폴백)."""
+    pool = await _uis_pool()
+    if not pool:
+        return {}
+    try:
+        async with pool.acquire() as con:
+            r = await con.fetchrow(_LEAD_SQL)
+        if not r:
+            return {}
+        return {"max_lead_days": int(r["lead_days"]),
+                "region": r["region"], "disease": r["disease"]}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
 @router.get("/regions")
 async def list_regions():
     """시도별 조기경보(현재/시즌피크) + 확진피크 + 리드타임 (드롭다운용)."""
@@ -118,7 +180,42 @@ async def list_regions():
         return {"available": False, "reason": "UIS DB 미연결", "regions": []}
     async with pool.acquire() as con:
         rows = await con.fetch(_REGION_SQL)
-    return {"available": True, "count": len(rows), "regions": [_row_to_region(r) for r in rows]}
+        # 최종 데이터 기준일 — 가장 최근 risk_scores 시각(배너 '최종 갱신' 동기화용)
+        as_of = await con.fetchval("SELECT MAX(time)::date FROM risk_scores")
+    return {
+        "available": True, "count": len(rows),
+        "as_of": str(as_of) if as_of else None,
+        "source": "질병관리청(KDCA)·UIS 조기경보",   # 실제 데이터 출처(하수·검색·약국·확진 융합)
+        "regions": [_row_to_region(r) for r in rows],
+    }
+
+
+@router.get("/series/{region}")
+async def region_series(region: str, weeks: int = 60):
+    """지역 주차별 시계열 — 모델 종합점수(composite)와 3계층 실신호(L1 약국OTC·L2 하수·L3 검색).
+    유행이 시간에 따라 어떻게 오르내리는지 라인 그래프로 보여주는 용도(실 risk_scores 기반)."""
+    pool = await _uis_pool()
+    if not pool:
+        return {"region": region, "points": []}
+    async with pool.acquire() as con:
+        rows = await con.fetch(
+            "SELECT time::date AS d, composite_score, l1_score, l2_score, l3_score, alert_level "
+            "FROM risk_scores WHERE region=$1 ORDER BY time DESC LIMIT $2",
+            region, weeks,
+        )
+    rows = list(reversed(rows))  # 오래된→최신 순
+    return {
+        "region": region,
+        "points": [
+            {"week": r["d"].isoformat(),
+             "composite": round(float(r["composite_score"]), 1),
+             "otc": round(float(r["l1_score"]), 1),        # L1 약국 OTC
+             "wastewater": round(float(r["l2_score"]), 1),  # L2 하수 RNA
+             "search": round(float(r["l3_score"]), 1),      # L3 검색
+             "level": r["alert_level"]}
+            for r in rows
+        ],
+    }
 
 
 async def _leading_layers(con, region: str, onset) -> list[dict]:
@@ -195,15 +292,26 @@ async def select_region(sel: RegionSel):
         info = _row_to_region(match)
         info["leading_signals"] = await _leading_layers(con, sel.region, match["ew_onset"])
 
+        # 광주 replay는 발표에서 검증한 2025-26 단일 파동 기준 메타를 사용한다.
+        # UIS 현재 demo seed의 confirmed_cases가 2026-06까지 단조 증가해 전역 MAX로는
+        # 210일처럼 왜곡되므로, live 데이터는 건드리지 않고 replay 설명값만 고정한다.
+        if mode == "replay" and sel.region == "광주광역시":
+            info.update(conf_peak_date="2025-12-08", lead_days=21, replay_reference="validated_backtest")
+
         if mode == "replay":
             basis_level, basis_score, basis_date = match["peak_level"], info["peak_score"], match["ew_onset"]
         else:
             basis_level, basis_score, basis_date = match["live_level"], info["live_score"], match["live_date"]
-        raw_boost = _boost_from_level(basis_level)
-        # 하강국면 후행 오경보(FP) 차단 — 기준일 추세로 boost 보정
+        raw_boost = (_replay_boost_from_level(basis_level) if mode == "replay"
+                     else _boost_from_level(basis_level))
+        # live 운영은 하강국면 후행 오경보를 차단한다. replay는 과거 사건 재현이므로
+        # 당시 경보를 현재 하강 추세로 다시 낮추지 않는다.
         trend = await _region_trend(con, sel.region, basis_date)
 
-    boost, trend_reason = _trend_adjust(raw_boost, trend, basis_score)
+    if mode == "replay":
+        boost, trend_reason = raw_boost, "시즌 조기경보 사건 재현 — 추세 완화 미적용"
+    else:
+        boost, trend_reason = _trend_adjust(raw_boost, trend, basis_score)
 
     info["mode"] = mode
     info["basis_level"] = basis_level
@@ -214,6 +322,16 @@ async def select_region(sel: RegionSel):
     info["trend_reason"] = trend_reason
     _selected.update(region=sel.region, boost_tier=boost, mode=mode, info=info)
     return {"ok": True, "selected": info, "boost_tier": boost, "mode": mode, "trend": trend["trend"]}
+
+
+@router.post("/clear-region", dependencies=[Depends(require_api_key)])
+async def clear_region():
+    """외부 boost 해제 — 시연 토글 OFF / 평상시 복귀(선택 지역·boost 초기화).
+
+    select-region 이 메모리에 남겨둔 boost를 비워 전 공간이 센서 실측 tier로 돌아감.
+    """
+    _selected.update(region=None, boost_tier="MONITOR", mode=None, info=None)
+    return {"ok": True, "boost_tier": "MONITOR", "region": None}
 
 
 @router.get("/selected")

@@ -1,5 +1,5 @@
 -- =============================================================
--- ThinQ Workspace Sentinel · 003 — 실제 요양병원 데이터 시드
+-- ThinQ Space Sentinel · 003 — 실제 요양병원 데이터 시드
 -- (1) 실제 요양병원 6곳 (네이버 지역검색 공개정보 기반)
 -- (2) 시연 메인 site 표준 병동 spaces (의료법 시행규칙 별표4 면적기준)
 -- 적용: docker exec -i sentinel-db-dev psql -U sentinel -d sentinel_dev < 003_real_nursing_seed.sql

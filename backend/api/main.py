@@ -1,4 +1,4 @@
-"""ThinQ Workspace Sentinel · FastAPI 엔트리포인트.
+"""ThinQ Space Sentinel · FastAPI 엔트리포인트.
 
 엔드포인트:
   GET /health                          - 헬스체크 (DB·Redis·시뮬레이터 상태)
@@ -11,17 +11,19 @@
 """
 from __future__ import annotations
 
+import logging
 import os
 import pathlib as _pl
 from contextlib import asynccontextmanager
 
 import asyncpg
 import redis.asyncio as redis
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from backend.api.auth import require_api_key
 from backend.api.external_live import router as external_router
 from backend.api.sensor import router as sensor_router
 from backend.api.sse import router as sse_router
@@ -40,13 +42,36 @@ from pipeline.simulator.runner import SCENARIO_SEASON, run
 DB_DSN = os.getenv("DATABASE_URL", "postgresql://sentinel@localhost:55432/sentinel_dev")
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6380/0")
 
+logger = logging.getLogger(__name__)
 state: dict = {}
+
+
+def _warn_insecure_defaults() -> None:
+    """운영 시크릿 미설정 경고 — 데모는 기본값으로 동작하나, B2G/ISMS-P 배포 전엔 반드시 설정.
+
+    데모를 깨뜨리지 않도록 차단이 아닌 '가시성'만 제공(미설정이면 로그에 명확히 남김).
+    """
+    from backend.api.auth import demo_mode
+    demo = demo_mode()
+    if not os.getenv("SENTINEL_API_KEY"):
+        if demo:
+            logger.warning("[보안] SENTINEL_API_KEY 미설정 + 데모 모드(SENTINEL_DEMO) — POST API 무인증 통과. 운영 배포 전 키 설정 필수.")
+        else:
+            logger.warning("[보안] SENTINEL_API_KEY 미설정 — POST 제어 API 거부(fail-closed). 키를 설정하거나 데모는 SENTINEL_DEMO=1.")
+    if not os.getenv("ADMIN_CONTROL_PW"):
+        if demo:
+            logger.warning("[보안] ADMIN_CONTROL_PW 미설정 + 데모 모드 — 제어모드 비번 데모 기본값('admin'). 운영 배포 전 설정 필수.")
+        else:
+            logger.warning("[보안] ADMIN_CONTROL_PW 미설정 — 제어모드 전환 거부(fail-closed). 운영 배포 전 설정 필수.")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    _warn_insecure_defaults()
     state["db"] = await asyncpg.create_pool(DB_DSN, min_size=4, max_size=12)
-    state["redis"] = redis.from_url(REDIS_URL, decode_responses=True)
+    # Redis 는 선택적 — REDIS_URL 미설정(클라우드 무료호스트 등)이면 None.
+    # 실로직엔 안 쓰이고 health-check 표시용일 뿐이라 없어도 서비스 정상.
+    state["redis"] = redis.from_url(REDIS_URL, decode_responses=True) if os.getenv("REDIS_URL") else None
     # 코웨이 실기기 어댑터 (COWAY_USERNAME 설정 시에만 활성, 미설정/미설치면 None)
     try:
         from backend.services.coway_adapter import CowayAdapter
@@ -75,10 +100,11 @@ async def lifespan(app: FastAPI):
         await state["uis_db"].close()
     if state.get("ac"):
         await state["ac"].close()
-    await state["redis"].aclose()
+    if state.get("redis"):
+        await state["redis"].aclose()
 
 
-app = FastAPI(title="ThinQ Workspace Sentinel", version="0.3.0", lifespan=lifespan)
+app = FastAPI(title="ThinQ Space Sentinel", version="0.3.0", lifespan=lifespan)
 
 # 배포·발표장 도메인은 CORS_ORIGINS 환경변수(콤마분리)로 추가. 미설정 시 로컬 기본값만.
 _cors_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
@@ -109,27 +135,14 @@ _NOCACHE = {"Cache-Control": "no-cache, no-store, must-revalidate"}
 
 
 def _serve_html(filename: str):
-    """HTML 서빙 — 변경 API 인증키(SENTINEL_API_KEY)를 placeholder 에 주입.
+    """HTML 서빙(GET, 무인증). 보안키는 절대 클라이언트 HTML에 주입하지 않는다.
 
-    데모(키 미설정)면 빈 문자열 → 인증 비활성과 정합. 운영(키 설정)이면
-    브라우저 제어 fetch 가 동일 키를 X-API-Key 로 전송(same-origin)."""
+    /wardmap 등은 무인증 GET이므로, 여기에 SENTINEL_API_KEY 를 끼워넣으면
+    키가 노출된다 → 주입 금지. 제어 fetch 의 키는 클라이언트가 별도로 주입."""
     from fastapi.responses import HTMLResponse
 
     html = (_STATIC_DIR / filename).read_text(encoding="utf-8")
-    html = html.replace("__SENTINEL_API_KEY__", os.getenv("SENTINEL_API_KEY", ""))
     return HTMLResponse(html, headers=_NOCACHE)
-
-
-@app.get("/dashboard")
-async def dashboard():
-    """라파이 크로미움 키오스크용 실시간 대시보드(단일 HTML, same-origin SSE)."""
-    return _serve_html("dashboard.html")
-
-
-@app.get("/m")
-async def mobile_pwa():
-    """PWA 모바일 대시보드 (홈화면 설치 · 경보 알림)."""
-    return _serve_html("m.html")
 
 
 @app.get("/wardmap")
@@ -145,15 +158,6 @@ async def service_worker():
 
     return FileResponse(str(_STATIC_DIR / "sw.js"), media_type="application/javascript",
                         headers={"Cache-Control": "no-cache"})
-
-
-@app.get("/split")
-async def split_view():
-    """시연용 분할 화면 — 좌: 간호사 관제 대시보드 / 우: 보호자 폰앱(목업)."""
-    from fastapi.responses import FileResponse
-
-    return FileResponse(str(_STATIC_DIR / "split.html"), media_type="text/html",
-                        headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
 
 @app.get("/health")
 async def health():
@@ -171,18 +175,21 @@ async def health():
     except Exception as e:
         ok["db"] = {"status": "down", "error": str(e)[:120]}
 
-    # Redis 체크
-    try:
-        await state["redis"].ping()
-        ok["redis"] = {"status": "up"}
-    except Exception as e:
-        ok["redis"] = {"status": "down", "error": str(e)[:120]}
+    # Redis 체크 — 선택적. 미설정(disabled)이면 헬스체크에 영향 없음.
+    if state.get("redis"):
+        try:
+            await state["redis"].ping()
+            ok["redis"] = {"status": "up"}
+        except Exception as e:
+            ok["redis"] = {"status": "down", "error": str(e)[:120]}
+    else:
+        ok["redis"] = {"status": "disabled"}
 
     # Simulator 체크
     ok["simulator"] = {"status": "up", "scenarios": list(SCENARIO_SEASON.keys())}
 
-    # overall 상태 종합
-    is_down = ok["db"]["status"] == "down" or ok["redis"]["status"] == "down"
+    # overall 상태 종합 — DB 만 필수(Redis 는 표시용이라 제외).
+    is_down = ok["db"]["status"] == "down"
     ok["overall"] = "down" if is_down else "ok"
 
     status_code = 503 if is_down else 200
@@ -251,7 +258,7 @@ class SimRequest(BaseModel):
     dt: float = Field(1.0, ge=0.5, le=60.0)   # step 0.5~60분
 
 
-@app.post("/api/v1/simulate")
+@app.post("/api/v1/simulate", dependencies=[Depends(require_api_key)])
 async def simulate(req: SimRequest):
     if req.scenario not in SCENARIO_SEASON:
         raise HTTPException(400, f"Unknown scenario. Use one of {list(SCENARIO_SEASON.keys())}")

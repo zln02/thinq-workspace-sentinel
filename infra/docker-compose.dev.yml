@@ -1,4 +1,4 @@
-# ThinQ Workspace Sentinel · 로컬 개발 스택
+# ThinQ Space Sentinel · 로컬 개발 스택
 # 팀원 본인 PC에서 docker compose 한 줄로 mini-stack 띄움.
 # 실서비스(VM) 연동 불필요 — DB·Redis 모두 로컬에서 가상.
 #

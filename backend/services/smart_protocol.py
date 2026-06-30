@@ -58,16 +58,32 @@ TIER_INTENSITY = {
 }
 
 
+def _purifier_strength(policy: dict, intensity: float) -> tuple[str, str]:
+    """티어 강도 → 공청 풍량. 평소(저강도)엔 약/대기로 내려 경보(TURBO)와 대비를 명확히.
+    returns (strength, mode): mode ∈ {idle, down, bump, base}.
+      - MONITOR(평소)   → 대기      (idle)   : 위협 없음, 에너지 절약
+      - CAUTION         → LOW       (down)   : 약하게
+      - ALERT+ & 정책HIGH → TURBO   (bump)   : 인플루엔자류 상향
+      - ALERT+ & 정책TURBO → 정책값  (base)   : 코로나/결핵 등 이미 최대
+    """
+    base = policy.get("purifier", "MED")
+    if intensity <= 0.3:
+        return "대기", "idle"
+    if intensity < 1.0:
+        return "LOW", "down"
+    if base == "HIGH":
+        return "TURBO", "bump"
+    return base, "base"
+
+
 def plan_actions(pathogen: str, tier: str, season: str = "summer") -> list[dict]:
     """병원체 + 등급 + 계절 → 가전별 제어 명령 리스트."""
     policy = PATHOGEN_POLICY.get(pathogen, PATHOGEN_POLICY["COVID-19"])
     intensity = TIER_INTENSITY.get(tier, 1.0)
     actions = []
 
-    # 1. 공기청정기
-    strength = policy.get("purifier", "MED")
-    if intensity >= 1.0 and strength == "HIGH":
-        strength = "TURBO"
+    # 1. 공기청정기 — 평소 대기 → 경보 TURBO (강도별 풍량)
+    strength, _ = _purifier_strength(policy, intensity)
     actions.append({
         "device_type": DeviceType.AIR_PURIFIER.value,
         "body": {"airFlow": {"windStrength": strength}},
@@ -133,6 +149,93 @@ def plan_actions(pathogen: str, tier: str, season: str = "summer") -> list[dict]
         })
 
     return actions
+
+
+DEVICE_KR = {
+    "AIR_PURIFIER": "공기청정기", "AIR_CONDITIONER": "에어컨", "VENTILATOR": "환기청정기",
+    "HUMIDIFIER": "가습기", "DEHUMIDIFIER": "제습기", "BOILER": "보일러",
+    "ROBOT_CLEANER": "로봇청소기", "STYLER": "스타일러",
+}
+
+
+def explain_plan(pathogen: str, tier: str, season: str = "summer") -> dict:
+    """plan_actions를 사람이 읽는 형태로 설명 — 관리자 대시보드 흐름 viz(⑤ 가전 세팅)용.
+
+    각 가전의 타깃 세팅 + 적용/미적용 사유를 반환. plan_actions와 동일 조건을 따른다
+    (둘은 인접 배치 — 조건 변경 시 함께 수정).
+    """
+    policy = PATHOGEN_POLICY.get(pathogen, PATHOGEN_POLICY["COVID-19"])
+    intensity = TIER_INTENSITY.get(tier, 1.0)
+    on: list[dict] = []
+    off: list[dict] = []
+
+    def _on(dev, setting, reason):
+        on.append({"device": dev, "name_kr": DEVICE_KR[dev], "setting": setting, "reason": reason})
+
+    def _off(dev, reason):
+        off.append({"device": dev, "name_kr": DEVICE_KR[dev], "reason": reason})
+
+    # 1. 공기청정기 — 항상 (평소 대기 → 경보 TURBO)
+    strength, pmode = _purifier_strength(policy, intensity)
+    _reason = {
+        "idle": "평상시 대기 — 위협 없음(에너지 절약)",
+        "down": "PM2.5 제거(CADR) · 약하게",
+        "bump": "PM2.5 제거(CADR) · tier↑로 TURBO 선제 상향",
+        "base": "PM2.5 제거(CADR) · 최대 가동",
+    }[pmode]
+    _on("AIR_PURIFIER", f"바람 {strength}", _reason)
+
+    # 2. 에어컨 — 여름·환절기
+    if season in ("summer", "autumn"):
+        _on("AIR_CONDITIONER", f"냉방 {policy['target_temp'] + 4}°C · 환기송풍",
+            "폭염 노인 사망 예방 + 환기 보조(Q_aux)")
+    else:
+        _off("AIR_CONDITIONER", f"{season} — 냉방 불필요")
+
+    # 3. 환기청정기 — 항상 (Wells-Riley Q 핵심)
+    vent = policy["vent_rate"]
+    vbump = intensity >= 1.2 and vent != "MAX"
+    if vbump:
+        vent = "MAX"
+    _on("VENTILATOR", f"환기율 {vent}",
+        "Wells-Riley Q 직접 제어(ACH)" + (" · 고위험 MAX 강제" if vbump else ""))
+
+    # 4. 가습기 — 겨울·인플루엔자·RSV
+    if season == "winter" or pathogen in ("INFLUENZA", "RSV"):
+        _on("HUMIDIFIER", f"목표습도 {policy['target_rh']}%", "점막 보호·비말 안정성↓")
+    else:
+        _off("HUMIDIFIER", "가습 조건 아님(여름/비호흡기 병원체)")
+
+    # 5. 제습기 — 여름·노로 등
+    if season == "summer" or policy.get("dehumid_on"):
+        _on("DEHUMIDIFIER", f"목표습도 {policy['target_rh']}%", "표면 바이러스·곰팡이·욕창 억제")
+    else:
+        _off("DEHUMIDIFIER", "제습 조건 아님")
+
+    # 6. 보일러 — 겨울·인플루엔자
+    if season == "winter" or policy.get("boiler_on"):
+        _on("BOILER", f"난방 {policy['target_temp']}°C", "저체온증·인플루엔자 시즌")
+    else:
+        _off("BOILER", f"{season} — 난방 불필요")
+
+    # 7. 로봇청소기 — 표면 살균
+    cm = policy.get("cleaner", "NORMAL")
+    if cm != "NORMAL":
+        _on("ROBOT_CLEANER", f"청소 {cm}", "표면 살균(노로·CDI)")
+    else:
+        _off("ROBOT_CLEANER", "표면 전파 병원체 아님")
+
+    # 8. 스타일러 — 의류 살균
+    if policy.get("styler"):
+        _on("STYLER", policy["styler"], "의류 살균(옴·요양보호사 출퇴근 린넨)")
+    else:
+        _off("STYLER", "의류 매개 병원체 아님")
+
+    return {
+        "pathogen": pathogen, "tier": tier, "season": season,
+        "intensity": intensity, "rationale": policy["rationale"],
+        "applied": on, "skipped": off,
+    }
 
 
 async def execute_protocol(thinq_api, devices: list, pathogen: str, tier: str, season: str = "summer") -> dict:
