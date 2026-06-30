@@ -72,22 +72,65 @@
 
 ## 아키텍처 (DX)
 
-![System Architecture](docs/architecture/system_architecture.png)
+```mermaid
+flowchart LR
+    subgraph EDGE["🔌 엣지 · IoT"]
+        direction TB
+        ARD["Arduino<br/>MH-Z19C · DHT11<br/><i>CO₂ · 온습도</i>"]
+        CAM["YOLO 카메라<br/>재실 카운팅<br/><i>프레임 미저장</i>"]
+        RPI["Raspberry Pi 브리지<br/><i>시리얼 ↔ HTTP</i>"]
+        ARD -->|serial| RPI
+    end
 
+    subgraph EXT["🌐 외부 역학 신호 · read-only"]
+        SIG["KOWAS 하수 RNA<br/>DataLab 검색추이<br/>OTC 약국판매"]
+    end
+
+    subgraph CORE["⚙️ 백엔드 · FastAPI"]
+        direction TB
+        POI["Wells-Riley PoI 엔진<br/>→ 5단계 위험도"]
+        FSM["2단계 상태기계<br/>armed → active → recover"]
+        DB[("TimescaleDB<br/>하이퍼테이블·보존정책")]
+        SSE(["SSE 라이브 푸시"])
+        POI --> FSM
+        FSM --> DB
+        FSM --> SSE
+    end
+
+    subgraph ACT["🏠 가전 제어 · 실연동"]
+        COWAY["Coway IoCare"]
+        ST["Samsung SmartThings"]
+    end
+
+    subgraph UI["🖥️ 프론트 · 관측"]
+        direction TB
+        DASH["Next.js 대시보드<br/><i>간호사·시설·병원장</i>"]
+        PWA["보호자 PWA"]
+        GRAF["Grafana"]
+    end
+
+    RPI ==> POI
+    CAM ==> POI
+    SIG -.boost.-> FSM
+    FSM ==> ACT
+    SSE ==> DASH
+    SSE ==> PWA
+    DB --> GRAF
+
+    classDef edge fill:#E8F4FD,stroke:#3B82F6,color:#1E3A5F;
+    classDef ext fill:#FEF3C7,stroke:#D97706,color:#5C3A00;
+    classDef core fill:#DCFCE7,stroke:#16A34A,color:#14532D;
+    classDef act fill:#F3E8FF,stroke:#9333EA,color:#4C1D6B;
+    classDef ui fill:#FFE4E6,stroke:#E11D48,color:#7A0024;
+    class ARD,CAM,RPI edge;
+    class SIG ext;
+    class POI,FSM,DB,SSE core;
+    class COWAY,ST act;
+    class DASH,PWA,GRAF ui;
 ```
-[Arduino(MH-Z19C·DHT11)] ─serial─▶ [Raspberry Pi 브리지] ─┐
-[YOLO 카메라 재실 카운팅] ──────────HTTP──────────────────┤
-                                                          ▼
-[외부 역학 신호 KOWAS·DataLab·OTC] ──read-only──▶ [FastAPI 백엔드]
-                                                  ├ Wells-Riley PoI → 5-Tier
-                                                  ├ 2단계 상태기계(armed→active→recover)
-                                                  ├ TimescaleDB(시계열·보존정책)
-                                                  └ SSE 라이브 푸시
-                                                          ▼
-              [Coway IoCare / Samsung SmartThings 실제 가전 제어]
-                                                          ▼
-              [Next.js 대시보드 · 보호자 PWA · Grafana 관측]
-```
+
+> 외부 역학 신호는 위험도를 **선제(armed)** 로만 끌어올리고, **실제 CO₂ 서지가 확인될 때(active)** 만 가전을 작동시킵니다 → 오작동 최소화.
+> 📐 상세 아키텍처/ERD: [`docs/architecture/system_architecture.png`](docs/architecture/system_architecture.png) · [ERD](docs/설계서/diagrams/ThinQ-Sentinel_ERD.png)
 
 - **데이터 모델**: TimescaleDB 하이퍼테이블(센서·PoI 결과·가전 액션·알림), 10년 보존 + 자동 다운샘플링, 멀티테넌트(UUID)
 - **graceful degradation**: Redis·외부 UIS DB·실제 하드웨어 모두 optional — 센서 단독으로도 완결 동작
@@ -228,7 +271,7 @@ python -m pytest tests/ -v        # 백엔드 단위/통합 테스트 — 73 pas
 | DevOps / QA (인프라·CI·마이그레이션) | 정욱현 |
 | Strategy / Design (CX·BX·발표) | 조근범 |
 
-**포트폴리오 문서**: [BX 브랜드경험](docs/portfolio/01_BX_브랜드경험.md) · [CX 고객경험](docs/portfolio/02_CX_고객경험.md) · [DX 기술과배포](docs/portfolio/03_DX_기술과배포.md)
+**포트폴리오 문서**: [팀원 가이드](docs/portfolio/00_팀원_포트폴리오_가이드.md) · [BX 브랜드경험](docs/portfolio/01_BX_브랜드경험.md) · [CX 고객경험](docs/portfolio/02_CX_고객경험.md) · [DX 기술과배포](docs/portfolio/03_DX_기술과배포.md)
 **기타 문서**: 설계서·ERD([`docs/설계서/`](docs/설계서/)) · 법규 매트릭스([`docs/legal/`](docs/legal/)) · 비즈니스 모델([`docs/business/`](docs/business/)) · 검증 리포트([`docs/test/`](docs/test/)) · 발표/시연([`docs/발표/`](docs/발표/)) · 팀 온보딩([`docs/dev/팀_온보딩_README.md`](docs/dev/팀_온보딩_README.md))
 
 ---
