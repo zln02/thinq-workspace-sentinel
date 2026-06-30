@@ -32,7 +32,11 @@ from pydantic import BaseModel
 from backend.api.auth import demo_mode, require_api_key
 from backend.api.sse import publish_live
 from pipeline.simulator.iaq import iaq_exceedances
-from pipeline.simulator.rebreathed import infection_probability, tier_from_poi, quanta_for
+from pipeline.simulator.rebreathed import (
+    infection_probability,
+    quanta_for,
+    tier_from_poi,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/sensor", tags=["sensor"])
