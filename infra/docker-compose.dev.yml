@@ -55,7 +55,7 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:8003:8003"
-      # 라파이(Tailscale)에서 대시보드/ingest 접근용 — GCP Tailscale IP 바인딩
+      # 라파이(Tailscale)에서 대시보드/ingest 접근용 — 서버(AWS/Tailscale) IP 바인딩
       - "100.96.227.23:8003:8003"
     environment:
       DATABASE_URL: postgresql://sentinel:dev_local_password@sentinel-db-dev:5432/sentinel_dev
