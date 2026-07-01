@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from typing import AsyncIterator
 
 from fastapi import APIRouter, Query
@@ -26,6 +27,7 @@ from pipeline.simulator.runner import SCENARIO_SEASON
 from pipeline.simulator.sensors import build_nursing_home_sensors
 from pipeline.simulator.space import SpaceEnv, seed_scenario, space_env_from_row
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/stream", tags=["realtime"])
 
 
@@ -50,8 +52,8 @@ async def _load_demo_space() -> SpaceEnv:
                 )
                 if row:
                     return space_env_from_row(dict(row), space_id="ward_a")
-    except Exception:
-        pass
+    except Exception as e:  # noqa: BLE001
+        logger.warning("데모 공간 로드 실패(기본값 폴백): %s", str(e)[:120])
     return SpaceEnv(space_id="ward_a")
 
 

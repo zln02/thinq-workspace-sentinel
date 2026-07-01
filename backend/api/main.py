@@ -11,6 +11,7 @@
 """
 from __future__ import annotations
 
+import datetime
 import logging
 import os
 import pathlib as _pl
@@ -78,7 +79,7 @@ async def lifespan(app: FastAPI):
 
         state["coway"] = CowayAdapter() if os.getenv("COWAY_USERNAME") else None
     except Exception as e:  # noqa: BLE001
-        print(f"[main] Coway 어댑터 비활성: {str(e)[:100]}")
+        logger.warning("Coway 어댑터 비활성: %s", str(e)[:100])
         state["coway"] = None
     # 삼성 SmartThings 에어컨 어댑터 (SMARTTHINGS_TOKEN 설정 시에만 활성)
     try:
@@ -86,13 +87,13 @@ async def lifespan(app: FastAPI):
 
         state["ac"] = SmartThingsAdapter() if os.getenv("SMARTTHINGS_TOKEN") else None
     except Exception as e:  # noqa: BLE001
-        print(f"[main] SmartThings 어댑터 비활성: {str(e)[:100]}")
+        logger.warning("SmartThings 어댑터 비활성: %s", str(e)[:100])
         state["ac"] = None
     # UIS DB(urban_immune)는 sentinel DB와 별개 — read-only 외부신호 소비용 별도 풀
     try:
         state["uis_db"] = await asyncpg.create_pool(UIS_DSN, min_size=1, max_size=2)
-    except Exception as e:
-        print(f"[main] UIS DB 풀 초기화 실패 (외부신호 비활성, sentinel은 정상): {str(e)[:120]}")
+    except Exception as e:  # noqa: BLE001
+        logger.warning("UIS DB 풀 초기화 실패 (외부신호 비활성, sentinel은 정상): %s", str(e)[:120])
         state["uis_db"] = None
     yield
     await state["db"].close()
@@ -164,7 +165,7 @@ async def health():
     ok = {
         "service": "sentinel-api",
         "version": app.version,
-        "timestamp": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
     }
 
     # DB 체크
