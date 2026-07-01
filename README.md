@@ -131,11 +131,11 @@ flowchart LR
 ```
 
 > 외부 역학 신호는 위험도를 **선제(armed)** 로만 끌어올리고, **실제 CO₂ 서지가 확인될 때(active)** 만 가전을 작동시킵니다 → 오작동 최소화.
-> 📐 상세 아키텍처/ERD: [`docs/architecture/system_architecture.png`](docs/architecture/system_architecture.png) · [ERD](docs/설계서/diagrams/ThinQ-Sentinel_ERD.png)
+> 📐 상세 아키텍처/ERD (발표용): [4단계 시스템 아키텍처](docs/발표/deck_site/시스템%20아키텍처.png) · [ERD](docs/발표/deck_site/ERD2.png)
 
 - **데이터 모델**: TimescaleDB 하이퍼테이블(센서·PoI 결과·가전 액션·알림), 10년 보존 + 자동 다운샘플링, 멀티테넌트(UUID)
 - **graceful degradation**: Redis·외부 UIS DB·실제 하드웨어 모두 optional — 센서 단독으로도 완결 동작
-- 자세한 내용·ERD: **[DX 기술·배포 문서](docs/portfolio/03_DX_기술과배포.md)** · [ERD](docs/설계서/diagrams/ThinQ-Sentinel_ERD.png)
+- 자세한 내용·ERD: **[DX 기술·배포 문서](docs/portfolio/03_DX_기술과배포.md)** · [ERD](docs/발표/deck_site/ERD2.png)
 
 ---
 
