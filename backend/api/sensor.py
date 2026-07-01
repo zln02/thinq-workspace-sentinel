@@ -255,8 +255,6 @@ async def _coway_aq() -> Optional[dict]:
     코웨이 IoCare 클라우드 호출(수초)을 ingest 임계경로에서 제거 →
     센서 수신 지연이 가전 클라우드 응답속도에 종속되지 않음(p95 안정).
     """
-    import asyncio
-
     now = time.time()
     fresh = (now - float(_coway_cache["t"])) < _COWAY_TTL and _coway_cache["data"]
     if not fresh and not _coway_cache.get("refreshing"):
@@ -821,8 +819,6 @@ def _sim_reading(space_name: str, space_type: str) -> dict:
 
     음압격리실은 고위험 환자 수용이라 baseline을 높여 데모 다양성 확보(라벨 '시뮬').
     """
-    import math
-
     seed = sum(ord(c) for c in space_name)
     t = time.time() / 60.0
     wave = math.sin(t + seed)  # -1~1, 분 단위 완만 변동
@@ -853,8 +849,6 @@ def _derive_reading(base, base_occ, space_name: str, space_type: str) -> dict:
     센서 미설치 호실을 실센서로 위장하지 않기 위함(라벨='파생'). 실측 환경(온습도)을
     건물 공통 기준으로 깔고, 공간 타입별 밀집/환기 특성으로 CO2·재실을 변형한다.
     """
-    import math
-
     seed = sum(ord(c) for c in space_name)
     t = time.time() / 60.0
     wave = math.sin(t + seed)  # 분 단위 완만 변동(라이브감)

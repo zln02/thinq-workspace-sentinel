@@ -12,10 +12,13 @@ sentinel 시스템의 공간 위험도(5-Tier) 사전 보정에 활용한다.
 """
 from __future__ import annotations
 
+import logging
 import os
 from typing import Optional
 
 import asyncpg
+
+logger = logging.getLogger(__name__)
 
 # UIS DB는 sentinel DB와 별개 — 전용 DSN (urban_immune)
 # 자격증명은 소스에 두지 않음 — UIS_DATABASE_URL 을 .env 로 주입 (미설정 시 비번 없는 기본)
@@ -102,9 +105,9 @@ async def fetch_latest_signals(pool: asyncpg.Pool, limit: int = 20,
                 "signal_date": str(r["time"].date()) if r["time"] else "",
             })
         return out
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         # UIS 연결 불가 시 sentinel은 자체 데이터로만 동작 (서버 로그만)
-        print(f"[uis_reader] fetch_latest_signals error: {str(e)[:120]}")
+        logger.warning("fetch_latest_signals error: %s", str(e)[:120])
         return []
 
 
@@ -137,9 +140,9 @@ async def fetch_regional_risk(pool: asyncpg.Pool, region: str) -> Optional[dict]
             },
             "as_of": str(row["time"].date()) if row["time"] else "",
         }
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         # ISMS-P: raw DB 에러 클라이언트 노출 금지 — 서버 로그에만
-        print(f"[uis_reader] fetch_regional_risk({region}) error: {str(e)[:120]}")
+        logger.warning("fetch_regional_risk(%s) error: %s", region, str(e)[:120])
         return None
 
 
