@@ -4,16 +4,17 @@
 > 외부 역학 신호(하수 RNA·검색추이·약국판매) + 실내 IoT 센서를 융합해 감염 위험을 5단계로 산정하고, LG ThinQ 가전을 위험도에 맞춰 자동 제어하는 IoT 감염 사전대응 시스템.
 
 <p>
+  <img alt="Award" src="https://img.shields.io/badge/🏆_LG_DX_School_5기-DX_장려상-A50034">
   <img alt="Python" src="https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white">
   <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-0.111-009688?logo=fastapi&logoColor=white">
   <img alt="Next.js" src="https://img.shields.io/badge/Next.js-14-000000?logo=nextdotjs&logoColor=white">
   <img alt="TimescaleDB" src="https://img.shields.io/badge/TimescaleDB-PostgreSQL-336791?logo=postgresql&logoColor=white">
   <img alt="Arduino" src="https://img.shields.io/badge/Arduino-MH--Z19C-00979D?logo=arduino&logoColor=white">
-  <img alt="tests" src="https://img.shields.io/badge/tests-73%20passed-success">
+  <img alt="tests" src="https://img.shields.io/badge/tests-74%20passed-success">
   <img alt="License" src="https://img.shields.io/badge/License-MIT-green">
 </p>
 
-**LG DX School 5기 캡스톤 PoC** · 2026.05.19 – 06.25 (6주) · 5인 팀 · **BX → CX → DX → 배포 전 과정 수행**
+**🏆 LG DX School 5기 DX 장려상 수상** (2026-06-25) · 2026.05.19 – 06.25 (6주) · 5인 팀 · **BX → CX → DX → 배포 전 과정 수행**
 
 ---
 
@@ -261,7 +262,7 @@ python -m pytest tests/ -v        # 백엔드 단위/통합 테스트 — 73 pas
 
 ## 프로젝트 정보
 
-**LG DX School 5기 캡스톤** · 2026.05.19 – 06.25 (6주 PoC) · 5인 팀
+**LG DX School 5기** · 2026.05.19 – 06.25 (6주 PoC) · 5인 팀 · **🏆 DX 장려상 수상**
 
 | 역할 | 담당 |
 |---|---|
