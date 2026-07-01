@@ -1,13 +1,67 @@
-name: Deploy
+name: Deploy (AWS EC2)
+
+# 수동 실행 전용(workflow_dispatch) — push 시 자동 배포되지 않음(운영 안전).
+# 실제 배포 방식: AWS EC2(서울, ap-northeast-2)에 SSH → git pull → 의존성 설치 →
+#   systemd 서비스(sentinel-backend:8103 · sentinel-frontend:3100) 재시작 → 헬스체크.
+#
+# 필요한 리포지토리 Secrets (Settings → Secrets and variables → Actions):
+#   VM_HOST    : EC2 퍼블릭 IP 또는 도메인
+#   VM_USER    : SSH 사용자 (예: ubuntu)
+#   VM_SSH_KEY : 배포용 개인키(PEM 전체 내용)
+# ※ Secrets 미설정 시 사전 점검 단계에서 명확히 실패합니다(정상 동작).
 
 on:
   workflow_dispatch:
+    inputs:
+      ref:
+        description: "배포할 브랜치/태그"
+        required: true
+        default: "main"
+
+concurrency:
+  group: deploy-ec2
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Notice
+      - name: 사전 점검 — 필수 Secrets 확인
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_USER: ${{ secrets.VM_USER }}
+          VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
         run: |
-          echo "::notice::Deploy workflow placeholder. Tech Lead가 VM_SSH_KEY·VM_HOST·VM_USER Secrets 등록 후 본 워크플로 본문 채워서 활성화."
-          echo "현재는 수동 트리거만 가능 (Actions 탭)."
+          missing=0
+          for s in VM_HOST VM_USER VM_SSH_KEY; do
+            if [ -z "${!s}" ]; then echo "::error::secret $s 미설정"; missing=1; fi
+          done
+          [ "$missing" = 0 ] || { echo "필수 Secrets를 등록한 뒤 다시 실행하세요."; exit 1; }
+
+      - name: EC2 배포 (SSH · systemd)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          command_timeout: "20m"
+          script: |
+            set -euo pipefail
+            cd ~/thinq-workspace-sentinel
+            echo "▶ 코드 갱신 (${{ github.event.inputs.ref }})"
+            git fetch origin --prune
+            git checkout "${{ github.event.inputs.ref }}"
+            git pull --ff-only origin "${{ github.event.inputs.ref }}"
+            echo "▶ 백엔드 의존성"
+            .venv/bin/pip install -r backend/requirements.txt
+            echo "▶ 프론트 빌드"
+            cd frontend && npm ci && npm run build && cd ..
+            echo "▶ 서비스 재시작 (systemd)"
+            sudo systemctl restart sentinel-backend sentinel-frontend
+            echo "▶ 헬스체크"
+            sleep 4
+            curl -fsS http://127.0.0.1:8103/health && echo " ✅ backend OK"
+
+      - name: 결과
+        if: always()
+        run: echo "배포 워크플로 종료 — Actions 로그에서 헬스체크 결과 확인"

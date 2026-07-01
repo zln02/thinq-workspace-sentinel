@@ -46,6 +46,10 @@ jobs:
         run: |
           npm install --no-audit --no-fund
           npm run build
+      - name: Frontend 단위테스트 (Jest + RTL)
+        if: steps.check.outputs.exists == 'true'
+        working-directory: frontend
+        run: npm test -- --ci
 
   secret-scan:
     runs-on: ubuntu-latest
