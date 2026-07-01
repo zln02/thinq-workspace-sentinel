@@ -229,7 +229,7 @@ FastAPI 자동 문서: `http://127.0.0.1:8003/docs`
 ## 테스트 & CI
 
 ```bash
-python -m pytest tests/ -v        # 백엔드 단위/통합 테스트 — 73 passed
+python -m pytest tests/ -v        # 백엔드 단위/통합 테스트 — 74 passed
 ```
 
 - **CI** (`.github/workflows/ci.yml`): Ruff 린트 + pytest + 5종 시나리오 스모크 + `.env` 커밋 차단(secret-scan)
