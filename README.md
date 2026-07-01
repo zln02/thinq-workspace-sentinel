@@ -253,8 +253,8 @@ python -m pytest tests/ -v        # 백엔드 단위/통합 테스트 — 74 pas
 ## 로드맵 (PoC → 제품)
 
 - [x] **보안 1차 하드닝** — admin 기본비번 제거(fail-closed), 제어 엔드포인트 인증 강제, 데모 탈출구(`SENTINEL_DEMO`)
-- [ ] **테스트 확충** — 프론트 Jest/RTL + Playwright e2e, 백엔드 커버리지 ↑
-- [ ] **배포 자동화** — `deploy.yml` 구현(현재 placeholder), 무중단 배포
+- [x] **테스트 확충** — 프론트 Jest/RTL 15개 추가(CI 반영) · 백엔드 74개 (e2e·커버리지 확대는 후속)
+- [x] **배포 자동화** — `deploy.yml` AWS EC2 SSH 배포 워크플로(workflow_dispatch) 구현
 - [ ] **ML 포캐스터 통합** — XGBoost 14일 예측(F1 0.907)을 백엔드에 연결
 - [ ] **파일럿 MOU** — 요양병원 1곳 무상 파일럿으로 실데이터·ICN 검증 확보
 
