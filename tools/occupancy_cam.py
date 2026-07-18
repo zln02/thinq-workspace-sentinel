@@ -10,7 +10,7 @@ rpi/bridge.py 와 동일한 엣지 패턴. 영상/프레임은 저장·전송하
   pip install ultralytics opencv-python requests
 
 실행:
-  SENTINEL_API=http://34.47.113.176:8003/api/v1/sensor/reading \
+  SENTINEL_API=http://127.0.0.1:8003/api/v1/sensor/reading \
   SPACE_ID=ward_a python3 occupancy_cam.py
 
 환경변수:
@@ -30,7 +30,7 @@ import cv2
 import requests
 from ultralytics import YOLO
 
-API = os.getenv("SENTINEL_API", "http://34.47.113.176:8003/api/v1/sensor/reading")
+API = os.getenv("SENTINEL_API", "http://127.0.0.1:8003/api/v1/sensor/reading")
 API_KEY = os.getenv("SENTINEL_API_KEY", "")
 SPACE = os.getenv("SPACE_ID", "ward_a")
 CAM_INDEX = int(os.getenv("CAM_INDEX", "0"))

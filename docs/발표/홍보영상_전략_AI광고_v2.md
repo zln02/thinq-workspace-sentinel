@@ -2,7 +2,7 @@
 
 > 작성 2026-06-23 · 용도 **CES 부스 루프 (60~75초, 무한 반복)** · 제작 **AI 영상 생성 + 컷편집**
 > VO=Supertone · BGM=Suno · 영상=AI 텍스트→비디오 툴(Kling/Veo/Runway/Higgsfield 등)
-> 새 VM 데모 URL: **http://54.116.75.169:3100** (구 3.34.222.103 폐기)
+> 새 VM 데모 URL: **http://<DEMO_VM_HOST>:3100** (구 <DEMO_VM_HOST> 폐기)
 > ⚠️ 전제: "실제 광고영상" 퀄리티 = 데이터 슬라이드쇼❌ / 인간 스토리 + 제품 히어로 + 한 방 데이터 ⭕
 > ⚠️ 과대포장=즉사. 모든 카피는 아래 §2 가드레일 통과분만.
 
@@ -126,7 +126,7 @@ Cinematic emotional ambient, instrumental, no vocals. Soft cool piano intro with
 1. **AI 영상 생성** — §4 CUT1~7 프롬프트를 텍스트→비디오 툴에 넣어 클립 생성.
    - 추천: **Kling**(사실적 인물/저렴), **Google Veo 3**(고퀄·오디오), **Runway Gen-3**, 또는 **Higgsfield**(크레딧 충전 시 내가 여기서 직접 생성 가능).
    - 인물 클립은 1~2개 variation 더 뽑아 자연스러운 것 선택.
-2. **REAL ASSET 녹화** — 새 VM(http://54.116.75.169:3100)에서: ① epidemic 지도, ② 관제 tier 상승+코웨이 TURBO, ③ 센서 그래프. OBS로 화면녹화.
+2. **REAL ASSET 녹화** — 새 VM(http://<DEMO_VM_HOST>:3100)에서: ① epidemic 지도, ② 관제 tier 상승+코웨이 TURBO, ③ 센서 그래프. OBS로 화면녹화.
 3. **VO** — Supertone에서 §5 7줄 녹음 → mp3.
 4. **BGM** — Suno에서 §6 → mp3.
 5. **컷편집** — CapCut/Vrew/프리미어에서 클립+인서트+자막+VO+BGM 합성, 68초 타임라인, 루프 연결.
