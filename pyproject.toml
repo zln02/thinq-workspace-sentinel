@@ -1,0 +1,57 @@
+[project]
+name = "thinq-workspace-sentinel"
+version = "1.0.0"
+description = "요양병원 집단감염 조기경보 + LG ThinQ 가전 자동 방역 시스템 (LG전자 DX SCHOOL 5기 최종 프로젝트)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+
+# 런타임 의존성. 검증된 핀 버전은 backend/requirements.txt 참조.
+dependencies = [
+    "fastapi==0.111.0",
+    "uvicorn[standard]==0.30.0",
+    "asyncpg==0.29.0",
+    "redis>=5.0",
+    "pydantic==2.7.0",
+    "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff==0.5.0",
+    "pytest==8.2.0",
+    "pre-commit>=3.7",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# 애플리케이션 저장소(배포 가능한 라이브러리 아님) — 패키지 자동탐색 비활성.
+py-modules = []
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Ruff — CI(.github/workflows/ci.yml)와 동일 규칙 유지
+# ──────────────────────────────────────────────────────────────────────────────
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+extend-exclude = [".venv", "frontend", "ad-video", "intro-video", "docs"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]  # 라인 길이는 포매터에 위임
+
+[tool.ruff.lint.isort]
+known-first-party = ["backend", "pipeline", "ml"]
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Pytest
+# ──────────────────────────────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+pythonpath = ["."]  # repo 루트를 sys.path에 추가 → backend·pipeline·ml 임포트
+addopts = "-ra -q"
+filterwarnings = ["ignore::DeprecationWarning"]
