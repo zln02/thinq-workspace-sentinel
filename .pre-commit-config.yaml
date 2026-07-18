@@ -1,0 +1,36 @@
+# pre-commit — 커밋 전 자동 검사. 설치: pip install pre-commit && pre-commit install
+# 전체 수동 실행: pre-commit run --all-files
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: '\.(md|svg)$'
+      - id: end-of-file-fixer
+        exclude: '^(ad-video|intro-video|frontend)/'
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=10240"]  # 10MB 초과 커밋 차단(영상 원본 유입 방지)
+      - id: detect-private-key
+      - id: check-yaml
+      - id: check-json
+        exclude: '^frontend/'
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.0
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+        files: '^(backend|pipeline|ml)/'
+      - id: ruff-format
+        files: '^(backend|pipeline|ml)/'
+
+  # .env 커밋 차단 — CI secret-scan 잡과 동일한 방어선을 로컬에도.
+  - repo: local
+    hooks:
+      - id: block-dotenv
+        name: block committing .env files
+        entry: 'Refusing to commit a .env file (secrets). Use .env.example instead.'
+        language: fail
+        files: '(^|/)\.env$|\.env\.[a-zA-Z0-9_-]+$'
+        exclude: '\.env\.example$'

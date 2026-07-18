@@ -23,7 +23,7 @@ npm run dev         # Remotion Studio 미리보기
 8. 정직성 고지 엔드카드 → 루프
 
 ## 라이브 목업 캡처
-`public/live/*.png` = http://54.116.75.169:3100 실시간 캡처 (playwright/CDP).
+`public/live/*.png` = http://<DEMO_VM_HOST>:3100 실시간 캡처 (playwright/CDP).
 재캡처: `node $JOBTMP/shot2.mjs`(데모 3화면+발령) / `shot3.mjs`(admin/admin 세션주입 → 페르소나 4종).
 demo 3화면(epidemic/control/sensor)은 공개, 페르소나 대시보드는 admin/admin 로그인.
 

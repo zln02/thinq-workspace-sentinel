@@ -1,10 +1,10 @@
-# ThinQ Workspace Sentinel
+# ThinQ Workspace Sentinel · Space Sentinel
 
 > **요양병원 집단감염을, 가전이 2~3주 먼저 감지하고 자동으로 차단한다.**
 > 외부 역학 신호(하수 RNA·검색추이·약국판매) + 실내 IoT 센서를 융합해 감염 위험을 5단계로 산정하고, LG ThinQ 가전을 위험도에 맞춰 자동 제어하는 IoT 감염 사전대응 시스템.
 
 <p>
-  <img alt="Award" src="https://img.shields.io/badge/🏆_LG_DX_School_5기-DX_장려상-A50034">
+  <img alt="Award" src="https://img.shields.io/badge/🏆_LG전자_DX_SCHOOL_5기-DX_장려상-A50034">
   <img alt="Python" src="https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white">
   <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-0.111-009688?logo=fastapi&logoColor=white">
   <img alt="Next.js" src="https://img.shields.io/badge/Next.js-14-000000?logo=nextdotjs&logoColor=white">
@@ -14,7 +14,11 @@
   <img alt="License" src="https://img.shields.io/badge/License-MIT-green">
 </p>
 
-**🏆 LG DX School 5기 DX 장려상 수상** (2026-06-25) · 2026.05.19 – 06.25 (6주) · 5인 팀 · **BX → CX → DX → 배포 전 과정 수행**
+> 🏆 **LG전자 DX SCHOOL 5기 최종 통합 프로젝트 — DX 장려상 수상.**
+> LG전자가 주관하는 K-디지털 트레이닝 부트캠프(고용노동부·한국표준협회 지원 / 약 6개월·1,000시간)의 최종 과제로, **LG전자 현직자가 출제한 실제 과제**를 3단계(BX→CX→DX)로 수행했습니다. 수료증은 LG전자가 발행하며, 우수팀에 상장이 수여됩니다.
+
+<!-- TL;DR (English) -->
+**TL;DR** — *Space Sentinel* is an award-winning (LG Electronics DX SCHOOL, top-team prize) infection early-warning + smart-appliance auto-response system for nursing hospitals, where immune-vulnerable elderly patients are densely housed. It fuses **external epidemiological signals** (wastewater RNA, search trends, OTC pharmacy sales) with **in-room IoT sensing** (CO₂, temp/humidity, PM, YOLO occupancy) through a physics-based **Wells-Riley infection-probability engine**, then drives **real LG ThinQ / Coway appliances** — but only via a **2-stage state machine** that requires *both* an external alert *and* a measured indoor CO₂ surge, to minimize false triggers. Stack: FastAPI · Next.js 14 · TimescaleDB · Raspberry Pi bridge, with 74 backend tests + CI.
 
 ---
 
@@ -64,7 +68,7 @@
 
 1. **감염병 조기경보** — 외부 3종 신호(하수 RNA·검색추이·OTC)를 신뢰도 가중 정규화하여 지역 유행을 선제 감지
 2. **실시간 병동 관제** — 5단계 위험도(MONITOR→CAUTION→ALERT→HIGH_RISK→CRITICAL) 히트맵, 공기질·온습도·재실 인원
-3. **ThinQ 가전 자동 제어** — 8종 가전(공기청정기·에어컨·환기·가습·제습·보일러·로봇청소기·스타일러)을 병원체·위험도에 맞춰 제어
+3. **ThinQ 가전 자동 제어** — 8종 가전(공기청정기·에어컨·환기·가습·제습·보일러·로봇청소기·스타일러)을 병원체·위험도에 맞춰 제어. **실연동 실증은 Coway 공기청정기(IoCare, TURBO 확인) 1종**이며 Samsung SmartThings 에어컨은 API 연동 완료, 나머지는 동일 ThinQ 인터페이스로 확장하는 **설계 범위**입니다.
 4. **스마트 방역 프로토콜** — 8종 병원체별 Wells-Riley 파라미터(quanta·목표 온습도·ACH) 기반 대응 플랜
 5. **보호자 안심 앱(PWA)** — 실시간 안전 점수·알림으로 가족 안심
 6. **규제 증빙 자동화** — 9개 국내 법령 매핑 + 적정성평가/감염예방관리료 증빙 자동 로깅
@@ -131,7 +135,10 @@ flowchart LR
 ```
 
 > 외부 역학 신호는 위험도를 **선제(armed)** 로만 끌어올리고, **실제 CO₂ 서지가 확인될 때(active)** 만 가전을 작동시킵니다 → 오작동 최소화.
-> 📐 상세 아키텍처/ERD (발표용): [4단계 시스템 아키텍처](docs/발표/deck_site/시스템%20아키텍처.png) · [ERD](docs/발표/deck_site/ERD2.png)
+
+<p align="center"><img src="docs/architecture/system_architecture.png" width="720" alt="시스템 아키텍처"></p>
+
+> 📐 상세 아키텍처/ERD (발표용): [시스템 아키텍처](docs/발표/deck_site/시스템%20아키텍처.png) · [ERD](docs/발표/deck_site/ERD2.png)
 
 - **데이터 모델**: TimescaleDB 하이퍼테이블(센서·PoI 결과·가전 액션·알림), 10년 보존 + 자동 다운샘플링, 멀티테넌트(UUID)
 - **graceful degradation**: Redis·외부 UIS DB·실제 하드웨어 모두 optional — 센서 단독으로도 완결 동작
@@ -167,7 +174,8 @@ flowchart LR
 👉 [`backend/api/sensor.py`](backend/api/sensor.py)
 
 ### 3. 실제 하드웨어 통합 (mock 아님)
-Coway IoCare·SmartThings 실연동, Arduino MH-Z19C NDIR(체크섬 검증), USB 핫플러그 안전 재연결, YOLO 재실 카운팅(프레임 미저장·정수 카운트만 전송 — 프라이버시 우선).
+**Coway IoCare 실기기 제어**(시연에서 TURBO 자동 가동 확인)와 Samsung SmartThings 에어컨 REST API 연동, Arduino MH-Z19C NDIR(체크섬 검증)·DHT11, USB 핫플러그 안전 재연결, YOLO 재실 카운팅(프레임 미저장·정수 카운트만 전송 — 프라이버시 우선).
+> 정직 고지: 최종 시연에서 **물리적으로 실동작한 가전은 Coway 1종**입니다. 핵심 증명은 "외부경보 → 실내 실측 → 실제 기기 작동 → 자동 회복"의 **전 파이프라인이 진짜로 돈다는 것**이며, 나머지 가전은 동일 인터페이스로 연동만 추가하면 됩니다.
 
 ### 4. 시계열 데이터 설계
 TimescaleDB 하이퍼테이블 + BRIN 인덱스 + 압축/보존 정책, 멀티테넌트 UUID, soft-delete, JSONB 확장 메타데이터.
@@ -250,19 +258,34 @@ python -m pytest tests/ -v        # 백엔드 단위/통합 테스트 — 74 pas
 
 ---
 
+## UIS 연계 (외부 역학 신호)
+
+Sentinel의 피드포워드 계층은 자매 프로젝트 **urban-immune-system(UIS)** 이 구축한 외부 역학신호 DB를 **read-only 로 소비**하는 *last-mile 센서 융합 계층*입니다. 역할 분담이 명확합니다.
+
+| 담당 | UIS (외부 예측) | **Sentinel (본 레포)** |
+|---|---|---|
+| 데이터 | KOWAS 하수 RNA · DataLab 검색 · OTC 판매 | 병실 CO₂·온습도·PM·YOLO 재실 **실측** |
+| 출력 | 지역 유행 조기경보 신호 | Wells-Riley PoI 5단계 위험도 + **실제 가전 제어** |
+| 성격 | 지역 단위 예측 모델 | 병원·병실 단위 **현장 대응 실행** |
+
+> 선행성 검정 결과, 외부 신호 중 **약국 OTC가 6~7주 단방향 선행**함을 실데이터로 확인했습니다. 다만 지역 예측모델의 정량 성능(F1 등)은 **UIS 영역의 설계 수치**이며, Sentinel은 그 신호를 받아 *실내 검증 + 자동 대응*을 담당합니다.
+
+---
+
 ## 로드맵 (PoC → 제품)
 
 - [x] **보안 1차 하드닝** — admin 기본비번 제거(fail-closed), 제어 엔드포인트 인증 강제, 데모 탈출구(`SENTINEL_DEMO`)
 - [x] **테스트 확충** — 프론트 Jest/RTL 15개 추가(CI 반영) · 백엔드 74개 (e2e·커버리지 확대는 후속)
 - [x] **배포 자동화** — `deploy.yml` AWS EC2 SSH 배포 워크플로(workflow_dispatch) 구현
-- [ ] **ML 포캐스터 통합** — XGBoost 14일 예측(F1 0.907)을 백엔드에 연결
+- [ ] **ML 포캐스터 통합** — XGBoost 14일 예측을 백엔드에 연결
+  > ⚠️ **정직 고지**: XGBoost 14일 예측 **F1 0.907**은 별도 캡스톤 레포(`urban-immune-system`)의 **설계/자체평가(walk-forward) 수치이며, 현재 Sentinel 백엔드에 통합되어 있지 않습니다.** 배포된 임상 예측 성능이 아니라 Phase 2 목표치입니다.
 - [ ] **파일럿 MOU** — 요양병원 1곳 무상 파일럿으로 실데이터·ICN 검증 확보
 
 ---
 
-## 프로젝트 정보
+## 팀 & 프로젝트 정보
 
-**LG DX School 5기** · 2026.05.19 – 06.25 (6주 PoC) · 5인 팀 · **🏆 DX 장려상 수상**
+**LG전자 DX SCHOOL 5기 최종 통합 프로젝트** · 팀 **5분 대기조 (5기 DX 5팀)** · **🏆 DX 장려상 수상**
 
 | 역할 | 담당 |
 |---|---|

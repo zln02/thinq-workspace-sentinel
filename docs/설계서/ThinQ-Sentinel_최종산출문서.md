@@ -16,7 +16,7 @@
 | 핵심 한 줄 | **요양병원이 못 막던 집단감염을, 가전이 2~3주 전에 알고 자동으로 막는다** |
 | 서비스명 | **Space Sentinel** — B2B SaaS + ThinQ(코웨이) 가전 제어 연동 (구독형) |
 | 타깃 | 100병상+ 요양병원(전국 약 1,400개소) / 감염관리 의무 장기요양시설 |
-| 실증 범위 | RPi+아두이노 실센서(201호 다인실) · 노트북 YOLO 재실 카메라 · 코웨이 IoCare 실기기 제어 · 외부 감염병 조기경보(UIS) 연동 · 5-Tier 자동 거버넌스 · 통합 대시보드 + 보호자 PWA |
+| 실증 범위 | RPi+아두이노 실센서(201호 다인실) · 노트북 YOLO 재실 카메라 · 코웨이 IoCare 공기청정기 + 삼성 SmartThings 에어컨 실기기 제어(가전 2종, 나머지 6종은 제어계획) · 외부 감염병 조기경보(UIS) 연동 · 5-Tier 자동 거버넌스 · 통합 대시보드 + 보호자 PWA |
 
 ---
 
@@ -192,11 +192,13 @@ P = 1 − exp(−(I/n)·q·t·f)
 |---|---|---|---|
 | idle | MONITOR | 대기 | — |
 | gentle | CAUTION | 공기청정기 LOW(선제 약대응) | 외부 ORANGE/YELLOW 포함 |
-| strong | ALERT·HIGH_RISK | 공기청정기 TURBO + 환기 강화 | 코웨이 실제 제어 |
+| strong | ALERT·HIGH_RISK | 공기청정기 TURBO + 환기 강화 | 코웨이·SmartThings 실기기 제어 |
 | approval | CRITICAL | **관리자 승인 후 제어** | `/sensor/approve` |
 | manual | (전환 시) | 자동 보류, tier/SSE/KPI는 정상 | 관리자 비밀번호 전환 |
 
-## XVI. 기능 명세서 (실 API 31종)
+> **가전 실증 범위(정직 표기):** `device_catalog`의 **가전 8종은 설계·차등제어 정책(시뮬)** 이고, 실기기로 실제 제어까지 검증된 것은 **코웨이 IoCare 공기청정기 + 삼성 SmartThings 에어컨 2종**이다(어댑터 `coway_adapter.py`·`smartthings_adapter.py`). 나머지 6종(환기청정기·가습기·제습기·보일러·로봇청소기·스타일러)은 벤더 어댑터 한 줄 교체로 흡수하는 확장 대상이다.
+
+## XVI. 기능 명세서 (실 API 34종)
 
 | ID | 기능명 | 설명 | 우선순위 |
 |---|---|---|---|
@@ -213,7 +215,7 @@ P = 1 − exp(−(I/n)·q·t·f)
 | F26/F27/F28 | 외부신호·보정·지역신호 | UIS KOWAS/DataLab/OTC | 중 |
 | F30/F31 | 시뮬 스트림·3D 위험맵 | 시연·입체 시각화 | 중 |
 
-(전체 31종은 `backend/api` openapi 기준. 인증은 `SENTINEL_API_KEY` 헤더.)
+(전체 34종은 `backend/api` 라우트 기준(sensor 14 + external_live 5 + sse 2 + main 13). 인증은 `SENTINEL_API_KEY` 헤더.)
 
 ## XVII. 데이터 모델 (ERD)
 
@@ -238,7 +240,7 @@ P = 1 − exp(−(I/n)·q·t·f)
 | 실센서 실데이터 적재(201호) | 가동 | rpi-arduino 68,942건 + laptop-cam 1,299건 | ✅ 실가동 |
 | SSE 라이브 갱신 주기 | ≤2s | ~1s push | ✅ |
 | Wells-Riley/Tier 산출 단위테스트 | 통과 | tier 테스트 통과 | ✅ |
-| 가전(코웨이) 실제 제어 | 연동 | IoCare 실기기 ON/급속 제어 | ✅ |
+| 가전(코웨이·SmartThings) 실제 제어 | 연동 | 코웨이 IoCare ON/급속 + 삼성 에어컨 송풍 실기기 제어(가전 2종) | ✅ |
 | 외부 조기경보 선제 boost | 동작 | 광주 RED→실내 tier 선제 상향 | ✅ |
 | API p95 응답 | <500ms | 데모 환경 충족 | ✅ |
 | ML 예측(XGBoost) | — | **미구현(계획/PoC)** | ⏳ 향후 |
