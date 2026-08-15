@@ -14,11 +14,31 @@
   <img alt="License" src="https://img.shields.io/badge/License-MIT-green">
 </p>
 
+> **Status:** Archived (운영 종료)
+> **운영 기간:** 2026-05-28 ~ 2026-07-18
+> **종료 사유:** 계획 종료 — LG DX School 5기 과정 종료에 따른 PoC 마감
+> **라이브 데모:** 제공하지 않음 — 아래 "라이브 데모가 없는 이유" 참조
+> **재현:** `docker compose -f infra/docker-compose.dev.yml up -d` ([빠른 시작](#빠른-시작))
+
+### 라이브 데모가 없는 이유
+
+이 시스템은 **실제 하드웨어에 의존**한다. 병실 CO₂(MH-Z19C)·온습도·미세먼지를 읽는
+Arduino 센서와 이를 중계하는 Raspberry Pi 브리지, 그리고 실제 LG ThinQ·Coway 가전이
+있어야 정상 동작한다. 센서 입력이 없으면 Wells-Riley 감염확률 엔진에 넣을 값이 없고,
+제어 대상 가전이 없으면 2단계 상태기계의 출력이 향할 곳이 없다.
+
+따라서 상시 접속 가능한 데모 URL은 제공하지 않는다. 하드웨어 없이 동작을 확인하려면
+위 재현 절차로 로컬 스택을 띄운 뒤, 시뮬레이션 엔드포인트
+(`POST /api/v1/simulate`)로 시나리오를 주입하면 된다. 이 경로는 센서 없이도
+CRITICAL → MONITOR 자동 전환까지 확인할 수 있다.
+
+---
+
 > 🏆 **LG전자 DX SCHOOL 5기 최종 통합 프로젝트 — DX 장려상 수상.**
 > LG전자가 주관하는 K-디지털 트레이닝 부트캠프(고용노동부·한국표준협회 지원 / 약 6개월·1,000시간)의 최종 과제로, **LG전자 현직자가 출제한 실제 과제**를 3단계(BX→CX→DX)로 수행했습니다. 수료증은 LG전자가 발행하며, 우수팀에 상장이 수여됩니다.
 
 <!-- TL;DR (English) -->
-**TL;DR** — *Space Sentinel* is an award-winning (LG Electronics DX SCHOOL, top-team prize) infection early-warning + smart-appliance auto-response system for nursing hospitals, where immune-vulnerable elderly patients are densely housed. It fuses **external epidemiological signals** (wastewater RNA, search trends, OTC pharmacy sales) with **in-room IoT sensing** (CO₂, temp/humidity, PM, YOLO occupancy) through a physics-based **Wells-Riley infection-probability engine**, then drives **real LG ThinQ / Coway appliances** — but only via a **2-stage state machine** that requires *both* an external alert *and* a measured indoor CO₂ surge, to minimize false triggers. Stack: FastAPI · Next.js 14 · TimescaleDB · Raspberry Pi bridge, with 74 backend tests + CI.
+**TL;DR** — *Space Sentinel* is an award-winning (LG Electronics DX SCHOOL 5th cohort, Encouragement Award) infection early-warning + smart-appliance auto-response system for nursing hospitals, where immune-vulnerable elderly patients are densely housed. It fuses **external epidemiological signals** (wastewater RNA, search trends, OTC pharmacy sales) with **in-room IoT sensing** (CO₂, temp/humidity, PM, YOLO occupancy) through a physics-based **Wells-Riley infection-probability engine**, then drives **real LG ThinQ / Coway appliances** — but only via a **2-stage state machine** that requires *both* an external alert *and* a measured indoor CO₂ surge, to minimize false triggers. Stack: FastAPI · Next.js 14 · TimescaleDB · Raspberry Pi bridge, with 74 backend tests + CI.
 
 ---
 
@@ -46,7 +66,10 @@
 |---|---|
 | <img src="docs/설계서/img/screen_admin.png" width="420"> | <img src="docs/설계서/img/screen_demo.png" width="420"> |
 
-> **라이브 데모**: 최종 배포는 AWS EC2(서울, systemd + nginx)였으며 대회 종료 후 비활성화(아카이브)되었습니다. 데모 영상·시연 대본·발표덱은 `docs/발표/` 및 `ad-video/`에 있으며, 재기동은 요청 시 가능합니다.
+> **라이브 데모**: 최종 배포는 AWS(서울 리전, systemd + nginx)였으며 과정 종료 후 비활성화되었습니다.
+> 백엔드 프로세스는 **2026-08-15에 완전히 종료**했습니다 (종료 로그: [`docs/ops/sentinel-backend-shutdown-20260815.md`](docs/ops/sentinel-backend-shutdown-20260815.md)).
+> 상시 접속 가능한 데모 URL은 제공하지 않습니다 — 이유는 상단 [라이브 데모가 없는 이유](#라이브-데모가-없는-이유) 참조.
+> 데모 영상·시연 대본·발표덱은 `docs/발표/` 및 `ad-video/`에 있습니다.
 
 ---
 
@@ -277,6 +300,8 @@ Sentinel의 피드포워드 계층은 자매 프로젝트 **urban-immune-system(
 - [x] **보안 1차 하드닝** — admin 기본비번 제거(fail-closed), 제어 엔드포인트 인증 강제, 데모 탈출구(`SENTINEL_DEMO`)
 - [x] **테스트 확충** — 프론트 Jest/RTL 15개 추가(CI 반영) · 백엔드 74개 (e2e·커버리지 확대는 후속)
 - [x] **배포 자동화** — `deploy.yml` AWS EC2 SSH 배포 워크플로(workflow_dispatch) 구현
+  > 정직 고지: 워크플로는 구현·검증까지 완료했으나 **실제 실행 이력은 없습니다**(Actions 실행 0건).
+  > 운영 배포는 서버에서 systemd로 직접 수행했습니다.
 - [ ] **ML 포캐스터 통합** — XGBoost 14일 예측을 백엔드에 연결
   > ⚠️ **정직 고지**: XGBoost 14일 예측 **F1 0.907**은 별도 캡스톤 레포(`urban-immune-system`)의 **설계/자체평가(walk-forward) 수치이며, 현재 Sentinel 백엔드에 통합되어 있지 않습니다.** 배포된 임상 예측 성능이 아니라 Phase 2 목표치입니다.
 - [ ] **파일럿 MOU** — 요양병원 1곳 무상 파일럿으로 실데이터·ICN 검증 확보
