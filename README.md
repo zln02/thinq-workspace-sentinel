@@ -1,6 +1,6 @@
 # ThinQ Workspace Sentinel · Space Sentinel
 
-> **요양병원 집단감염을, 가전이 2~3주 먼저 감지하고 자동으로 차단한다.**
+> **요양병원 집단감염 위험을 미리 알아채고, 공기청정기 같은 가전을 자동으로 켜는 IoT 시제품.**
 > 외부 역학 신호(하수 RNA·검색추이·약국판매) + 실내 IoT 센서를 융합해 감염 위험을 5단계로 산정하고, LG ThinQ 가전을 위험도에 맞춰 자동 제어하는 IoT 감염 사전대응 시스템.
 
 <p>
@@ -18,7 +18,19 @@
 > LG전자가 주관하는 K-디지털 트레이닝 부트캠프(고용노동부·한국표준협회 지원 / 약 6개월·1,000시간)의 최종 과제로, **LG전자 현직자가 출제한 실제 과제**를 3단계(BX→CX→DX)로 수행했습니다. 수료증은 LG전자가 발행하며, 우수팀에 상장이 수여됩니다.
 
 <!-- TL;DR (English) -->
-**TL;DR** — *Space Sentinel* is an award-winning (LG Electronics DX SCHOOL, top-team prize) infection early-warning + smart-appliance auto-response system for nursing hospitals, where immune-vulnerable elderly patients are densely housed. It fuses **external epidemiological signals** (wastewater RNA, search trends, OTC pharmacy sales) with **in-room IoT sensing** (CO₂, temp/humidity, PM, YOLO occupancy) through a physics-based **Wells-Riley infection-probability engine**, then drives **real LG ThinQ / Coway appliances** — but only via a **2-stage state machine** that requires *both* an external alert *and* a measured indoor CO₂ surge, to minimize false triggers. Stack: FastAPI · Next.js 14 · TimescaleDB · Raspberry Pi bridge, with 74 backend tests + CI.
+**TL;DR** — *Space Sentinel* is an infection early-warning + smart-appliance auto-response system for nursing hospitals, where immune-vulnerable elderly patients are densely housed. It fuses **external epidemiological signals** (wastewater RNA, search trends, OTC pharmacy sales) with **in-room IoT sensing** (CO₂, temp/humidity, PM, YOLO occupancy) through a physics-based **Wells-Riley infection-probability engine**, then drives smart appliances (a **Coway air purifier** ran live in the final demo; LG ThinQ / SmartThings were integrated at the API level) — but only via a **2-stage state machine** that requires *both* an external alert *and* a measured indoor CO₂ surge, to minimize false triggers. It won the **Encouragement Prize** at LG Electronics DX SCHOOL (5th cohort). Stack: FastAPI · Next.js 14 · TimescaleDB · Raspberry Pi bridge, with 74 backend tests + CI.
+
+---
+
+## 👀 쉽게 말하면
+
+| | |
+|:--|:--|
+| **문제** | 요양병원은 감염에 약한 어르신이 모여 있는데, 지금은 **증상이 나온 뒤에야** 대응합니다. |
+| **만든 것** | 바깥 감염 신호(하수·검색·약국 판매)와 병실 센서(이산화탄소·미세먼지·인원 수)를 함께 보고, 위험할 때 공기청정기 같은 가전을 자동으로 켜는 시스템 |
+| **핵심 설계** | 바깥 경보만으로는 **대기 상태**까지만 가고, 병실 공기가 **실제로 나빠질 때만** 가전을 켭니다. 카메라는 영상을 저장하지 않고 **사람 수만** 셉니다. |
+| **결과** | LG전자 DX School 5기 최종 프로젝트 **장려상** · 5인 팀 (박진영 팀장) · 6주 · 백엔드 테스트 74개 |
+| **한계** | 최종 시연에서 실제로 움직인 가전은 공기청정기 1종이고, LG ThinQ·SmartThings는 연동 코드까지 완료했습니다. |
 
 ---
 
